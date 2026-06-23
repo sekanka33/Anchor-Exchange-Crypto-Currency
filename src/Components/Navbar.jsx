@@ -20,7 +20,7 @@ const Navbar = () => {
         <div className="flex items-center h-full text-gray-300">
           {/* Active/Highlighted Tab */}
           <Link to="/" className="text-white px-4 h-full flex items-center space-x-1 font-semibold  hover:bg-blue-500">
-            <span>Homepage</span>
+            <span>Home</span>
             <span className="text-[10px]">▼</span>
           </Link>
           
