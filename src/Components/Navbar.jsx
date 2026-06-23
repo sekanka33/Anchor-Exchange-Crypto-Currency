@@ -1,34 +1,94 @@
 import React from 'react'
-import { Routes, Route, Link } from 'react-router-dom'
+import { Link } from 'react-router-dom'
+import { FiMoon, FiBell } from "react-icons/fi";
+import { useState, useEffect } from 'react';
+
 
 const Navbar = () => {
   return (
-    <nav className='flex justify-between bg-black w-auto h-11 text-white pr-15 pl-15 items-center'>
-        <div className='flex justify-between items-center'>
-            <div>
-                <Link to="/" className='text-2xl pb-1'>Anchor Exchange</Link>
-            </div>
+    <nav className="flex justify-between items-center bg-[#0d0e12] w-full h-14 text-white px-6 text-sm font-medium border-b border-gray-800">
+      {/* Left Section: Logo & Main Navigation */}
+      <div className="flex items-center h-full space-x-1">
         
+        {/* Logo */}
+        <Link to="/" className="flex items-center space-x-2 px-4 h-full hover:opacity-90">
+          {/* Hexagon/Crypto Icon Placeholder */}
+          <span className="text-lg font-bold tracking-wide text-white">Anchor Exchange</span>
+        </Link>
 
-            <div className='pl-4 items-center'>
-                <Link to="/">Home</Link>
-                <Link to="buyCrypto" className='pl-3'>Buy Crypto</Link>
-                <Link to="markets" className='pl-3'>Markets</Link>
-                <Link to="exchange" className='pl-3'>Exchange</Link>
-                <Link to="spot" className='pl-3'>Spot</Link>
-                {/* <Link to="pages">Pages</Link> */}
-            </div>
-        </div>
+        {/* Navigation Links */}
+        <div className="flex items-center h-full text-gray-300">
+          {/* Active/Highlighted Tab */}
+          <Link to="/" className="text-white px-4 h-full flex items-center space-x-1 font-semibold  hover:bg-blue-500">
+            <span>Homepage</span>
+            <span className="text-[10px]">▼</span>
+          </Link>
+          
+          <Link to="/buy-crypto" className="px-4 h-full flex items-center hover:text-white transition-colors  hover:bg-blue-500">
+            Buy Crypto
+          </Link>
+          
+          <Link to="/markets" className="px-4 h-full flex items-center hover:text-white transition-colors  hover:bg-blue-500">
+            Markets
+          </Link>
+          
+          <Link to="/exchange" className="px-4 h-full flex items-center hover:text-white transition-colors  hover:bg-blue-500">
+            Exchange
+          </Link>
+          
+          <Link to="/spot" className="px-4 h-full flex items-center hover:text-white transition-colors  hover:bg-blue-500">
+            Spot
+          </Link>
 
-        <div>
-            <Link to="assets">Assets</Link>
-            <Link to="orderTrades" className='pl-3'>Order & Trades</Link>
-            <Link to="/" className='pl-3'>EN/USD</Link>
-            <Link to="/" className='pl-3'>Home</Link>
-            <Link to="/" className='pl-3'>Home</Link>
-            <button className='border-2 border-white rounded-full pl-3 items-center'><Link to="/">Wallets</Link></button>
-            <Link to="/" className='pl-3'>Sign-In</Link> 
+          <Link to="/bitusdt" className="px-4 h-full flex items-center hover:text-white  hover:bg-blue-500 transition-colors space-x-1 text-xs">
+            <span>BITUSDT</span>
+            <span className="text-blue-500 text-[8px]">💧</span>
+          </Link>
+
+          <Link to="/pages" className="px-4 h-full flex items-center hover:text-white transition-colors space-x-1  hover:bg-blue-500">
+            <span>Pages</span>
+            <span className="text-[10px]">▼</span>
+          </Link>
         </div>
+      </div>
+
+      {/* Right Section: Actions & Profile */}
+      <div className="flex items-center space-x-2 text-gray-300">
+        <Link to="/" className="text-white px-2 h-full flex items-center space-x-1 font-semibold  hover:bg-blue-500">
+            <span>Assests</span>
+            <span className="text-[10px]">▼</span>
+          </Link>
+        
+        <Link to="/" className="text-white px-2 h-full flex items-center space-x-1 font-semibold  hover:bg-blue-500">
+            <span>Orders & Trades</span>
+            <span className="text-[10px]">▼</span>
+          </Link>
+        
+        <Link to="/" className="text-white px-2 h-full flex items-center space-x-1 font-semibold  hover:bg-blue-500">
+            <span>EN/USD</span>
+            <span className="text-[10px]">▼</span>
+          </Link>
+
+        {/* Theme/Notification Icons */}
+        <button className="text-gray-300 hover:text-white hover:bg-blue-500 text-xl">
+            <FiMoon />
+        </button>
+        <button className="text-gray-300 hover:text-white hover:bg-blue-500 text-xl relative">
+        <FiBell />
+      </button>
+
+        {/* Wallet Button */}
+        <Link 
+          to="/wallet" 
+          className="border border-gray-600 rounded-full px-4 py-1 text-xs hover:bg-blue-500 transition-colors"
+        >
+          Wallet
+        </Link>
+
+        <Link to="/wallet" className="border border-gray-600 rounded-full px-4 py-1 text-xs hover:bg-blue-500 transition-colors">Sign-In</Link>
+
+        
+      </div>
     </nav>
   )
 }
