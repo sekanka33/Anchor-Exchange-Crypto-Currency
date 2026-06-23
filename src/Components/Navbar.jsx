@@ -90,6 +90,28 @@ const Navbar = () => {
         
       </div>
     </nav>
+
+
+
+    // Mobile screen size 320px to 480px
+
+
+
+
+    // Tablet Screen size 481px to 768px
+
+
+
+
+    // Tablet Landscape / Laptops screen size 769px to 1024px
+
+
+
+    // Desktop Screens size 1025px to 1200px
+
+
+
+    // Large / Widescreen screen size 1201px and up
   )
 }
 
