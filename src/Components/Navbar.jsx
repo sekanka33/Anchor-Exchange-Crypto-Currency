@@ -6,7 +6,7 @@ import { useState, useEffect } from 'react';
 
 const Navbar = () => {
   return (
-    <nav className="flex justify-between items-center bg-[#0d0e12] w-full h-14 text-white px-6 text-sm font-medium border-b border-gray-800">
+    <nav className="flex justify-between items-center bg-[#0d0e12] w-auto h-14 text-white px-6 text-sm font-medium border-b border-gray-800">
       {/* Left Section: Logo & Main Navigation */}
       <div className="flex items-center h-full space-x-1">
         
