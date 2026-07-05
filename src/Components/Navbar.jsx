@@ -93,7 +93,7 @@ const Navbar = () => {
 
 
 
-    // Mobile screen size 320px to 480px
+    // Mobile screen size 320px to 480px.
 
 
 
