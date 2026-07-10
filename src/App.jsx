@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState } from 'react'
 import Navbar from './Components/Navbar'
 import Footer from './Components/Footer'
 import About from './Pages/About'
@@ -17,6 +17,9 @@ import { Route, Routes } from 'react-router-dom'
 
 
 const App = () => {
+
+  const [darkAndWhiteMode, setDarkAndWhiteMode] = useState(false);
+
   return (
     <>
       <Navbar />
