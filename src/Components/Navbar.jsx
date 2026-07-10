@@ -1,23 +1,25 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
-import { FiMoon, FiBell } from "react-icons/fi";
-import { useState, useEffect } from 'react';
-
+import { FiMoon, FiBell, FiMenu, FiX } from "react-icons/fi";
+import { useState } from 'react';
 
 const Navbar = () => {
+
+  const [menuOpen, setMenuOpen] = useState(false);
+
   return (
-    <nav className="flex justify-between items-center bg-[#0d0e12] w-auto h-14 text-white px-6 text-sm font-medium border-b border-gray-800">
+    <nav className="flex justify-between items-center bg-[#0d0e12] w-full h-14 text-white px-6 text-sm font-medium border-b border-gray-800">
       {/* Left Section: Logo & Main Navigation */}
       <div className="flex items-center h-full space-x-1">
         
         {/* Logo */}
-        <Link to="/" className="flex items-center space-x-2 px-4 h-full hover:opacity-90">
+        <Link to="/" onClick={() => setMenuOpen(false)} className="flex items-center space-x-2 px-4 h-full hover:opacity-90">
           {/* Hexagon/Crypto Icon Placeholder */}
           <span className="text-lg font-bold tracking-wide text-white">Anchor Exchange</span>
         </Link>
 
         {/* Navigation Links */}
-        <div className="flex items-center h-full text-gray-300">
+        <div className="hidden md:flex items-center h-full text-gray-300">
           {/* Active/Highlighted Tab */}
           <Link to="/" className="text-white px-4 h-full flex items-center space-x-1 font-semibold  hover:bg-blue-500">
             <span>Home</span>
@@ -27,7 +29,7 @@ const Navbar = () => {
           <Link to="/buy-crypto" className="px-4 h-full flex items-center hover:text-white transition-colors  hover:bg-blue-500">
             Buy Crypto
           </Link>
-          
+           
           <Link to="/markets" className="px-4 h-full flex items-center hover:text-white transition-colors  hover:bg-blue-500">
             Markets
           </Link>
@@ -53,7 +55,7 @@ const Navbar = () => {
       </div>
 
       {/* Right Section: Actions & Profile */}
-      <div className="flex items-center space-x-2 text-gray-300">
+      <div className="hidden md:flex items-center space-x-2 text-gray-300">
         <Link to="/" className="text-white px-2 h-full flex items-center space-x-1 font-semibold  hover:bg-blue-500">
             <span>Assests</span>
             <span className="text-[10px]">▼</span>
@@ -89,29 +91,50 @@ const Navbar = () => {
 
         
       </div>
+
+
+      <div className='md:hidden'>
+        <button onClick={() => setMenuOpen(!menuOpen)} className='md:hidden text-2xl'
+          aria-label={menuOpen ? "Close navigation menu" : "Open navigation menu"}
+          aria-expanded={menuOpen}
+        >
+          {menuOpen ? <FiX /> : <FiMenu />}
+        </button>
+      </div>
+
+      {menuOpen && (
+            <div className="absolute top-14 left-0 w-full bg-[#0d0e12] flex flex-col p-6 gap-4 border-b border-gray-800 z-50 text-gray-300">
+              <Link to="/" onClick={() => setMenuOpen(false)} className="hover:text-white transition-colors py-1">
+                Home
+              </Link>
+              
+              <Link to="/buy-crypto" onClick={() => setMenuOpen(false)} className="hover:text-white transition-colors py-1">
+                Buy Crypto
+              </Link>
+              
+              <Link to="/markets" onClick={() => setMenuOpen(false)} className="hover:text-white transition-colors py-1">
+                Markets
+              </Link>
+              
+              <Link to="/exchange" onClick={() => setMenuOpen(false)} className="hover:text-white transition-colors py-1">
+                Exchange
+              </Link>
+              
+              <Link to="/spot" onClick={() => setMenuOpen(false)} className="hover:text-white transition-colors py-1">
+                Spot
+              </Link>
+
+              <Link to="/bitusdt" onClick={() => setMenuOpen(false)} className="hover:text-white transition-colors py-1">
+                BITUSDT
+              </Link>
+
+              <Link to="/pages" onClick={() => setMenuOpen(false)} className="hover:text-white transition-colors py-1">
+                Pages ▼
+              </Link>
+            </div>
+        )}
     </nav>
 
-
-
-    // Mobile screen size 320px to 480px.
-
-
-
-
-    // Tablet Screen size 481px to 768px
-
-
-
-
-    // Tablet Landscape / Laptops screen size 769px to 1024px
-
-
-
-    // Desktop Screens size 1025px to 1200px
-
-
-
-    // Large / Widescreen screen size 1201px and up
   )
 }
 
