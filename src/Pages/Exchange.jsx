@@ -2,8 +2,8 @@ import React from 'react'
 
 const Exchange = () => {
   return (
-    <div>
-      
+    <div className='text-white'>
+      <p>Exchange</p>
     </div>
   )
 }

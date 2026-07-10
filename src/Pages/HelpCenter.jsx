@@ -2,8 +2,8 @@ import React from 'react'
 
 const HelpCenter = () => {
   return (
-    <div>
-      
+    <div className='text-white'>
+      <p>Help center</p>
     </div>
   )
 }

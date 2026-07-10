@@ -2,8 +2,8 @@ import React from 'react'
 
 const Markets = () => {
   return (
-    <div>
-      
+    <div className='text-white'>
+      <p>Markets</p>
     </div>
   )
 }

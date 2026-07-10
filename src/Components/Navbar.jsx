@@ -6,6 +6,7 @@ import { useState } from 'react';
 const Navbar = () => {
 
   const [menuOpen, setMenuOpen] = useState(false);
+  
 
   return (
     <nav className="flex justify-between items-center bg-[#0d0e12] w-full h-14 text-white px-6 text-sm font-medium border-b border-gray-800">
@@ -21,7 +22,7 @@ const Navbar = () => {
         {/* Navigation Links */}
         <div className="hidden md:flex items-center h-full text-gray-300">
           {/* Active/Highlighted Tab */}
-          <Link to="/" className="text-white px-4 h-full flex items-center space-x-1 font-semibold  hover:text-blue-500">
+          <Link to="/" className="text-white px-4 h-full flex items-center space-x-1  hover:text-blue-500">
             <span>Home</span>
           </Link>
           
@@ -55,16 +56,16 @@ const Navbar = () => {
 
       {/* Right Section: Actions & Profile */}
       <div className="hidden md:flex items-center space-x-2 text-gray-300">
-        <Link to="/" className="text-white px-2 h-full flex items-center space-x-1 font-semibold  hover:text-blue-500">
+        <Link to="/assets" className="text-white px-2 h-full flex items-center space-x-1  hover:text-blue-500">
             <span>Assests</span>
             <span className="text-[10px]">▼</span>
           </Link>
         
-        <Link to="/" className="text-white px-2 h-full flex items-center space-x-1 font-semibold  hover:text-blue-500">
+        <Link to="/orderstrades" className="text-white px-2 h-full flex items-center space-x-1 hover:text-blue-500">
             <span>Orders & Trades</span>
           </Link>
         
-        <Link to="/" className="text-white px-2 h-full flex items-center space-x-1 font-semibold  hover:text-blue-500">
+        <Link to="/enusd" className="text-white px-2 h-full flex items-center space-x-1  hover:text-blue-500">
             <span>EN/USD</span>
             <span className="text-[10px]">▼</span>
           </Link>
@@ -85,7 +86,7 @@ const Navbar = () => {
           Wallet
         </Link>
 
-        <Link to="/wallet" className="border border-gray-600 rounded-full px-4 py-1 text-xs hover:bg-blue-500 transition-colors">Sign-In</Link>
+        <Link to="/signin" className="border border-gray-600 rounded-full px-4 py-1 text-xs hover:bg-blue-500 transition-colors">Sign-In</Link>
 
         
       </div>

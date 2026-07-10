@@ -2,8 +2,8 @@ import React from 'react'
 
 const BuyCrypto = () => {
   return (
-    <div>
-      
+    <div className='text-white'>
+      <p>Buy Crypto</p>
     </div>
   )
 }

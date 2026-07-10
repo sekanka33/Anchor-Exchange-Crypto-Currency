@@ -2,8 +2,8 @@ import React from 'react'
 
 const Wallet = () => {
   return (
-    <div>
-      
+    <div className='text-white'>
+      <p>Wallet</p>
     </div>
   )
 }

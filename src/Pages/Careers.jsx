@@ -2,8 +2,8 @@ import React from 'react'
 
 const Careers = () => {
   return (
-    <div>
-      
+    <div className='text-white'>
+      <p>Careers</p>
     </div>
   )
 }

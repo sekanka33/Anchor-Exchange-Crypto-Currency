@@ -14,6 +14,10 @@ import OrdersTrades from './Pages/OrdersTrades'
 import Spot from './Pages/Spot'
 import Wallet from './Pages/Wallet'
 import { Route, Routes } from 'react-router-dom'
+import Bitusdt from './Pages/Bitusdt'
+import Pages from './Pages/Pages'
+import Signin from './Pages/Signin'
+import Enusd from './Pages/Enusd'
 
 
 const App = () => {
@@ -22,10 +26,25 @@ const App = () => {
 
   return (
     <>
-      <Navbar />
-      <Routes>
-        <Route path="/" element={<Home />} />
-      </Routes>
+      <header>
+        <Navbar />
+      </header>
+      <main>
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path='/buy-Crypto' element={<BuyCrypto />} />
+          <Route path='/markets' element={<Markets />} />
+          <Route path='/exchange' element={<Exchange />} />
+          <Route path='/spot' element={<Spot />} />
+          <Route path='/bitusdt' element={<Bitusdt />} />
+          <Route path='/pages' element={<Pages />} />
+          <Route path='/assets' element={<Assets />} />
+          <Route path='/orderstrades' element={<OrdersTrades />} />
+          <Route path='/enusd' element={<Enusd />} />
+          <Route path='/wallet' element={<Wallet />} />
+          <Route path='/signin' element={<Signin />} />
+        </Routes>
+      </main>
       <Footer />
     </>
   )

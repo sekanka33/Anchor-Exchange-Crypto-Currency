@@ -2,8 +2,8 @@ import React from 'react'
 
 const Spot = () => {
   return (
-    <div>
-      
+    <div className='text-white'>
+      <p>spot</p>
     </div>
   )
 }
