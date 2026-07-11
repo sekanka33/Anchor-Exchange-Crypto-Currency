@@ -23,8 +23,6 @@ import Notifications from './Pages/Notifications'
 
 const App = () => {
 
-  const [darkAndWhiteMode, setDarkAndWhiteMode] = useState(false);
-
   return (
     <>
       <header>
