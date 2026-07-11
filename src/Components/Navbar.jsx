@@ -15,13 +15,11 @@ const Navbar = () => {
         
         {/* Logo */}
         <Link to="/" onClick={() => setMenuOpen(false)} className="flex items-center space-x-2 px-4 h-full hover:opacity-90">
-          {/* Hexagon/Crypto Icon Placeholder */}
           <span className="text-lg font-bold tracking-wide text-white hover:text-blue-500">Anchor Exchange</span>
         </Link>
 
         {/* Navigation Links */}
         <div className="hidden md:flex items-center h-full text-gray-300">
-          {/* Active/Highlighted Tab */}
           <Link to="/" className="text-white px-4 h-full flex items-center space-x-1  hover:text-blue-500">
             <span>Home</span>
           </Link>
@@ -101,37 +99,41 @@ const Navbar = () => {
         </button>
       </div>
 
+      {/* Mobile Dropdown Menu */}
       {menuOpen && (
-            <div className="absolute top-14 left-0 w-full bg-[#0d0e12] flex flex-col p-6 gap-4 border-b border-gray-800 z-50 text-gray-300">
-              <Link to="/" onClick={() => setMenuOpen(false)} className="hover:text-white transition-colors py-1">
-                Home
-              </Link>
-              
-              <Link to="/buy-crypto" onClick={() => setMenuOpen(false)} className="hover:text-white transition-colors py-1">
-                Buy Crypto
-              </Link>
-              
-              <Link to="/markets" onClick={() => setMenuOpen(false)} className="hover:text-white transition-colors py-1">
-                Markets
-              </Link>
-              
-              <Link to="/exchange" onClick={() => setMenuOpen(false)} className="hover:text-white transition-colors py-1">
-                Exchange
-              </Link>
-              
-              <Link to="/spot" onClick={() => setMenuOpen(false)} className="hover:text-white transition-colors py-1">
-                Spot
-              </Link>
+        <div className="absolute top-14 left-0 w-full bg-[#0d0e12] flex flex-col p-6 gap-4 border-b border-gray-800 z-50 text-gray-300">
+          <Link to="/" onClick={() => setMenuOpen(false)} className="hover:text-white transition-colors py-1">
+            Home
+          </Link>
+          
+          <Link to="/buy-crypto" onClick={() => setMenuOpen(false)} className="hover:text-white transition-colors py-1">
+            Buy Crypto
+          </Link>
+          
+          <Link to="/markets" onClick={() => setMenuOpen(false)} className="hover:text-white transition-colors py-1">
+            Markets
+          </Link>
+          
+          <Link to="/exchange" onClick={() => setMenuOpen(false)} className="hover:text-white transition-colors py-1">
+            Exchange
+          </Link>
+          
+          <Link to="/spot" onClick={() => setMenuOpen(false)} className="hover:text-white transition-colors py-1">
+            Spot
+          </Link>
 
-              <Link to="/bitusdt" onClick={() => setMenuOpen(false)} className="hover:text-white transition-colors py-1">
-                BITUSDT
-              </Link>
+          <Link to="/bitusdt" onClick={() => setMenuOpen(false)} className="hover:text-white transition-colors py-1">
+            BITUSDT
+          </Link>
 
-              <Link to="/pages" onClick={() => setMenuOpen(false)} className="hover:text-white transition-colors py-1">
-                Pages ▼
-              </Link>
-            </div>
-        )}
+          <Link to="/pages" onClick={() => setMenuOpen(false)} className="hover:text-white transition-colors py-1">
+            Pages ▼
+          </Link>
+          <Link to="/signin" onClick={() => setMenuOpen(false)} className="text-center border border-gray-600 rounded-full px-4 py-2 text-xs hover:bg-blue-500 transition-colors mt-2 text-white">
+            Sign-In
+          </Link>
+        </div>
+      )}
     </nav>
 
   )
