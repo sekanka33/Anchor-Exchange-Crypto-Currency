@@ -24,10 +24,10 @@ const Signin = () => {
       </div>
       <form className='text-center pt-13'>
         <h2 className='pr-108'>Email</h2>
-        <input type="text" placeholder='Please fill in the email form.' className='w-120 h-13 rounded-2xl  bg-gray-900 border-2 border-gray-900 pt-1 pl-4 mt-2' />
+        <input type="text" placeholder='Please fill in the email form.' className='w-120 h-13 rounded-2xl bg-gray-900 border-2 border-gray-900 pt-1 pl-4 mt-2' />
         <h2 className='pr-101 pt-7'>Password</h2>
         <div>
-          <input type="text" placeholder='Please enter a password.' className='w-120 h-13 rounded-2xl  bg-gray-900 border-2 border-gray-900 pt-1 pl-4 mt-2' />
+          <input type="text" placeholder='Please enter a password.' className='w-120 h-13 rounded-2xl bg-gray-900 border-2 border-gray-900 pt-1 pl-4 mt-2' />
           <FaEye />
         </div>
         
