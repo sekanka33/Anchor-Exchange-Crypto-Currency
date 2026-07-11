@@ -1,51 +1,51 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
-import { FiMoon, FiBell, FiMenu, FiX } from "react-icons/fi";
+import { FiMoon, FiSun, FiBell, FiMenu, FiX } from "react-icons/fi";
 import { useState } from 'react';
+import { useTheme } from '../hooks/useTheme';
 
 const Navbar = () => {
-
   const [menuOpen, setMenuOpen] = useState(false);
-  
+  const { isDarkMode, toggleTheme } = useTheme();
 
   return (
-    <nav className="flex justify-between items-center bg-[#0d0e12] w-full h-14 text-white px-6 text-sm font-medium border-b border-gray-800">
+    <nav className="flex justify-between items-center bg-white dark:bg-[#0d0e12] w-full h-14 text-slate-900 dark:text-white px-6 text-sm font-medium border-b border-gray-200 dark:border-gray-800 transition-colors duration-300">
       {/* Left Section: Logo & Main Navigation */}
       <div className="flex items-center h-full space-x-1">
         
         {/* Logo */}
         <Link to="/" onClick={() => setMenuOpen(false)} className="flex items-center space-x-2 px-4 h-full hover:opacity-90">
-          <span className="text-lg font-bold tracking-wide text-white hover:text-blue-500">Anchor Exchange</span>
+          <span className="text-lg font-bold tracking-wide text-slate-900 dark:text-white hover:text-blue-500">Anchor Exchange</span>
         </Link>
 
         {/* Navigation Links */}
-        <div className="hidden md:flex items-center h-full text-gray-300">
-          <Link to="/" className="text-white px-4 h-full flex items-center space-x-1  hover:text-blue-500">
+        <div className="hidden md:flex items-center h-full text-slate-600 dark:text-gray-300">
+          <Link to="/" className="text-slate-900 dark:text-white px-4 h-full flex items-center space-x-1 hover:text-blue-500">
             <span>Home</span>
           </Link>
           
-          <Link to="/buy-crypto" className="px-4 h-full flex items-center transition-colors  hover:text-blue-500">
+          <Link to="/buy-crypto" className="px-4 h-full flex items-center transition-colors hover:text-blue-500">
             Buy Crypto
           </Link>
            
-          <Link to="/markets" className="px-4 h-full flex items-center transition-colors  hover:text-blue-500">
+          <Link to="/markets" className="px-4 h-full flex items-center transition-colors hover:text-blue-500">
             Markets
           </Link>
           
-          <Link to="/exchange" className="px-4 h-full flex items-center transition-colors  hover:text-blue-500">
+          <Link to="/exchange" className="px-4 h-full flex items-center transition-colors hover:text-blue-500">
             Exchange
           </Link>
           
-          <Link to="/spot" className="px-4 h-full flex items-center  transition-colors  hover:text-blue-500">
+          <Link to="/spot" className="px-4 h-full flex items-center transition-colors hover:text-blue-500">
             Spot
           </Link>
 
-          <Link to="/bitusdt" className="px-4 h-full flex items-center  hover:text-blue-500 transition-colors space-x-1 text-xs">
+          <Link to="/bitusdt" className="px-4 h-full flex items-center hover:text-blue-500 transition-colors space-x-1 text-xs">
             <span>BITUSDT</span>
             <span className="text-blue-500 text-[8px]">💧</span>
           </Link>
 
-          <Link to="/pages" className="px-4 h-full flex items-center  transition-colors space-x-1  hover:text-blue-500">
+          <Link to="/pages" className="px-4 h-full flex items-center transition-colors space-x-1 hover:text-blue-500">
             <span>Pages</span>
             <span className="text-[10px]">▼</span>
           </Link>
@@ -53,47 +53,51 @@ const Navbar = () => {
       </div>
 
       {/* Right Section: Actions & Profile */}
-      <div className="hidden md:flex items-center space-x-2 text-gray-300">
-        <Link to="/assets" className="text-white px-2 h-full flex items-center space-x-1  hover:text-blue-500">
-            <span>Assests</span>
-            <span className="text-[10px]">▼</span>
-          </Link>
+      <div className="hidden md:flex items-center space-x-2 text-slate-600 dark:text-gray-300">
+        <Link to="/assets" className="text-slate-900 dark:text-white px-2 h-full flex items-center space-x-1 hover:text-blue-500">
+          <span>Assests</span>
+          <span className="text-[10px]">▼</span>
+        </Link>
         
-        <Link to="/orderstrades" className="text-white px-2 h-full flex items-center space-x-1 hover:text-blue-500">
-            <span>Orders & Trades</span>
-          </Link>
+        <Link to="/orderstrades" className="text-slate-900 dark:text-white px-2 h-full flex items-center space-x-1 hover:text-blue-500">
+          <span>Orders & Trades</span>
+        </Link>
         
-        <Link to="/enusd" className="text-white px-2 h-full flex items-center space-x-1  hover:text-blue-500">
-            <span>EN/USD</span>
-            <span className="text-[10px]">▼</span>
-          </Link>
+        <Link to="/enusd" className="text-slate-900 dark:text-white px-2 h-full flex items-center space-x-1 hover:text-blue-500">
+          <span>EN/USD</span>
+          <span className="text-[10px]">▼</span>
+        </Link>
 
         {/* Theme/Notification Icons */}
-        <button className="text-gray-300 hover:text-blue-500 text-xl">
-            <FiMoon />
+        <button 
+          onClick={toggleTheme} 
+          className="text-slate-600 dark:text-gray-300 hover:text-blue-500 text-xl p-1 rounded-full transition-colors"
+          aria-label="Toggle theme layout"
+        >
+          {isDarkMode ? <FiSun /> : <FiMoon />}
         </button>
         
-        <Link to="/notifications"><button className="text-gray-300 hover:text-blue-500 text-xl relative">
-              <FiBell />
-              </button>
+        <Link to="/notifications">
+          <button className="text-slate-600 dark:text-gray-300 hover:text-blue-500 text-xl relative">
+            <FiBell />
+          </button>
         </Link>
 
         {/* Wallet Button */}
         <Link 
           to="/wallet" 
-          className="border border-gray-600 rounded-full px-4 py-1 text-xs hover:bg-blue-500 transition-colors"
+          className="border border-gray-300 dark:border-gray-600 rounded-full px-4 py-1 text-xs text-slate-900 dark:text-white hover:bg-blue-500 hover:text-white transition-colors"
         >
           Wallet
         </Link>
 
-        <Link to="/signin" className="border border-gray-600 rounded-full px-4 py-1 text-xs hover:bg-blue-500 transition-colors">Sign-In</Link>
-
-        
+        <Link to="/signin" className="border border-gray-300 dark:border-gray-600 rounded-full px-4 py-1 text-xs text-slate-900 dark:text-white hover:bg-blue-500 hover:text-white transition-colors">
+          Sign-In
+        </Link>
       </div>
 
-
       <div className='md:hidden'>
-        <button onClick={() => setMenuOpen(!menuOpen)} className='md:hidden text-2xl'
+        <button onClick={() => setMenuOpen(!menuOpen)} className='md:hidden text-2xl text-slate-900 dark:text-white'
           aria-label={menuOpen ? "Close navigation menu" : "Open navigation menu"}
           aria-expanded={menuOpen}
         >
@@ -103,41 +107,41 @@ const Navbar = () => {
 
       {/* Mobile Dropdown Menu */}
       {menuOpen && (
-        <div className="absolute top-14 left-0 w-full bg-[#0d0e12] flex flex-col p-6 gap-4 border-b border-gray-800 z-50 text-gray-300">
-          <Link to="/" onClick={() => setMenuOpen(false)} className="hover:text-white transition-colors py-1">
+        <div className="absolute top-14 left-0 w-full bg-white dark:bg-[#0d0e12] flex flex-col p-6 gap-4 border-b border-gray-200 dark:border-gray-800 z-50 text-slate-600 dark:text-gray-300">
+          <Link to="/" onClick={() => setMenuOpen(false)} className="hover:text-slate-900 dark:hover:text-white transition-colors py-1">
             Home
           </Link>
           
-          <Link to="/buy-crypto" onClick={() => setMenuOpen(false)} className="hover:text-white transition-colors py-1">
+          <Link to="/buy-crypto" onClick={() => setMenuOpen(false)} className="hover:text-slate-900 dark:hover:text-white transition-colors py-1">
             Buy Crypto
           </Link>
           
-          <Link to="/markets" onClick={() => setMenuOpen(false)} className="hover:text-white transition-colors py-1">
+          <Link to="/markets" onClick={() => setMenuOpen(false)} className="hover:text-slate-900 dark:hover:text-white transition-colors py-1">
             Markets
           </Link>
           
-          <Link to="/exchange" onClick={() => setMenuOpen(false)} className="hover:text-white transition-colors py-1">
+          <Link to="/exchange" onClick={() => setMenuOpen(false)} className="hover:text-slate-900 dark:hover:text-white transition-colors py-1">
             Exchange
           </Link>
           
-          <Link to="/spot" onClick={() => setMenuOpen(false)} className="hover:text-white transition-colors py-1">
+          <Link to="/spot" onClick={() => setMenuOpen(false)} className="hover:text-slate-900 dark:hover:text-white transition-colors py-1">
             Spot
           </Link>
 
-          <Link to="/bitusdt" onClick={() => setMenuOpen(false)} className="hover:text-white transition-colors py-1">
+          <Link to="/bitusdt" onClick={() => setMenuOpen(false)} className="hover:text-slate-900 dark:hover:text-white transition-colors py-1">
             BITUSDT
           </Link>
 
-          <Link to="/pages" onClick={() => setMenuOpen(false)} className="hover:text-white transition-colors py-1">
+          <Link to="/pages" onClick={() => setMenuOpen(false)} className="hover:text-slate-900 dark:hover:text-white transition-colors py-1">
             Pages ▼
           </Link>
-          <Link to="/signin" onClick={() => setMenuOpen(false)} className="text-center border border-gray-600 rounded-full px-4 py-2 text-xs hover:bg-blue-500 transition-colors mt-2 text-white">
+          
+          <Link to="/signin" onClick={() => setMenuOpen(false)} className="text-center border border-gray-300 dark:border-gray-600 rounded-full px-4 py-2 text-xs hover:bg-blue-500 hover:text-white transition-colors mt-2 text-slate-900 dark:text-white">
             Sign-In
           </Link>
         </div>
       )}
     </nav>
-
   )
 }
 

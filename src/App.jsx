@@ -19,12 +19,13 @@ import Pages from './Pages/Pages'
 import Signin from './Pages/Signin'
 import Enusd from './Pages/Enusd'
 import Notifications from './Pages/Notifications'
+import { ThemeProvider } from './Components/ThemeProvider'
 
 
 const App = () => {
 
   return (
-    <>
+    <ThemeProvider>
       <header>
         <Navbar />
       </header>
@@ -46,7 +47,7 @@ const App = () => {
         </Routes>
       </main>
       <Footer />
-    </>
+    </ThemeProvider>
   )
 }
 

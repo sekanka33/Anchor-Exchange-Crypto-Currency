@@ -58,18 +58,18 @@ const Footer = () => {
         </div>
       </div>
 
-      {/* Bottom Footer */}
-      <div className='h-20 w-full bg-mist-900'>
+
+      <div className='h-20 w-full bg-white border-t border-gray-200 text-gray-600 dark:bg-mist-900 dark:border-transparent dark:text-white transition-colors duration-300'>
         <div className='flex justify-between pl-20 pr-20 pt-6'>
           <div>
             <p>Copyright &copy; {new Date().getFullYear()} Free For all of the World people</p>
           </div>
 
-          <div className='flex gap-5 '>
-            <button className='hover:text-blue-500'><FaFacebook/> </button>
-            <button className='hover:text-blue-500'><FaWhatsapp /> </button>
-            <button className='hover:text-blue-500'><FaLinkedin /> </button>
-            <button className='hover:text-blue-500'><FaXTwitter /> </button>
+          <div className='flex gap-5 text-gray-500 dark:text-gray-400'>
+            <button className='hover:text-blue-500'><FaFacebook size={20} /> </button>
+            <button className='hover:text-blue-500'><FaWhatsapp size={20} /> </button>
+            <button className='hover:text-blue-500'><FaLinkedin size={20} /> </button>
+            <button className='hover:text-blue-500'><FaXTwitter size={20} /> </button>
           </div>
         </div>
       </div>
