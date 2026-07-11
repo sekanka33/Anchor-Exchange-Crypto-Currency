@@ -18,6 +18,7 @@ import Bitusdt from './Pages/Bitusdt'
 import Pages from './Pages/Pages'
 import Signin from './Pages/Signin'
 import Enusd from './Pages/Enusd'
+import Notifications from './Pages/Notifications'
 
 
 const App = () => {
@@ -41,6 +42,7 @@ const App = () => {
           <Route path='/assets' element={<Assets />} />
           <Route path='/orderstrades' element={<OrdersTrades />} />
           <Route path='/enusd' element={<Enusd />} />
+          <Route path='/notifications' element={<Notifications />} />
           <Route path='/wallet' element={<Wallet />} />
           <Route path='/signin' element={<Signin />} />
         </Routes>

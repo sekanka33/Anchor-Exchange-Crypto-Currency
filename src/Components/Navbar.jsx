@@ -72,9 +72,11 @@ const Navbar = () => {
         <button className="text-gray-300 hover:text-blue-500 text-xl">
             <FiMoon />
         </button>
-        <button className="text-gray-300 hover:text-blue-500 text-xl relative">
-        <FiBell />
-      </button>
+        
+        <Link to="/notifications"><button className="text-gray-300 hover:text-blue-500 text-xl relative">
+              <FiBell />
+              </button>
+        </Link>
 
         {/* Wallet Button */}
         <Link 

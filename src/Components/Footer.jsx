@@ -4,9 +4,9 @@ import { FaWhatsapp, FaXTwitter } from 'react-icons/fa6'
 
 const Footer = () => {
   return (
-    <footer className='py-20 px-22 w-full h-75'>
+    <footer className='w-full h-75'>
       {/* Top Footer */}
-      <div className='flex justify-between'>
+      <div className='flex justify-between py-20 px-22'>
         <div className='flex flex-col gap-4'>
           {/* Logo */}
           <h1 className='text-2xl font-extrabold '>Anchor Exchange</h1>
@@ -19,56 +19,58 @@ const Footer = () => {
         <div className='flex gap-20 justify-between'>
           <div className='flex flex-col gap-4'>
             <h2 className='text-1xl font-bold '>PRODUCTS</h2>
-            <p>Spot</p>
-            <p>Inverse Perpetual</p>
-            <p>USDT Perpetual</p>
-            <p>Exchange</p>
-            <p>Launchpad</p>
-            <p>Anchor pay</p>
+            <p className='hover:text-blue-500'>Spot</p>
+            <p className='hover:text-blue-500'>Inverse Perpetual</p>
+            <p className='hover:text-blue-500'>USDT Perpetual</p>
+            <p className='hover:text-blue-500'>Exchange</p>
+            <p className='hover:text-blue-500'>Launchpad</p>
+            <p className='hover:text-blue-500'>Anchor pay</p>
           </div>
 
           <div className='flex flex-col gap-4'>
             <h1 className='text-1xl font-bold '>SERVICES</h1>
-            <p>Buy Crypto</p>
-            <p>Markets</p>
-            <p>Trading Fee</p>
-            <p>Affiliate Program</p>
-            <p>Referral Program</p>
-            <p>API</p>
+            <p className='hover:text-blue-500'>Buy Crypto</p>
+            <p className='hover:text-blue-500'>Markets</p>
+            <p className='hover:text-blue-500'>Trading Fee</p>
+            <p className='hover:text-blue-500'>Affiliate Program</p>
+            <p className='hover:text-blue-500'>Referral Program</p>
+            <p className='hover:text-blue-500'>API</p>
           </div>
 
           <div className='flex flex-col gap-4'>
             <h1 className='text-1xl font-bold '>SUPPORT</h1>
-            <p>Anchor Learn</p>
-            <p>Help Center</p>
-            <p>User Feedback</p>
-            <p>Submit Request</p>
-            <p>API Documentation</p>
-            <p>Trading Rules</p>
+            <p className='hover:text-blue-500'>Anchor Learn</p>
+            <p className='hover:text-blue-500'>Help Center</p>
+            <p className='hover:text-blue-500'>User Feedback</p>
+            <p className='hover:text-blue-500'>Submit Request</p>
+            <p className='hover:text-blue-500'>API Documentation</p>
+            <p className='hover:text-blue-500'>Trading Rules</p>
           </div>
 
           <div className='flex flex-col gap-4'>
             <h1 className='text-1xl font-bold '>ABOUT US</h1>
-            <p>About Anchor Exchange</p>
-            <p>Authenticity Check</p>
-            <p>Careers</p>
-            <p>Contacts</p>
-            <p>Blog</p>
+            <p className='hover:text-blue-500'>About Anchor Exchange</p>
+            <p className='hover:text-blue-500'>Authenticity Check</p>
+            <p className='hover:text-blue-500'>Careers</p>
+            <p className='hover:text-blue-500'>Contacts</p>
+            <p className='hover:text-blue-500'>Blog</p>
           </div>
         </div>
       </div>
 
       {/* Bottom Footer */}
-      <div className='flex justify-between pt-10 h-10 w-full bg-whiet'>
-        <div>
-          <p>Copyright &copy; {new Date().getFullYear()} Free For all of the World people</p>
-        </div>
+      <div className='h-20 w-full bg-mist-900'>
+        <div className='flex justify-between pl-20 pr-20 pt-6'>
+          <div>
+            <p>Copyright &copy; {new Date().getFullYear()} Free For all of the World people</p>
+          </div>
 
-        <div className='flex gap-5'>
-          <button><FaFacebook/> </button>
-          <button><FaWhatsapp /> </button>
-          <button><FaLinkedin /> </button>
-          <button><FaXTwitter /> </button>
+          <div className='flex gap-5 '>
+            <button className='hover:text-blue-500'><FaFacebook/> </button>
+            <button className='hover:text-blue-500'><FaWhatsapp /> </button>
+            <button className='hover:text-blue-500'><FaLinkedin /> </button>
+            <button className='hover:text-blue-500'><FaXTwitter /> </button>
+          </div>
         </div>
       </div>
 
