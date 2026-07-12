@@ -20,6 +20,7 @@ import Signin from './Pages/Signin'
 import Enusd from './Pages/Enusd'
 import Notifications from './Pages/Notifications'
 import { ThemeProvider } from './Components/ThemeProvider'
+import Signup from './Pages/Signup'
 
 
 const App = () => {
@@ -44,6 +45,7 @@ const App = () => {
           <Route path='/notifications' element={<Notifications />} />
           <Route path='/wallet' element={<Wallet />} />
           <Route path='/signin' element={<Signin />} />
+          <Route path='/signup' element={<Signup />} />
         </Routes>
       </main>
       <Footer />
