@@ -12,9 +12,9 @@ const Signin = () => {
       <div className='flex justify-between items-center'>
         <div className='pl-135'>
       <div className='items-center text-center'>
-        <h1 className='text-3xl font-semibold pt-25'>Log In to Anchor Exchange</h1>
+        <h1 className='text-3xl font-semibold pt-18'>Log In to Anchor Exchange</h1>
         <p className='pt-3'>Welcome back! Log In now to start trading</p>
-        <div className='flex gap-6 justify-center pt-7'>
+        <div className='flex gap-6 justify-center pt-5'>
           <div className='border-2 h-8 w-19 text-center rounded-full'>
             <p>Email</p>
           </div>
