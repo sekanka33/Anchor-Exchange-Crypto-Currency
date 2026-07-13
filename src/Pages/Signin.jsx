@@ -47,7 +47,7 @@ const Signin = () => {
           <p className='text-red-600'>Forgot Password?</p>
         </div>
         <button type='submit' className='w-120 h-10 mt-6 bg-blue-500 rounded-3xl'>LogIn</button>
-        <p className='mt-4'>Not a member?<Link to="/signup" className='text-blue-500 ml-3'>Register</Link></p>
+        <p className='mt-4'>Not a member?<Link to="/signup" className='text-blue-500 ml-2'>Register</Link></p>
       </form>
       </div>
       <div className='pr-45'>

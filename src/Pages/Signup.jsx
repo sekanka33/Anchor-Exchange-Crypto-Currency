@@ -35,6 +35,50 @@ const Signup = () => {
             <button type='button' className='absolute left-120 h-13 w-40 bg-blue-500 hover:bg-blue-400 rounded-e-2xl font-medium'>Authenticate</button>
           </div>
         </div>
+
+        <div className='flex flex-col gap-3'>
+          <h2>Password</h2>
+          <div className='relative flex items-center w-161'>
+            <input type="text" placeholder='Please enter a password.' className='h-13 w-full bg-gray-900 rounded-2xl text-white focus:outline-none pl-3'/>
+            <FaEye className='absolute right-3'/>
+          </div>
+
+          <div className='relative flex items-center w-161'>
+            <input type="text" placeholder='Please re-enter your password.' className='h-13 w-full bg-gray-900 rounded-2xl text-white focus:outline-none pl-3'/>
+            <FaEye className='absolute right-3'/>
+          </div>
+        </div>
+
+        <div className='flex flex-col gap-3'>
+          <h2>Full Names</h2>
+          <div className='items-center w-161'>
+            <input type="text" placeholder='Please enter full names.' className='h-13 w-full bg-gray-900 rounded-2xl pl-3 text-white focus:outline-none'/>
+          </div>
+        </div>
+
+        <div className='flex flex-col gap-3'>
+          <h2>Surname</h2>
+          <div className='items-center w-161'>
+            <input type="text" placeholder='Please enter your surname.' className='h-13 w-full bg-gray-900 rounded-2xl pl-3 text-white focus:outline-none'/>
+          </div>
+        </div>
+
+        <div className='flex flex-col gap-3'>
+          <h2>Country</h2>
+          <div className='items-center w-161'>
+            <input type="text" placeholder='e.g South Africa.' className='h-13 w-full bg-gray-900 rounded-2xl pl-3 text-white focus:outline-none'/>
+          </div>
+        </div>
+
+        <div className='flex flex-col gap-3'>
+          <h2>Phone Number</h2>
+          <div className='items-center w-161'>
+            <input type="text" placeholder='e.g +27 712 345 6789' className='h-13 w-full bg-gray-900 rounded-2xl pl-3 text-white focus:outline-none'/>
+          </div>
+        </div>
+
+        <button type='Submit' className='h-13 w-160 mt-3 bg-blue-600 rounded-full'>Register</button>
+        <p className='pl-50'>Already have an account? <Link to="/signin" className='text-blue-500'>Log In</Link></p>
       </form>
     </div>
   )
