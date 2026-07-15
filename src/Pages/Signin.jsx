@@ -10,8 +10,6 @@ const Signin = () => {
       </div>
 
       <div className='relative'>
-
-        {/* KEEP FORM CENTERED EXACTLY AS BEFORE */}
         <div className='flex justify-center'>
           <div className='flex flex-col items-center'>
 
@@ -106,8 +104,8 @@ const Signin = () => {
           </div>
         </div>
 
-
-        <div className='absolute right-20 top-40 flex flex-col items-center'>
+        {/* right it was right-20 */}
+        <div className='absolute right-38 top-40 flex flex-col items-center'>
 
           <FaQrcode className='text-9xl' />
 
