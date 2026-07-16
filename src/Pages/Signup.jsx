@@ -14,15 +14,6 @@ const Signup = () => {
           <div>
             <h1 className='text-3xl font-semibold pt-19'>Register to Anchor Exchange</h1>
             <p className='pt-3 text-center'>Register in advance and enjoy the event benefits</p>
-            <div className='flex gap-6 justify-center pt-5'>
-              <div className='border-2 h-8 w-19 text-center rounded-full'>
-                <p>Email</p>
-              </div>
-
-              <div className='border-2 h-8 w-19 text-center rounded-full'>
-                <p>Mobile</p>
-              </div>
-            </div>
           </div>
         </div>
       </div> 
