@@ -57,7 +57,7 @@ const Signin = () => {
         </div>
 
         {/* right it was right-20 */}
-        <div className='absolute right-38 top-40 flex flex-col items-center'>
+        <div className='absolute right-42 top-40 flex flex-col items-center'>
           <FaQrcode className='text-9xl' />
           <h1 className='text-2xl font-semibold mt-5'>Login with QR code</h1>
           <p className='text-center mt-2'>Scan this code with your phone <br />to log in instantly.</p>
