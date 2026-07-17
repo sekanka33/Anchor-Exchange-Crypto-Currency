@@ -5,11 +5,11 @@ import { Link } from 'react-router-dom'
 const Signin = () => {
   return (
     <div>
-      <div className='pr-20 pl-20 pt-10 h-27 w-full bg-mist-900'>
+      <div className='hidden md:block pr-20 pl-20 pt-10 h-27 w-full bg-mist-900'>
         <h1 className='text-2xl font-semibold'>Sign-In</h1>
       </div>
 
-      <div className='relative'>
+      <div className='hidden md:block relative'>
         <div className='flex justify-center'>
           <div className='flex flex-col items-center'>
 
@@ -30,7 +30,7 @@ const Signin = () => {
             </div>
 
 
-            <form className='text-center pt-13'>
+            <form className='hidden md:block text-center pt-13'>
               <h2 className='pr-108'>Email</h2>
               <input type="text" placeholder='Please fill in the email form.' className='w-120 h-13 rounded-2xl bg-gray-900 border-2 border-gray-900 pt-1 pl-4 mt-2'/>
               <h2 className='pr-101 pt-7'>Password</h2>
@@ -56,8 +56,7 @@ const Signin = () => {
           </div>
         </div>
 
-        {/* right it was right-20 */}
-        <div className='absolute right-42 top-40 flex flex-col items-center'>
+        <div className='hidden md:flex flex-col absolute right-42 top-40 items-center'>
           <FaQrcode className='text-9xl' />
           <h1 className='text-2xl font-semibold mt-5'>Login with QR code</h1>
           <p className='text-center mt-2'>Scan this code with your phone <br />to log in instantly.</p>
@@ -65,7 +64,63 @@ const Signin = () => {
 
       </div>
 
+      {/* mobile */}
+      <div className='hidden md:pl-7 pt-6 h-20 w-full bg-mist-900'>
+        <h1 className='text-xl font-semibold'>Sign-In</h1>
+      </div>
+
+      <div className='hidden md:relative'>
+        <div className='flex justify-center'>
+          <div className='flex flex-col items-center'>
+
+            <div className='items-center text-center'>
+              <h1 className='text-xl font-semibold pt-12'>Log In to Anchor Exchange</h1>
+              <p className='pt-3 text-base'>Welcome back! Log In now <br /> to start trading</p>
+
+              <div className='flex gap-6 justify-center pt-5'>
+                <div className='border-2 border-blue-500 hover:bg-blue-500 h-7 w-17 text-center rounded-full'>
+                  <p className='text-base'>Email</p>
+                </div>
+
+                <div className='border-2 border-blue-500 hover:bg-blue-500 h-7 w-17 text-center rounded-full'>
+                  <p className='text-base'>Mobile</p>
+                </div>
+              </div>
+
+            </div>
+
+
+            <form className='text-center pt-13 pb-10'>
+              <h2 className='pr-83 text-base'>Email</h2>
+              <input type="text" placeholder='Please fill in the email form.' className='w-95 h-13 rounded-2xl bg-gray-900 border-2 border-gray-900 pt-1 pl-4 mt-2'/>
+              <h2 className='pr-78 pt-7 text-base'>Password</h2>
+
+              <div className='relative w-120 mx-auto mt-2'>
+                <input type="password" placeholder='Please enter a password.' className='w-95 h-13 rounded-2xl bg-gray-900 border-2 border-gray-900 pt-1 pl-4 pr-12'/>
+                <FaEye className='absolute right-16 top-1/2 -translate-y-1/2 cursor-pointer text-gray-400 hover:text-gray-200'/>
+              </div>
+
+              <div className='flex gap-52 pt-2 justify-center pr-15 pl-15'>
+                <div className='flex gap-2'>
+                  <input type="checkbox" />
+                  <p className='text-sm'>Remember Me</p>
+                </div>
+                <p className='text-red-600 text-sm'>Forgot Password?</p>
+
+              </div>
+              
+              <button type='submit' className='w-90 h-10 mt-6 bg-blue-500 rounded-3xl'>LogIn</button>
+              <p className='mt-4 text-sm'>Not a member?<Link to="/signup" className='text-blue-500 ml-2'>Register</Link></p>
+            </form>
+
+          </div>
+        </div>
+
+      </div>
+      
     </div>
+
+    
   )
 }
 
