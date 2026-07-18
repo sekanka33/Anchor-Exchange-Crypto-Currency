@@ -292,7 +292,50 @@ const Home = () => {
                 </button>
               </div>
             </div>
+
           </div>
+        </div>
+
+        <div className='w-full h-150 bg-hero-dark mt-40'>
+          <div className='flex flex-row gap-10 justify-center'>
+            <div className='flex flex-col gap-3 text-center pt-15'>
+              <h1 className='text-3xl font-bold'>How it works</h1>
+              <p>Stacks is a production-ready library of stackable <br /> content blocks built in React Native.</p>
+            </div>
+          </div>
+
+          <div>
+              <div className='flex flex-row justify-center gap-40 pt-20'>
+                <div>
+                  <img src="src/assets/Bitcoin Cloud.png" alt="bitcoin-cloud" className='pl-13' />
+                  <p className='text-center text-gray-500 pt-3'>Step 1</p>
+                  <p className='text-center text-white text-1xl pt-3'>Download</p>
+                  <p className='text-center text-sm text-gray-500 pt-3'>Stacks is a production-ready <br />library of stackable content blocks <br /> built in React Native.</p>
+                </div>
+
+                <div>
+                  <img src="src/assets/Bitcoin Wallet.png" alt="wallet" className='pl-13' />
+                  <p className='text-center text-gray-500 pt-3'>Step 2</p>
+                  <p className='text-center text-white text-1xl pt-3'>Connect Wallet</p>
+                  <p className='text-center text-sm text-gray-500 pt-3'>Stacks is a production-ready <br />library of stackable content blocks <br />  built in React Native.</p>
+                </div>
+
+                <div>
+                  <img src="src/assets/Bitcoin Mining.png" alt="mining" className='pl-13' />
+                  <p className='text-center text-gray-500 pt-3'>Step 3</p>
+                  <p className='text-center text-white text-1xl pt-3'>Start Trading</p>
+                  <p className='text-center text-sm text-gray-500 pt-3'>Stacks is a production-ready <br />library of stackable content blocks <br />built in React Native.</p>
+                </div>
+
+                <div>
+                  <img src="src/assets/Bitcoin Comparison.png" alt="Comparing" className='pl-13' />
+                  <p className='text-center text-gray-500 pt-3'>Step 4</p>
+                  <p className='text-center text-white text-1xl pt-3'>Earn Money</p>
+                  <p className='text-center text-sm text-gray-500 pt-3'>Stacks is a production-ready <br />library of stackable content blocks <br />built in React Native.</p>
+                </div>
+              </div>
+            </div>
+
         </div>
 
     </div>
