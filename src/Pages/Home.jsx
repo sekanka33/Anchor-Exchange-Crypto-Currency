@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { getCoinsByCategory } from "../api/coingecko";
 import graphic from "../assets/Graphic.png";
+import { FaSearch, FaStar } from 'react-icons/fa';
 
 const Home = () => {
 
@@ -33,7 +34,7 @@ const Home = () => {
             <h2 className='text-2xl pt-7'>Our partners</h2>
             <div className='flex flex-row gap-5 pt-5'>
               <img src="src/assets/Trust_Wallet_logo_(2026).png" alt="" className='h-12 w-30' />
-              <img src="src/assets/edited-photo.png" alt="" className='h-25 w-30 ' />
+              <img src="src/assets/edited-photo.png" alt="" className='h-32 w-30 -mt-10' />
               <img src="src/assets/Stripe_Logo,_revised_2016.svg.webp" alt="" className='h-5 w-30 mt-5' />
             </div>
           </div>
@@ -43,15 +44,13 @@ const Home = () => {
             <img src="src/assets/homepage-hero.webp" alt="hero-image" className='w-120 h-115'/>
           </div>
         </div>
+
         <div className="flex justify-end">
-          <img
-            src={graphic}
-            alt="Green graphic"
-            className="w-72 h-auto"
-          />
+          <img src={graphic} alt="Green graphic" className="w-72 h-auto"/>
         </div>
-        <div className='flex justify-center relative -mt-45'>
-          <div className='w-280 h-60 bg-hero-dark border border-gray-600 rounded-2xl mb-50 shadow-xl'>
+
+        <div className='flex justify-center relative -top-45'>
+          <div className='w-280 h-60 bg-hero-dark border border-gray-600 rounded-2xl shadow-xl'>
             <div className='flex flex-row gap-8 pt-6 pl-8'>
               <p className="cursor-pointer hover:text-blue-500" onClick={() => setCategory("layer-1")}>Crypto</p>
               <p className="cursor-pointer hover:text-blue-500" onClick={() => setCategory("decentralized-finance-defi")}>DeFi</p>
@@ -71,11 +70,7 @@ const Home = () => {
                 >
                   {/* Top */}
                   <div className="flex items-center gap-2">
-                    <img
-                      src={coin.image}
-                      alt={coin.name}
-                      className="w-5 h-5"
-                    />
+                    <img src={coin.image} alt={coin.name} className="w-5 h-5"/>
 
                     <span className="text-sm font-semibold">
                       {coin.name}
@@ -118,6 +113,188 @@ const Home = () => {
             </div>
           </div>
         </div>
+
+        <div className='flex flex-col gap-7 pl-28 pr-28'>
+
+          <div className='flex justify-between'>
+            <h1 className='text-3xl font-bold'>Market Update</h1>
+            <p>See All Coins</p>
+          </div>
+
+          <div className='flex justify-between items-center'>
+            <div className='flex flex-row gap-8'>
+              <p>View ALL</p>
+              <p>Layer 1</p>
+              <p>DeFi</p>
+              <p>Stablecoins</p>
+              <p>Memecoins</p>
+              <p>Memecoins</p>
+              <p>NFT</p>
+              <p>Gaming</p>
+            </div>
+
+            <div className=''>
+              <FaSearch className='relative top-6 ml-4'/>
+              <input placeholder='Search Coin' className='h-8 w-65 bg-gray-900 rounded-2xl pl-11 pb-1'></input>
+            </div>
+          </div>
+
+          <div>
+            <div className='flex justify-center pt-11 pb-5'>
+              <p className='pr-5'></p>
+              <p className='pr-52'>Name</p>
+              <p className='pr-22'>Last Price</p>
+              <p className='pr-40'>24h %</p>
+              <p className='pr-40'>Market Cap</p>
+              <p className='pr-20'>Last 7 Days</p>
+              <p></p>
+            </div>
+
+      
+            <div className='flex flex-col gap-2'>
+              <hr className='text-gray-600 mt-4'/>
+
+              <div className='flex pt-5 justify-center items-center'>
+                <FaStar className='mr-8' />
+                <p className='pr-10'>1</p>
+                <p className='pr-60'>Name</p>
+                <p className='pr-26'>Last Price</p>
+                <p className='pr-40'>%</p>
+                <p className='pr-40'>Market Cap</p>
+                <p className='pr-12'>Last 7 Days</p>
+                <button className='w-20 h-8 border-2 rounded-full border-white hover:bg-blue-500 hover:border-blue-500 ml-8'>
+                  Trade
+                </button>
+              </div>
+            </div>
+
+
+            <div className='flex flex-col gap-2'>
+              <hr className='text-gray-600 mt-4'/>
+
+              <div className='flex pt-5 justify-center items-center'>
+                <FaStar className='mr-8' />
+                <p className='pr-10'>2</p>
+                <p className='pr-60'>Name</p>
+                <p className='pr-26'>Last Price</p>
+                <p className='pr-40'>%</p>
+                <p className='pr-40'>Market Cap</p>
+                <p className='pr-12'>Last 7 Days</p>
+                <button className='w-20 h-8 border-2 rounded-full border-white hover:bg-blue-500 hover:border-blue-500 ml-8'>
+                  Trade
+                </button>
+              </div>
+            </div>
+
+
+            <div className='flex flex-col gap-2'>
+              <hr className='text-gray-600 mt-4'/>
+
+              <div className='flex pt-5 justify-center items-center'>
+                <FaStar className='mr-8' />
+                <p className='pr-10'>3</p>
+                <p className='pr-60'>Name</p>
+                <p className='pr-26'>Last Price</p>
+                <p className='pr-40'>%</p>
+                <p className='pr-40'>Market Cap</p>
+                <p className='pr-12'>Last 7 Days</p>
+                <button className='w-20 h-8 border-2 rounded-full border-white hover:bg-blue-500 hover:border-blue-500 ml-8'>
+                  Trade
+                </button>
+              </div>
+            </div>
+
+
+            <div className='flex flex-col gap-2'>
+              <hr className='text-gray-600 mt-4'/>
+
+              <div className='flex pt-5 justify-center items-center'>
+                <FaStar className='mr-8' />
+                <p className='pr-10'>4</p>
+                <p className='pr-60'>Name</p>
+                <p className='pr-26'>Last Price</p>
+                <p className='pr-40'>%</p>
+                <p className='pr-40'>Market Cap</p>
+                <p className='pr-12'>Last 7 Days</p>
+                <button className='w-20 h-8 border-2 rounded-full border-white hover:bg-blue-500 hover:border-blue-500 ml-8'>
+                  Trade
+                </button>
+              </div>
+            </div>
+
+
+            <div className='flex flex-col gap-2'>
+              <hr className='text-gray-600 mt-4'/>
+
+              <div className='flex pt-5 justify-center items-center'>
+                <FaStar className='mr-8' />
+                <p className='pr-10'>5</p>
+                <p className='pr-60'>Name</p>
+                <p className='pr-26'>Last Price</p>
+                <p className='pr-40'>%</p>
+                <p className='pr-40'>Market Cap</p>
+                <p className='pr-12'>Last 7 Days</p>
+                <button className='w-20 h-8 border-2 rounded-full border-white hover:bg-blue-500 hover:border-blue-500 ml-8'>
+                  Trade
+                </button>
+              </div>
+            </div>
+
+
+            <div className='flex flex-col gap-2'>
+              <hr className='text-gray-600 mt-4'/>
+
+              <div className='flex pt-5 justify-center items-center'>
+                <FaStar className='mr-8' />
+                <p className='pr-10'>6</p>
+                <p className='pr-60'>Name</p>
+                <p className='pr-26'>Last Price</p>
+                <p className='pr-40'>%</p>
+                <p className='pr-40'>Market Cap</p>
+                <p className='pr-12'>Last 7 Days</p>
+                <button className='w-20 h-8 border-2 rounded-full border-white hover:bg-blue-500 hover:border-blue-500 ml-8'>
+                  Trade
+                </button>
+              </div>
+            </div>
+
+            <div className='flex flex-col gap-2'>
+              <hr className='text-gray-600 mt-4'/>
+
+              <div className='flex pt-5 justify-center items-center'>
+                <FaStar className='mr-8' />
+                <p className='pr-10'>7</p>
+                <p className='pr-60'>Name</p>
+                <p className='pr-26'>Last Price</p>
+                <p className='pr-40'>%</p>
+                <p className='pr-40'>Market Cap</p>
+                <p className='pr-12'>Last 7 Days</p>
+                <button className='w-20 h-8 border-2 rounded-full border-white hover:bg-blue-500 hover:border-blue-500 ml-8'>
+                  Trade
+                </button>
+              </div>
+            </div>
+
+
+            <div className='flex flex-col gap-2'>
+              <hr className='text-gray-600 mt-4'/>
+
+              <div className='flex pt-5 justify-center items-center'>
+                <FaStar className='mr-8' />
+                <p className='pr-10'>8</p>
+                <p className='pr-60'>Name</p>
+                <p className='pr-26'>Last Price</p>
+                <p className='pr-40'>%</p>
+                <p className='pr-40'>Market Cap</p>
+                <p className='pr-12'>Last 7 Days</p>
+                <button className='w-20 h-8 border-2 rounded-full border-white hover:bg-blue-500 hover:border-blue-500 ml-8'>
+                  Trade
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
     </div>
   )
 }
