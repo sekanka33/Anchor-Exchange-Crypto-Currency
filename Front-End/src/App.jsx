@@ -13,7 +13,7 @@ import Markets from './Pages/Markets'
 import OrdersTrades from './Pages/OrdersTrades'
 import Spot from './Pages/Spot'
 import Wallet from './Pages/Wallet'
-import { Route, Routes } from 'react-router-dom'
+import { Route, Routes, useLocation } from 'react-router-dom'
 import Bitusdt from './Pages/Bitusdt'
 import Pages from './Pages/Pages'
 import Signin from './Pages/Signin'
@@ -21,15 +21,23 @@ import Enusd from './Pages/Enusd'
 import Notifications from './Pages/Notifications'
 import { ThemeProvider } from './Components/ThemeProvider'
 import Signup from './Pages/Signup'
-import Dashboard from "./pages/Dashboard";
+import Dashboard from "./Pages/Dashboard";
 
 const App = () => {
 
+  const location = useLocation();
+
+  const isDashboard = location.pathname === "/dashboard";
+
   return (
     <ThemeProvider>
-      <header>
-        <Navbar />
-      </header>
+      {
+        !isDashboard && (
+          <header>
+            <Navbar />
+          </header>
+        )
+      }
       <main>
         <Routes>
           <Route path="/" element={<Home />} />
@@ -49,7 +57,9 @@ const App = () => {
           <Route path="/dashboard" element={<Dashboard />}/>
         </Routes>
       </main>
-      <Footer />
+      {
+        !isDashboard && <Footer />
+      }
     </ThemeProvider>
   )
 }

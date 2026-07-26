@@ -1,117 +1,203 @@
-import React, { useEffect, useState } from "react";
-
+import React from 'react'
+import { FaArrowCircleDown, FaArrowDown, FaChevronDown, FaSearch } from 'react-icons/fa'
+import { FiMoon, FiSun, FiBell, FiMenu, FiX } from "react-icons/fi";
+import { Link } from 'react-router-dom'
+import { useTheme } from '../hooks/useTheme';
 
 const Dashboard = () => {
 
-    const [wallet, setWallet] = useState(null);
-    const [error, setError] = useState("");
+  const { isDarkMode, toggleTheme } = useTheme();
 
+  return (
+    <div className="flex">
 
-    useEffect(() => {
+      {/* Side NavBar */}
+      <div className="w-70 h-screen border-2 border-dark-void pl-8 pt-5">
 
-
-        const fetchWallet = async () => {
-
-            const token = localStorage.getItem("token");
-
-
-            if(!token){
-                setError("No token found");
-                return;
-            }
-
-
-            try {
-
-                const response = await fetch(
-                    "http://localhost:5000/api/wallet",
-                    {
-                        method:"GET",
-                        headers:{
-                            "Authorization": `Bearer ${token}`
-                        }
-                    }
-                );
-
-
-                const data = await response.json();
-
-
-                if(!response.ok){
-                    setError(data.message);
-                    return;
-                }
-
-
-                setWallet(data);
-
-
-            } catch(error){
-
-                setError("Server error");
-
-            }
-
-        };
-
-
-        fetchWallet();
-
-
-    }, []);
-
-
-
-    return (
-
+        {/* Logo */}
         <div>
-
-            <h1>
-                Anchor Exchange Dashboard
-            </h1>
-
-
-            {
-                error && (
-                    <p>
-                        {error}
-                    </p>
-                )
-            }
-
-
-
-            {
-                wallet && (
-
-                    <div>
-
-                        <h2>
-                            My Wallet
-                        </h2>
-
-
-                        <p>
-                            BTC Balance: {wallet.btc_balance}
-                        </p>
-
-
-                        <p>
-                            ETH Balance: {wallet.eth_balance}
-                        </p>
-
-                        <p>USDT Balance: {wallet.usdt_balance}</p>
-                    </div>
-
-                )
-            }
-
-
+          <Link>
+            <span className="text-lg font-bold tracking-wide text-slate-900 dark:text-white hover:text-blue-500">
+              Anchor Exchange
+            </span>
+          </Link>
         </div>
 
-    );
+        {/* middle Section */}
+        <div className="pt-15 flex flex-col gap-10">
 
-};
+          <div className="flex flex-col gap-5">
 
+            <div className="flex flex-row gap-5 items-center hover:bg-blue-500 hover:w-50 hover:h-10 rounded-full">
+              <img src="src/assets/trade.png" alt="Home" className="w-6 h-6" />
+              <Link className="text-lg font-medium">Home</Link>
+            </div>
 
-export default Dashboard;
+            <div className="flex flex-row gap-5 items-center hover:bg-blue-500 hover:w-50 hover:h-10 rounded-full">
+              <img src="src/assets/trade.png" alt="Buy Crypto" className="w-6 h-6" />
+              <Link className="text-lg font-medium">Buy Crypto</Link>
+            </div>
+
+            <div className="flex flex-row gap-5 items-center hover:bg-blue-500 hover:w-50 hover:h-10 rounded-full">
+              <img src="src/assets/trade.png" alt="Market" className="w-6 h-6" />
+              <Link className="text-lg font-medium">Market</Link>
+            </div>
+
+            <div className="flex flex-row gap-5 items-center hover:bg-blue-500 hover:w-50 hover:h-10 rounded-full">
+              <img src="src/assets/trade.png" alt="Exchange" className="w-6 h-6" />
+              <Link className="text-lg font-medium">Exchange</Link>
+            </div>
+
+            <div className="flex flex-row gap-5 items-center hover:bg-blue-500 hover:w-50 hover:h-10 rounded-full">
+              <img src="src/assets/trade.png" alt="Spot" className="w-6 h-6" />
+              <Link className="text-lg font-medium">Spot</Link>
+            </div>
+
+            <div className="flex flex-row gap-5 items-center hover:bg-blue-500 hover:w-50 hover:h-10 rounded-full">
+              <img src="src/assets/trade.png" alt="ByFi Center" className="w-6 h-6" />
+              <Link className="text-lg font-medium">ByFi Center</Link>
+            </div>
+
+            <div className="flex flex-row gap-5 items-center hover:bg-blue-500 hover:w-50 hover:h-10 rounded-full">
+              <img src="src/assets/trade.png" alt="More" className="w-6 h-6" />
+              <Link className="text-lg font-medium">More</Link>
+            </div>
+
+          </div>
+
+          <hr className="mr-15 border-dark-void" />
+
+          <div className="flex flex-col gap-5">
+
+            <div className="flex flex-row gap-5 items-center hover:bg-blue-500 hover:w-50 hover:h-10 rounded-full">
+              <img src="src/assets/trade.png" alt="Asset" className="w-6 h-6" />
+              <Link className="text-lg font-medium">Asset</Link>
+            </div>
+
+            <div className="flex flex-row gap-5 items-center hover:bg-blue-500 hover:w-50 hover:h-10 rounded-full">
+              <img src="src/assets/trade.png" alt="Orders" className="w-6 h-6" />
+              <Link className="text-lg font-medium">Order & Trades</Link>
+            </div>
+
+            <div className="flex flex-row gap-5 items-center hover:bg-blue-500 hover:w-50 hover:h-10 rounded-full">
+              <img src="src/assets/trade.png" alt="Wallet" className="w-6 h-6" />
+              <Link className="text-lg font-medium">Wallet</Link>
+            </div>
+
+          </div>
+
+        </div>
+      </div>
+
+      {/* Right Side */}
+      <div className="flex-1">
+
+        {/* Top Navbar */}
+        <div className="h-20 bg-white dark:bg-[#0d0e12] border-b border-dark-void flex items-center justify-end px-8 ">
+          <div className='flex flex-row gap-8'>
+            <div>
+              <input type="text" placeholder='Search anything' className='w-55 h-11 bg-hero-dark rounded-full pl-10 mt-5'/>
+              <FaSearch className='relative bottom-7 left-3'/>
+            </div>
+            <Link className='mt-7'>EN/USD</Link>
+            <button 
+              onClick={toggleTheme} 
+              className="text-slate-600 dark:text-gray-300 hover:text-blue-500 text-xl p-1 rounded-full transition-colors"
+              aria-label="Toggle theme layout"
+            >
+              {isDarkMode ? <FiSun /> : <FiMoon />}
+            </button>
+            <button className="text-slate-600 dark:text-gray-300 hover:text-blue-500 text-xl relative"><FiBell /></button>
+          </div>
+        </div>
+
+        <div className='bg-crypto-color h-35 w-300 rounded-2xl mt-10 ml-7 flex items-center pr-10 pl-10 flex-row gap-17'>
+          <div className='flex flex-row gap-3 items-center'>
+            <h1 className='text-2xl font-medium'>BTC/USD</h1> 
+            <FaChevronDown className='text-2xl'/>
+          </div>
+
+          <div className='w-0.5 h-10 bg-line-color'></div>
+
+          <div className='flex flex-col gap-2'>
+            <p className='text-gray-500'>Last Prices</p>
+            <div className='flex flex-row gap-3'>
+              <p className='text-lg'>0.058505</p> 
+              <p className='text-lg text-red-600'>$390.68</p>
+            </div>
+          </div>
+
+          <div className='flex flex-col gap-2'>
+              <p className='text-gray-500'>24h Change</p>
+            <div className='flex flex-row gap-3'>
+              <p className='text-lg text-green-500'>0.001447 </p> 
+              <div>
+              <div className='w-15 h-7 bg-green-500 rounded-full'><p className='text-base text-white pt-0.5 pl-2'>3.24%</p></div>
+              </div>
+            </div>
+          </div>
+
+          <div >
+            <p className='text-gray-500'>24h High</p>
+            <div className='flex flex-row gap-3'>
+              <p className='text-lg'>0.060069</p> 
+            </div>
+          </div>
+
+          <div>
+            <p className='text-gray-500'>24h Low</p>
+            <div className='flex flex-row gap-3'>
+              <p className='text-lg'>0.056864</p> 
+            </div>
+          </div>
+          
+
+          <div>
+            <p className='text-gray-500'>24h Volume</p>
+            <div className='flex flex-row gap-3'>
+              <p className='text-lg'>8,532.12 BTC</p> 
+            </div>
+          </div>
+        </div>
+
+        <div className='flex justify-between pr-10 pl-10 pt-10'>
+          {/* left Section */}
+          <div>
+            <div className='flex flex-row gap-10'>
+              <div className='flex justify-between w-200 h-20 bg-crypto-color items-center pl-8 pr-8'>
+                <div>
+                  <p>Trading market</p>
+                </div>
+                <div className='flex flex-row gap-3'>
+                  <p className='hover:text-blue-500'>5M</p>
+                  <p className='hover:text-blue-500'>30M</p>
+                  <p className='hover:text-blue-500'>1H</p>
+                  <p className='hover:text-blue-500'>4H</p>
+                  <p className='hover:text-blue-500'>D</p>
+                  <p className='hover:text-blue-500'>W</p>
+                  <p className='hover:text-blue-500'>M</p>
+                  <p className='hover:text-blue-500'>Y</p>
+                </div>
+              </div>
+            </div>
+            
+            {/* This is where we are going to display the chart */}
+            <div className='w-200 h-100 bg-crypto-color mt-2'>
+
+            </div>
+          </div>
+
+          
+
+          {/* Right Section */}
+          <div>
+
+          </div>
+        </div>
+      </div>
+
+    </div>
+  )
+}
+
+export default Dashboard

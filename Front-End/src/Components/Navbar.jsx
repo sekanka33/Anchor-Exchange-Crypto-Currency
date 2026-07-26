@@ -9,6 +9,8 @@ import { useNavigate } from "react-router-dom";
 const Navbar = () => {
   const [menuOpen, setMenuOpen] = useState(false);
   const { isDarkMode, toggleTheme } = useTheme();
+
+  const [profileOpen, setProfileOpen] = useState(false);
   
   const token = localStorage.getItem("token");
 
@@ -98,17 +100,112 @@ const Navbar = () => {
         {
           token ? (
 
-              <Link to="/dashboard">
-                  <FaUserCircle 
-                      className="text-3xl cursor-pointer hover:text-blue-500"
-                  />
-              </Link>
+            <div className="relative">
+
+              <button
+                onClick={() => setProfileOpen(!profileOpen)}
+              >
+                <FaUserCircle 
+                  className="text-3xl cursor-pointer hover:text-blue-500"
+                />
+              </button>
+
+
+              {
+                profileOpen && (
+
+                  <div className="
+                    absolute 
+                    right-0 
+                    mt-3 
+                    w-56 
+                    bg-white 
+                    dark:bg-[#0d0e12]
+                    border
+                    border-gray-200
+                    dark:border-gray-700
+                    rounded-xl
+                    shadow-lg
+                    p-4
+                    z-50
+                  ">
+
+
+                    <h2 className="
+                      text-lg 
+                      font-semibold
+                      mb-3
+                    ">
+                      Account Overview
+                    </h2>
+
+
+                    <Link 
+                      to="/profile"
+                      className="
+                      block 
+                      py-2
+                      hover:text-blue-500
+                      "
+                    >
+                      1. Profile and Setting
+                    </Link>
+
+
+                    <Link 
+                      to="/dashboard"
+                      className="
+                      block 
+                      py-2
+                      hover:text-blue-500
+                      "
+                    >
+                      2. Dashboard
+                    </Link>
+
+
+                    <Link 
+                      to="/transactions"
+                      className="
+                      block 
+                      py-2
+                      hover:text-blue-500
+                      "
+                    >
+                      3. Transaction History
+                    </Link>
+
+
+                    <button
+                      onClick={()=>{
+                        localStorage.removeItem("token");
+                        window.location.href="/signin";
+                      }}
+                      className="
+                      block
+                      py-2
+                      text-red-500
+                      hover:text-red-700
+                      "
+                    >
+                      4. Log out
+                    </button>
+
+
+                  </div>
+
+                )
+              }
+
+
+            </div>
+
 
           ) : (
 
-              <Link to="/signin">
-                  Sign In
-              </Link>
+            <Link to="/signin">
+              Sign In
+            </Link>
 
           )
         }
