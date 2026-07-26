@@ -1,8 +1,66 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { FaEye, FaQrcode } from 'react-icons/fa'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 
-const Signin = () => {
+  const Signin = () => {
+
+  const navigate = useNavigate();
+
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+
+  const [error, setError] = useState("");
+
+
+  const handleLogin = async (e) => {
+
+    e.preventDefault();
+
+    setError("");
+
+    try {
+
+    const response = await fetch(
+      "http://localhost:5000/api/auth/login",
+      {
+        method:"POST",
+        headers:{
+          "Content-Type":"application/json"
+        },
+        body:JSON.stringify({
+          email,
+          password
+        })
+      }
+    );
+
+    const data = await response.json();
+
+    if(!response.ok){
+      setError(data.message);
+      return;
+    }
+
+
+
+    localStorage.setItem(
+      "token",
+      data.token
+    );
+
+    console.log("Token saved:", data.token);
+
+
+    navigate("/dashboard");
+
+  } catch(error){
+    setError("Server error");
+
+  }
+
+};
+
+
   return (
     <div>
       <div className='hidden md:block pr-20 pl-20 pt-10 h-27 w-full bg-mist-900'>
@@ -30,13 +88,25 @@ const Signin = () => {
             </div>
 
 
-            <form className='hidden md:block text-center pt-13'>
+            <form onSubmit={handleLogin} className='hidden md:block text-center pt-13'>
               <h2 className='pr-108'>Email</h2>
-              <input type="text" placeholder='Please fill in the email form.' className='w-120 h-13 rounded-2xl bg-gray-900 border-2 border-gray-900 pt-1 pl-4 mt-2'/>
+              <input 
+                type="text"
+                value={email}
+                onChange={(e)=>setEmail(e.target.value)}
+                placeholder='Please fill in the email form.' 
+                className='w-120 h-13 rounded-2xl bg-gray-900 border-2 border-gray-900 pt-1 pl-4 mt-2'
+              />
               <h2 className='pr-101 pt-7'>Password</h2>
 
               <div className='relative w-120 mx-auto mt-2'>
-                <input type="password" placeholder='Please enter a password.' className='w-full h-13 rounded-2xl bg-gray-900 border-2 border-gray-900 pt-1 pl-4 pr-12'/>
+                <input 
+                  type="password"
+                  value={password}
+                  onChange={(e)=>setPassword(e.target.value)}
+                  placeholder='Please enter a password.' 
+                  className='w-full h-13 rounded-2xl bg-gray-900 border-2 border-gray-900 pt-1 pl-4 pr-12'
+                />
                 <FaEye className='absolute right-4 top-1/2 -translate-y-1/2 cursor-pointer text-gray-400 hover:text-gray-200'/>
               </div>
 
@@ -49,6 +119,14 @@ const Signin = () => {
 
               </div>
               
+              {
+              error && (
+              <p className="text-red-500 mt-3">
+                {error}
+              </p>
+              )
+              }
+
               <button type='submit' className='w-120 h-10 mt-6 bg-blue-500 rounded-3xl'>LogIn</button>
               <p className='mt-4'>Not a member?<Link to="/signup" className='text-blue-500 ml-2'>Register</Link></p>
             </form>
@@ -90,13 +168,25 @@ const Signin = () => {
             </div>
 
 
-            <form className='text-center pt-13 pb-10'>
+            <form onSubmit={handleLogin} className='text-center pt-13 pb-10'>
               <h2 className='pr-83 text-base'>Email</h2>
-              <input type="text" placeholder='Please fill in the email form.' className='w-95 h-13 rounded-2xl bg-gray-900 border-2 border-gray-900 pt-1 pl-4 mt-2'/>
+              <input 
+                type="text"
+                value={email}
+                onChange={(e)=>setEmail(e.target.value)}
+                placeholder='Please fill in the email form.' 
+                className='w-95 h-13 rounded-2xl bg-gray-900 border-2 border-gray-900 pt-1 pl-4 mt-2'
+              />
               <h2 className='pr-78 pt-7 text-base'>Password</h2>
 
               <div className='relative w-120 mx-auto mt-2'>
-                <input type="password" placeholder='Please enter a password.' className='w-95 h-13 rounded-2xl bg-gray-900 border-2 border-gray-900 pt-1 pl-4 pr-12'/>
+                <input 
+                  type="password"
+                  value={password}
+                  onChange={(e)=>setPassword(e.target.value)}
+                  placeholder='Please enter a password.' 
+                  className='w-95 h-13 rounded-2xl bg-gray-900 border-2 border-gray-900 pt-1 pl-4 pr-12'
+                />
                 <FaEye className='absolute right-16 top-1/2 -translate-y-1/2 cursor-pointer text-gray-400 hover:text-gray-200'/>
               </div>
 
@@ -108,7 +198,6 @@ const Signin = () => {
                 <p className='text-red-600 text-sm'>Forgot Password?</p>
 
               </div>
-              
               <button type='submit' className='w-90 h-10 mt-6 bg-blue-500 rounded-3xl'>LogIn</button>
               <p className='mt-4 text-sm'>Not a member?<Link to="/signup" className='text-blue-500 ml-2'>Register</Link></p>
             </form>

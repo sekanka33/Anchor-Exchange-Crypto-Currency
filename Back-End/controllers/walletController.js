@@ -1,16 +1,36 @@
+const pool = require("../config/database");
+
 const getWallet = async (req, res) => {
-  try {
-    
-    const userId = req.user.id;
+    try {
 
+        const userId = req.user.id;
 
-    return res.status(200).json({
-      balance: 0,
-      currency: "ZAR"
-    });
-  } catch (error) {
-    return res.status(500).json({ message: "Server error retrieving wallet." });
-  }
+        const result = await pool.query(
+            `
+            SELECT *
+            FROM wallets
+            WHERE user_id = $1
+            `,
+            [userId]
+        );
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({
+                message: "Wallet not found"
+            });
+        }
+
+        res.json(result.rows[0]);
+
+    } catch (error) {
+
+        res.status(500).json({
+            message: error.message
+        });
+
+    }
 };
 
-module.exports = { getWallet };
+module.exports = {
+    getWallet
+};

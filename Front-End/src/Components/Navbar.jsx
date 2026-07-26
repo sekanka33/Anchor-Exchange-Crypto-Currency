@@ -3,10 +3,14 @@ import { Link } from 'react-router-dom'
 import { FiMoon, FiSun, FiBell, FiMenu, FiX } from "react-icons/fi";
 import { useState } from 'react';
 import { useTheme } from '../hooks/useTheme';
+import { FaUserCircle } from "react-icons/fa";
+import { useNavigate } from "react-router-dom";
 
 const Navbar = () => {
   const [menuOpen, setMenuOpen] = useState(false);
   const { isDarkMode, toggleTheme } = useTheme();
+  
+  const token = localStorage.getItem("token");
 
   return (
     <nav className="flex justify-between items-center bg-white dark:bg-[#0d0e12] w-full h-14 text-slate-900 dark:text-white px-6 text-sm font-medium border-b border-gray-200 dark:border-gray-800 transition-colors duration-300">
@@ -91,9 +95,23 @@ const Navbar = () => {
           Wallet
         </Link>
 
-        <Link to="/signin" className="border border-gray-300 dark:border-gray-600 rounded-full px-4 py-1 text-xs text-slate-900 dark:text-white hover:bg-blue-500 hover:text-white transition-colors">
-          Sign-In
-        </Link>
+        {
+          token ? (
+
+              <Link to="/dashboard">
+                  <FaUserCircle 
+                      className="text-3xl cursor-pointer hover:text-blue-500"
+                  />
+              </Link>
+
+          ) : (
+
+              <Link to="/signin">
+                  Sign In
+              </Link>
+
+          )
+        }
       </div>
 
       <div className='md:hidden'>
