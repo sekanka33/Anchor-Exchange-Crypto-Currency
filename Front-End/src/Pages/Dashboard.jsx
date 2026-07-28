@@ -3,6 +3,7 @@ import { FaArrowCircleDown, FaArrowDown, FaChevronDown, FaPlus, FaSearch } from 
 import { FiMoon, FiSun, FiBell, FiMenu, FiX } from "react-icons/fi";
 import { Link } from 'react-router-dom'
 import { useTheme } from '../hooks/useTheme';
+import { IoSearch, IoCheckmarkCircleOutline, IoCloseCircleOutline } from "react-icons/io5";
 
 const Dashboard = () => {
 
@@ -187,17 +188,121 @@ const Dashboard = () => {
             </div>
 
             {/* This is the section for order and history */}
-            <div className='w-200 h-90 bg-crypto-color mt-5 rounded-2xl'>
-              <div>
-                <p>Order history</p>
-                <p>Open Orders</p>
-                <p>Open Orders</p>
+            <div className="w-200 h-95 bg-crypto-color mt-5 rounded-2xl p-6 text-gray-200 font-sans shadow-xl">
+  
+              {/* Top Header Bar */}
+              <div className="flex items-center justify-between pb-4 border-b border-gray-800/40">
+                <div className="flex items-center space-x-8 text-sm font-semibold">
+                  <p className="cursor-pointer text-white pb-2 border-b-2 border-indigo-500 font-bold">
+                    Order History
+                  </p>
+                  <p className="cursor-pointer text-gray-400 hover:text-gray-200 transition">
+                    Open Orders
+                  </p>
+                  <p className="cursor-pointer text-gray-400 hover:text-gray-200 transition">
+                    Open Orders
+                  </p>
+                </div>
+
+                <div className="relative">
+                  <IoSearch className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 text-sm" />
+                  <input
+                    type="text"
+                    placeholder="Search By Date"
+                    className="w-50 h-10 bg-crypto-color text-xs text-gray-200 placeholder-gray-400 pl-9 pr-4 rounded-full outline-none focus:ring-1 focus:ring-indigo-500"
+                  />
+                </div>
               </div>
 
-              <div>
-                <input type="text" className='w-50 h-10 bg-crypto-color'/>
+              {/* Table Section */}
+              <div className="overflow-x-auto mt-2">
+                <table className="w-full text-left text-xs font-semibold">
+                  <thead>
+                    <tr className="text-gray-300 font-bold border-b border-transparent">
+                      <th className="py-3 px-3 text-lg">Date</th>
+                      <th className="py-3 px-3 text-lg">Pair</th>
+                      <th className="py-3 px-3 text-lg">Buy/Sell</th>
+                      <th className="py-3 px-3 text-lg">Price</th>
+                      <th className="py-3 px-3 text-lg">Excuted</th>
+                      <th className="py-3 px-3 text-right text-lg">Total</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {/* Row 1 */}
+                    <tr className="hover:bg-black/10 transition-colors">
+                      <td className="py-3 px-3 text-gray-300 text-base">24-04 14:40</td>
+                      <td className="py-3 px-3 text-gray-300 text-base">BTC/ETH</td>
+                      <td className="py-3 px-3 text-emerald-400 text-base">BUY</td>
+                      <td className="py-3 px-3 text-gray-300 text-base">$222</td>
+                      <td className="py-3 px-3 flex justify-center">
+                        <IoCheckmarkCircleOutline className="text-emerald-400 text-lg" />
+                      </td>
+                      <td className="py-3 px-3 text-right font-bold text-gray-200 text-base">
+                        0.4314 BTC
+                      </td>
+                    </tr>
+
+                    {/* Row 2 */}
+                    <tr className="hover:bg-black/10 transition-colors">
+                      <td className="py-3 px-3 text-gray-300 text-base">24-04 14:40</td>
+                      <td className="py-3 px-3 text-gray-300 text-base">BTC/ETH</td>
+                      <td className="py-3 px-3 text-rose-500 text-base">SELL</td>
+                      <td className="py-3 px-3 text-gray-300 text-base">$222</td>
+                      <td className="py-3 px-3 flex justify-center">
+                        <IoCheckmarkCircleOutline className="text-emerald-400 text-lg" />
+                      </td>
+                      <td className="py-3 px-3 text-right font-bold text-gray-200 text-base">
+                        0.4314 BTC
+                      </td>
+                    </tr>
+
+                    {/* Row 3 - Selected/Active Row Highlight */}
+                    <tr className="hover:bg-black/10 transition-colors">
+                      <td className="py-3 px-3 text-gray-300 text-base">24-04 14:40</td>
+                      <td className="py-3 px-3 text-gray-300 text-base">BTC/ETH</td>
+                      <td className="py-3 px-3 text-emerald-400 text-base">BUY</td>
+                      <td className="py-3 px-3 text-gray-300 text-base">$222</td>
+                      <td className="py-3 px-3 flex justify-center">
+                        <IoCloseCircleOutline className="text-rose-500 text-lg" />
+                      </td>
+                      <td className="py-3 px-3 text-right font-bold text-gray-200 text-base">
+                        0.4314 BTC
+                      </td>
+                    </tr>
+
+                    {/* Row 4 */}
+                    <tr className="hover:bg-black/10 transition-colors ">
+                      <td className="py-3 px-3 text-gray-300 text-base">24-04 14:40</td>
+                      <td className="py-3 px-3 text-gray-300 text-base">BTC/ETH</td>
+                      <td className="py-3 px-3 text-emerald-400 text-base">BUY</td>
+                      <td className="py-3 px-3 text-gray-300 text-base">$222</td>
+                      <td className="py-3 px-3 flex justify-center">
+                        <IoCheckmarkCircleOutline className="text-emerald-400 text-lg" />
+                      </td>
+                      <td className="py-3 px-3 text-right font-bold text-gray-200 text-base">
+                        0.4314 BTC
+                      </td>
+                    </tr>
+
+                    {/* Row 5 */}
+                    <tr className="hover:bg-black/10 transition-colors">
+                      <td className="py-3 px-3 text-gray-300 text-base">24-04 14:40</td>
+                      <td className="py-3 px-3 text-gray-300 text-base">BTC/ETH</td>
+                      <td className="py-3 px-3 text-rose-500 text-base">SELL</td>
+                      <td className="py-3 px-3 text-gray-300 text-base">$222</td>
+                      <td className="py-3 px-3 flex justify-center">
+                        <IoCloseCircleOutline className="text-rose-500 text-lg" />
+                      </td>
+                      <td className="py-3 px-3 text-right font-bold text-gray-200 text-base">
+                        0.4314 BTC
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
               </div>
+
             </div>
+            
           </div>
 
           
@@ -274,7 +379,6 @@ const Dashboard = () => {
           </div>
         </div>
       </div>
-
     </div>
   )
 }
