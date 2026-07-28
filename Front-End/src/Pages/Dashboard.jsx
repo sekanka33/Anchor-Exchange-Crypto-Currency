@@ -1,5 +1,5 @@
 import React from 'react'
-import { FaArrowCircleDown, FaArrowDown, FaChevronDown, FaSearch } from 'react-icons/fa'
+import { FaArrowCircleDown, FaArrowDown, FaChevronDown, FaPlus, FaSearch } from 'react-icons/fa'
 import { FiMoon, FiSun, FiBell, FiMenu, FiX } from "react-icons/fi";
 import { Link } from 'react-router-dom'
 import { useTheme } from '../hooks/useTheme';
@@ -111,7 +111,7 @@ const Dashboard = () => {
           </div>
         </div>
 
-        <div className='bg-crypto-color h-35 w-300 rounded-2xl mt-10 ml-7 flex items-center pr-10 pl-10 flex-row gap-17'>
+        <div className='bg-crypto-color h-35 w-300 rounded-2xl mt-7 ml-7 flex items-center pr-10 pl-10 flex-row gap-17'>
           <div className='flex flex-row gap-3 items-center'>
             <h1 className='text-2xl font-medium'>BTC/USD</h1> 
             <FaChevronDown className='text-2xl'/>
@@ -182,8 +182,21 @@ const Dashboard = () => {
             </div>
             
             {/* This is where we are going to display the chart */}
-            <div className='w-200 h-110 bg-crypto-color mt-1 rounded-b-2xl'>
+            <div className='w-200 h-115 bg-crypto-color mt-1 rounded-b-2xl'>
 
+            </div>
+
+            {/* This is the section for order and history */}
+            <div className='w-200 h-90 bg-crypto-color mt-5 rounded-2xl'>
+              <div>
+                <p>Order history</p>
+                <p>Open Orders</p>
+                <p>Open Orders</p>
+              </div>
+
+              <div>
+                <input type="text" className='w-50 h-10 bg-crypto-color'/>
+              </div>
             </div>
           </div>
 
@@ -191,7 +204,7 @@ const Dashboard = () => {
 
           {/* Right Section */}
           <div>
-            <div className='w-87 h-119 bg-crypto-color rounded-2xl flex flex-col gap-5 pt-7'>
+            <div className='w-87 h-117 bg-crypto-color rounded-2xl flex flex-col gap-5 pt-7'>
               <div className='flex justify-center flex-row gap-27'>
                 <p className='text-2xl'>Buy</p>
                 <p className='text-2xl'>Sell</p>
@@ -233,6 +246,30 @@ const Dashboard = () => {
 
                 <button className='w-75 h-10 bg-blue-500 rounded-full'>Buy</button>
               </div>
+            </div>
+
+            <div>
+              <div className='w-87 h-108 bg-crypto-color rounded-2xl'>
+                <div className='flex justify-center flex-col gap-2 pt-7 mt-7 pl-10 pr-10 items-center'>
+                  <p className='text-gray-500 pl-4'>Your Balance</p>
+                  <p className='text-2xl font-medium'>$132,832.89</p>
+                </div>
+
+                <div className='flex flex-row gap-3 items-center w-75 h-10 border-white border-2 rounded-4xl justify-center ml-6 mt-5 hover:bg-blue-500 hover:border-blue-500'>
+                  <FaPlus />
+                  <button>Top up balance</button>
+                </div>
+
+                <div className='flex justify-between pl-6 pr-3 pt-7 items-center'>
+                  <p>Your assets</p>
+                  <div className='flex items-center'>
+                    <input type="text" className='w-35 h-8 bg-input-field rounded-2xl'/>
+                    <FaSearch className='relative right-33'/>
+                  </div>
+                </div>
+              </div>
+
+              
             </div>
           </div>
         </div>
