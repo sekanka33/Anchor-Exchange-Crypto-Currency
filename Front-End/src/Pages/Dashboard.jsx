@@ -160,13 +160,13 @@ const Dashboard = () => {
           </div>
         </div>
 
-        <div className='flex justify-between pr-10 pl-10 pt-10'>
+        <div className='flex justify-between pr-10 pl-10 pt-5'>
           {/* left Section */}
           <div>
             <div className='flex flex-row gap-10'>
-              <div className='flex justify-between w-200 h-20 bg-crypto-color items-center pl-8 pr-8'>
+              <div className='flex justify-between w-200 h-20 bg-crypto-color items-center pl-8 pr-8 rounded-t-2xl'>
                 <div>
-                  <p>Trading market</p>
+                  <p className='text-lg font-bold'>Trading market</p>
                 </div>
                 <div className='flex flex-row gap-3'>
                   <p className='hover:text-blue-500'>5M</p>
@@ -182,7 +182,7 @@ const Dashboard = () => {
             </div>
             
             {/* This is where we are going to display the chart */}
-            <div className='w-200 h-100 bg-crypto-color mt-2'>
+            <div className='w-200 h-110 bg-crypto-color mt-1 rounded-b-2xl'>
 
             </div>
           </div>
@@ -191,7 +191,49 @@ const Dashboard = () => {
 
           {/* Right Section */}
           <div>
+            <div className='w-87 h-119 bg-crypto-color rounded-2xl flex flex-col gap-5 pt-7'>
+              <div className='flex justify-center flex-row gap-27'>
+                <p className='text-2xl'>Buy</p>
+                <p className='text-2xl'>Sell</p>
+              </div>
 
+              <div>
+                <hr className='ml-10 mr-44'/>
+                <hr className='ml-44 mr-10'/>
+              </div>
+
+              <div className='flex flex-row gap-5 justify-center pt-2 text-gray-500'>
+                <p className='text-sm'>Limit</p>
+                <p className='text-sm'>Market</p>
+                <p className='text-sm'>Stop limit</p>
+                <p className='text-sm'>Stop market</p>
+              </div>
+
+              <div className='flex flex-col gap-5 pl-6'>
+                <div className='w-75 h-20 bg-input-field rounded-2xl'>
+                  <p className='pt-2 pl-2'>Pay</p>
+                  <div className='flex justify-between pt-2 pl-2 pr-2 items-center'>
+                    <p className='text-lg font-medium'>3,000,000</p>
+                    <p>USD</p>
+                  </div>
+                </div>
+
+                <div className='w-75 h-20 bg-input-field rounded-2xl'>
+                  <p className='pt-2 pl-2'>Receive</p>
+                  <div className='flex justify-between items-center pt-2 pl-2 pr-2'>
+                    <p className='text-lg font-medium'>0.00207026</p>
+                    <p>BTC</p>
+                  </div>
+                </div>
+
+                <div className='flex justify-center gap-2'>
+                  <p className='text-sm pt-1'>1 BTC ≈ 38,677.94 USD</p>
+                  <div className='w-7 h-7 rounded-full bg-input-field flex items-center pl-1'><img src="src/assets/repeat.png" alt="exchange" className='w-5 h-5'/></div>
+                </div>
+
+                <button className='w-75 h-10 bg-blue-500 rounded-full'>Buy</button>
+              </div>
+            </div>
           </div>
         </div>
       </div>
