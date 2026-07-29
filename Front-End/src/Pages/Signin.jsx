@@ -1,18 +1,162 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from "react";
 import { FaEye, FaQrcode } from 'react-icons/fa'
 import { Link, useNavigate } from 'react-router-dom'
+import { io } from "socket.io-client";
 
   const Signin = () => {
 
   const navigate = useNavigate();
 
+  const [socket, setSocket] = useState(null);
+
+  // QR States
+  const [qrCode, setQrCode] = useState("");
+  const [qrToken, setQrToken] = useState("");
+  const [loadingQR, setLoadingQR] = useState(false);
+
+  // Login States
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
+  // Error State
   const [error, setError] = useState("");
 
+  useEffect(() => {
 
-  const handleLogin = async (e) => {
+    handleGenerateQR();
+
+    const interval = setInterval(() => {
+        handleGenerateQR();
+    }, 60000);
+
+
+    return () => clearInterval(interval);
+
+}, []);
+
+
+  useEffect(()=>{
+
+
+    return ()=>{
+
+        if(socket){
+            socket.disconnect();
+        }
+
+    }
+
+
+  },[socket]);
+
+const handleGenerateQR = async () => {
+
+    setLoadingQR(true);
+
+    try {
+
+        const response = await fetch(
+            "http://localhost:5000/api/qr/init"
+        );
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            setError(data.message);
+            return;
+        }
+
+        setQrCode(data.qrCode);
+        setQrToken(data.qr_token);
+
+        connectWebSocket(data.qr_token);
+
+    } catch (error) {
+
+        setError("Unable to generate QR Code.");
+
+    } finally {
+
+        setLoadingQR(false);
+
+    }
+
+};
+
+const connectWebSocket = (qr_token) => {
+
+
+    if(socket){
+        socket.disconnect();
+    }
+
+
+    const newSocket = io(
+        "http://localhost:5000"
+    );
+
+
+    newSocket.on(
+        "connect",
+        ()=>{
+
+
+            console.log(
+                "Socket connected:",
+                newSocket.id
+            );
+
+
+            newSocket.emit(
+                "join_qr",
+                qr_token
+            );
+
+
+            console.log(
+                "Joined QR room:",
+                qr_token
+            );
+
+
+        }
+    );
+
+
+
+    newSocket.on(
+        "qr-login-success",
+        (data)=>{
+
+
+            console.log(
+                "QR LOGIN SUCCESS",
+                data
+            );
+
+
+            localStorage.setItem(
+                "userId",
+                data.userId
+            );
+
+
+            navigate(
+                "/dashboard"
+            );
+
+
+            newSocket.disconnect();
+
+        }
+    );
+
+
+    setSocket(newSocket);
+
+};
+
+const handleLogin = async (e) => {
 
     e.preventDefault();
 
@@ -20,43 +164,36 @@ import { Link, useNavigate } from 'react-router-dom'
 
     try {
 
-    const response = await fetch(
-      "http://localhost:5000/api/auth/login",
-      {
-        method:"POST",
-        headers:{
-          "Content-Type":"application/json"
-        },
-        body:JSON.stringify({
-          email,
-          password
-        })
-      }
-    );
+        const response = await fetch(
+            "http://localhost:5000/api/auth/login",
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    email,
+                    password
+                })
+            }
+        );
 
-    const data = await response.json();
+        const data = await response.json();
 
-    if(!response.ok){
-      setError(data.message);
-      return;
+        if (!response.ok) {
+            setError(data.message);
+            return;
+        }
+
+        localStorage.setItem("token", data.token);
+
+        navigate("/dashboard");
+
+    } catch (error) {
+
+        setError("Server error");
+
     }
-
-
-
-    localStorage.setItem(
-      "token",
-      data.token
-    );
-
-    console.log("Token saved:", data.token);
-
-
-    navigate("/dashboard");
-
-  } catch(error){
-    setError("Server error");
-
-  }
 
 };
 
@@ -134,8 +271,19 @@ import { Link, useNavigate } from 'react-router-dom'
           </div>
         </div>
 
+        {/* This is a Section that will a users use QR code to Log-In  */}
         <div className='hidden md:flex flex-col absolute right-42 top-40 items-center'>
-          <FaQrcode className='text-9xl' />
+          {
+            qrCode ? (
+                <img
+                    src={qrCode}
+                    alt="QR Login"
+                    className="w-52 h-52 rounded-xl border border-gray-300 bg-white p-2"
+                />
+            ) : (
+                <FaQrcode className="text-9xl text-gray-400" />
+            )
+          }
           <h1 className='text-2xl font-semibold mt-5'>Login with QR code</h1>
           <p className='text-center mt-2'>Scan this code with your phone <br />to log in instantly.</p>
         </div>

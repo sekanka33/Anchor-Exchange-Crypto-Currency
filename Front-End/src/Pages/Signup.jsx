@@ -131,9 +131,8 @@ const Signup = () => {
 
     if(validationError){
 
-        setError(validationError);
-
-        return;
+      setError(validationError);
+      return;
     }
 
 
@@ -158,19 +157,19 @@ const Signup = () => {
 
     try {
         const response = await fetch("http://localhost:5000/register", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-              email: formData.email,
-              password: formData.password,
-              fullName: formData.fullName,
-              surname: formData.surname,
-              country: formData.country,
-              phoneNumber: formData.phoneNumber
-            })
-        });
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            email: formData.email,
+            password: formData.password,
+            fullName: formData.fullName,
+            surname: formData.surname,
+            country: formData.country,
+            phoneNumber: formData.phoneNumber
+          })
+      });
 
 
         const data = await response.json();
@@ -203,20 +202,20 @@ const Signup = () => {
       setPasswordMatch(false);
 
     } catch (error) {
-        setError("Something went wrong. Please try again.");
+      setError("Something went wrong. Please try again.");
     } finally {
-        setLoading(false);
+      setLoading(false);
     }
   };
 
   function passwordValidator(password) {
 
     if(password === null || password.trim() === ""){
-        return false;
+      return false;
     }
 
     if(password.length < 8){
-        return false;
+      return false;
     } 
 
       const containsUppercase = /[A-Z]/.test(password);
@@ -242,29 +241,20 @@ const Signup = () => {
   }
 
   function validateEmail(email){
-
     const emailPattern =
     /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
     return emailPattern.test(email);
-
   } 
 
   function validatePhoneNumber(phone){
-
     const phonePattern = /^\+?[0-9\s]{10,20}$/;
-
     return phonePattern.test(phone);
-
   }
 
 
   function validateName(name){
-
     const namePattern = /^[A-Za-z\s]+$/;
-
     return namePattern.test(name);
-
   }
 
   function authenticateEmail(){
