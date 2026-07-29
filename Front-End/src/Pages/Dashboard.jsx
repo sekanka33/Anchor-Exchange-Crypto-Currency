@@ -13,7 +13,7 @@ const Dashboard = () => {
     <div className="flex">
 
       {/* Side NavBar */}
-      
+      <div></div>
       <div className="w-70 h-screen border-2 border-dark-void pl-8 pt-5">
 
         {/* Logo */}
