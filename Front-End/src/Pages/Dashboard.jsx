@@ -13,7 +13,6 @@ const Dashboard = () => {
     <div className="flex">
 
       {/* Side NavBar */}
-      <div></div>
       <div className="w-70 h-screen border-2 border-dark-void pl-8 pt-5">
 
         {/* Logo */}
@@ -162,7 +161,7 @@ const Dashboard = () => {
           </div>
         </div>
 
-        <div className='flex justify-between pr-10 pl-10 pt-5'>
+        <div className='flex justify-between pr-4 pl-10 pt-5'>
           {/* left Section */}
           <div>
             <div className='flex flex-row gap-10'>
@@ -189,7 +188,7 @@ const Dashboard = () => {
             </div>
 
             {/* This is the section for order and history */}
-            <div className="w-200 h-95 bg-crypto-color mt-5 rounded-2xl p-6 text-gray-200 font-sans shadow-xl">
+            <div className="w-200 h-95 bg-hero-dark mt-5 rounded-2xl p-6 text-gray-200 font-sans shadow-xl">
   
               {/* Top Header Bar */}
               <div className="flex items-center justify-between pb-4 border-b border-gray-800/40">
@@ -201,7 +200,7 @@ const Dashboard = () => {
                     Open Orders
                   </p>
                   <p className="cursor-pointer text-gray-400 hover:text-gray-200 transition">
-                    Open Orders
+                    Closed Orders
                   </p>
                 </div>
 
@@ -310,15 +309,15 @@ const Dashboard = () => {
 
           {/* Right Section */}
           <div>
-            <div className='w-87 h-117 bg-crypto-color rounded-2xl flex flex-col gap-5 pt-7'>
+            <div className='w-91 h-117 bg-crypto-color rounded-2xl flex flex-col gap-5 pt-7'>
               <div className='flex justify-center flex-row gap-27'>
                 <p className='text-2xl'>Buy</p>
                 <p className='text-2xl'>Sell</p>
               </div>
 
               <div>
-                <hr className='ml-10 mr-44'/>
-                <hr className='ml-44 mr-10'/>
+                <hr className='ml-10 mr-48'/>
+                <hr className='ml-48 mr-10'/>
               </div>
 
               <div className='flex flex-row gap-5 justify-center pt-2 text-gray-500'>
@@ -355,7 +354,7 @@ const Dashboard = () => {
             </div>
 
             <div>
-              <div className='w-87 h-108 bg-crypto-color rounded-2xl'>
+              <div className='w-91 h-108 bg-crypto-color rounded-2xl'>
                 <div className='flex justify-center flex-col gap-2 pt-7 mt-7 pl-10 pr-10 items-center'>
                   <p className='text-gray-500 pl-4'>Your Balance</p>
                   <p className='text-2xl font-medium'>$132,832.89</p>
@@ -379,6 +378,9 @@ const Dashboard = () => {
             </div>
           </div>
         </div>
+
+
+
       </div>
     </div>
   )

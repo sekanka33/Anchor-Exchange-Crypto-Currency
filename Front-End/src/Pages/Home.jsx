@@ -6,6 +6,7 @@ import graphic from "../assets/Graphic.png";
 import { FaAppStore, FaAppStoreIos, FaCheckCircle, FaGooglePlay, FaSearch, FaStar } from 'react-icons/fa';
 import { FcCandleSticks } from 'react-icons/fc';
 import CreateAnAccoutSection from '../Components/CreateAnAccoutSection';
+import CryptoMarketBar from '../Components/CryptoMarketBar';
 
 const Home = () => {
 
@@ -50,73 +51,10 @@ const Home = () => {
         <div className="flex justify-end">
           <img src={graphic} alt="Green graphic" className="w-72 h-auto"/>
         </div>
+        {/* content */}
+        <CryptoMarketBar />
 
-        <div className='flex justify-center relative -top-45'>
-          <div className='w-280 h-60 bg-hero-dark border border-gray-600 rounded-2xl shadow-xl'>
-            <div className='flex flex-row gap-8 pt-6 pl-8'>
-              <p className="cursor-pointer hover:text-blue-500" onClick={() => setCategory("layer-1")}>Crypto</p>
-              <p className="cursor-pointer hover:text-blue-500" onClick={() => setCategory("decentralized-finance-defi")}>DeFi</p>
-              <p className="cursor-pointer hover:text-blue-500" onClick={() => setCategory("binance-smart-chain")}> BSC</p>
-              <p className="cursor-pointer hover:text-blue-500" onClick={() => setCategory("non-fungible-tokens-nft")}> NFT</p>
-            </div>
-            <hr className='mt-4 ml-8 mr-10 text-gray-600'></hr>
-            <div className="flex gap-6 ml-8 mt-5">
-              {coins.map((coin, index) => (
-                <div
-                  key={coin.id}
-                  className={`w-60 h-20 rounded-xl p-4 transition ${
-                    index === 1
-                      ? "bg-[#232737]"
-                      : "bg-transparent hover:bg-[#232737]"
-                  }`}
-                >
-                  {/* Top */}
-                  <div className="flex items-center gap-2">
-                    <img src={coin.image} alt={coin.name} className="w-5 h-5"/>
-
-                    <span className="text-sm font-semibold">
-                      {coin.name}
-                    </span>
-
-                    <span className="text-xs text-gray-400 uppercase">
-                      {coin.symbol}/USD
-                    </span>
-                  </div>
-
-                  {/* Price */}
-                  <h2 className="text-2xl font-bold mt-2">
-                    $
-                    {coin.current_price.toLocaleString(undefined, {
-                      minimumFractionDigits: 2,
-                      maximumFractionDigits: 2,
-                    })}
-                  </h2>
-
-                  {/* Bottom */}
-                  <div className="flex items-center gap-3 mt-2">
-                    <span className="text-xs text-gray-400">
-                      {new Intl.NumberFormat("en-US", {
-                        notation: "compact",
-                      }).format(coin.market_cap)}
-                    </span>
-
-                    <span
-                      className={`text-[10px] px-2 py-1 rounded-full ${
-                        coin.price_change_percentage_24h >= 0
-                          ? "bg-green-600"
-                          : "bg-red-600"
-                      }`}
-                    >
-                      {coin.price_change_percentage_24h.toFixed(2)}%
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        <div className='flex flex-col gap-7 pl-28 pr-28'>
+        <div className='flex flex-col gap-7 pl-28 pr-28 relative bottom-17'>
 
           <div className='flex justify-between'>
             <h1 className='text-3xl font-bold'>Market Update</h1>

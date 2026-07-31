@@ -26,16 +26,24 @@ router.get("/init", async (req, res) => {
         );
 
 
-        res.json({
+        // res.json({
 
-            qr_token,
+        //     qr_token,
 
-            qrCode:
-            `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${qr_token}`,
+        //     qrCode:
+        //     `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${qr_token}`,
 
-            expires_in: 60
+        //     expires_in: 60
 
-        });
+        // });
+
+       const qrUrl = `http://10.21.152.182:5173/qr-auth?token=${qr_token}`;
+
+            res.json({
+                qr_token,
+                qrCode: `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(qrUrl)}`,
+                expires_in: 60
+            });
 
 
     } catch (error) {

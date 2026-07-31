@@ -6,9 +6,9 @@ body {
 
 @theme {
   --color-hero-dark: #18191D;
+  --color-hero2-dark: #18191D;
   --color-dark-void: #141416;
   --color-crypto-color: #121318;
   --color-line-color: #23262F;
   --color-input-field: #222630;
-  
 }
