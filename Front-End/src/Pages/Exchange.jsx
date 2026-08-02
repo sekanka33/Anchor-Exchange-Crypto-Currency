@@ -351,7 +351,7 @@ const Exchange = () => {
                   <div className="flex justify-center w-full pt-3 pl-6 pr-6">
                     <div className="relative flex justify-between items-center w-full">
                       {/* Horizontal Line */}
-                      <div className="absolute top-1/2 left-0 right-0 h-[1px] bg-[#2d3139] -translate-y-1/2 z-0" />
+                      <div className="absolute top-1/2 left-0 right-0 h-1px bg-[#2d3139] -translate-y-1/2 z-0" />
 
                       {/* Step 1 */}
                       <div className="relative z-10 px-1 text-[#6b7280] text-xs">
