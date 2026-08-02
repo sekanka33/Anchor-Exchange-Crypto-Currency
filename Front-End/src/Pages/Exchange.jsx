@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { FaSearch, FaStar } from 'react-icons/fa';
+import { FaCalculator, FaGem, FaPhone, FaSearch, FaStar } from 'react-icons/fa';
 import { FiMoon, FiSun } from "react-icons/fi";
+import { BsDiamond } from 'react-icons/bs';
 
 
 const Exchange = () => {
@@ -317,8 +318,92 @@ const Exchange = () => {
 
               </div>
                <div className='flex flex-col gap-1'>
-                <div className='bg-hero2-dark h-10 w-98'></div>
-                <div className='bg-hero2-dark h-70 w-98'></div>
+                <div className='bg-hero2-dark h-10 w-98 flex justify-between items-center pr-4'>
+                  <div className='flex flex-row gap-3 pt-1 pl-4'>
+                    <div className='bg-input-field h-7 w-15 flex justify-center items-center'>
+                      <p className='text-sm hover:text-blue-500'>Cross</p>
+                    </div>
+
+                    <div className='bg-input-field h-7 w-15 flex justify-center items-center'>
+                      <p className='text-sm hover:text-blue-500'>10.00x</p>
+                    </div>
+                  </div>
+
+                  <div>
+                    <FaCalculator className='hover:text-blue-500'/>
+                  </div>
+                </div>
+
+                <div className='bg-hero2-dark h-85 w-98 pt-3'>
+                  <div className='flex flex-row gap-5 pl-4'>
+                    <p className='text-text-color hover:text-white'>Limit</p>
+                    <p className='text-text-color hover:text-white'>Market</p>
+                    <p className='text-text-color hover:text-white'>Conditional</p>
+                  </div>
+
+                  <hr className='mt-2 text-line-color'/>
+
+                  <div>
+                    <input type="text" placeholder='Qty' className='w-90 h-10 bg-input-field mt-4 ml-4 pl-2'/>
+                    <p className='text-sm relative bottom-7 flex justify-end right-6'>USD</p>
+                  </div>
+
+                  <div className="flex justify-center w-full pt-3 pl-6 pr-6">
+                    <div className="relative flex justify-between items-center w-full">
+                      {/* Horizontal Line */}
+                      <div className="absolute top-1/2 left-0 right-0 h-[1px] bg-[#2d3139] -translate-y-1/2 z-0" />
+
+                      {/* Step 1 */}
+                      <div className="relative z-10 px-1 text-[#6b7280] text-xs">
+                        <BsDiamond />
+                      </div>
+
+                      {/* Step 2 */}
+                      <div className="relative z-10  px-1 text-[#6b7280] text-xs">
+                        <BsDiamond />
+                      </div>
+
+                      {/* Step 3 (Active / Center) */}
+                      <div className="relative z-10 px-1 text-[#6b7280] text-xs">
+                        <BsDiamond />
+                      </div>
+
+                      {/* Step 4 */}
+                      <div className="relative z-10 px-1 text-[#6b7280] text-xs">
+                        <BsDiamond />
+                      </div>
+
+                      {/* Step 5 */}
+                      <div className="relative z-10 px-1 text-[#6b7280] text-xs">
+                        <BsDiamond />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className='flex justify-between pr-6 pl-6 pt-6'>
+                    <div>
+                      <div className='flex flex-row gap-3 items-center'>
+                        <input type="checkbox" />
+                        <p className='text-text-color'>Buy Long with TP/SL</p>
+                      </div>
+
+                      <div className='flex flex-row gap-3 items-center pt-2'>
+                        <input type="checkbox" />
+                        <p className='text-text-color'>Sell Short with TP/SL</p>
+                      </div>
+                    </div>
+
+                    <div className='flex flex-col gap-3 text-base'>
+                      <p>Order Value</p>
+                      <p>0.00000000 BTC</p>
+                    </div>
+                  </div>
+
+                  <div className='flex flex-row gap-6 pl-6 pr-6 pt-7'>
+                    <button className='h-10 w-40 bg-green-600 rounded-sm'>Buy / Long</button>
+                    <button className='h-10 w-40 bg-red-600 rounded-sm'>Sell / Short</button>
+                  </div>
+                </div>
               </div>
           </div>
         </div>
