@@ -233,7 +233,128 @@ export default function Markets() {
         </div>
       </div>
       
-      <CryptoMarketBar />
+      <div>
+        <CryptoMarketBar />
+      </div>
+      
+      <div className="pt-45 pb-16 px-4 max-w-7xl mx-auto">
+        {/* Header Section */}
+        <div className="flex flex-col gap-3 text-center mb-12">
+          <div className="flex justify-center text-3xl sm:text-4xl font-bold">
+            <p>Learn And Earn</p>
+          </div>
+
+          <div className="text-text-color flex justify-center">
+            <div className="flex flex-col gap-1 items-center max-w-md">
+              <p>Stacks is a production-ready library of stackable</p>
+              <p>content blocks built in React Native.</p>
+            </div>
+          </div>
+        </div>
+
+          {/* Cards Grid Container */}
+          <div className="flex flex-wrap justify-center gap-8">
+            {/* Card 1 */}
+            <div className="w-full sm:w-80 md:w-96 flex flex-col justify-between p-4 bg-background rounded-2xl shadow-sm">
+              <div className="w-full aspect-video bg-hero2-dark rounded-2xl overflow-hidden">
+                <iframe
+                  className="w-full h-full"
+                  src="https://www.youtube.com/embed/6VEzWfADwJE"
+                  title="YouTube video player"
+                  frameBorder="0"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  allowFullScreen
+                ></iframe>
+              </div>
+
+              <div className="h-8 w-32 bg-blue-500 text-white text-xs uppercase font-semibold flex items-center justify-center rounded-sm mt-5">
+                <p>learn & earn</p>
+              </div>
+
+              <div className="mt-4 font-medium text-lg">
+                <p>Learn about UI8 coin and earn an All-Access Pass</p>
+              </div>
+
+              <div className="flex justify-between items-center mt-6 pt-3 text-sm">
+                <div className="flex flex-row gap-2 items-center">
+                  <div className="w-3 h-3 bg-green-600 rounded-full"></div>
+                  <p className="font-medium">Binance</p>
+                </div>
+
+                <div>
+                  <p className="text-gray-500">2025</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Card 2 */}
+            <div className="w-full sm:w-80 md:w-96 flex flex-col justify-between p-4 bg-background rounded-2xl shadow-sm">
+              <div className="w-full aspect-video bg-hero2-dark rounded-2xl overflow-hidden">
+                <iframe
+                  className="w-full h-full"
+                  src="https://www.youtube.com/embed/k9sR7UkXX-s"
+                  title="YouTube video player"
+                  frameBorder="0"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  allowFullScreen
+                ></iframe>
+              </div>
+
+              <div className="h-8 w-32 bg-blue-500 text-white text-xs uppercase font-semibold flex items-center justify-center rounded-sm mt-5">
+                <p>learn & earn</p>
+              </div>
+
+              <div className="mt-4 font-medium text-lg">
+                <p>Learn about API</p>
+              </div>
+
+              <div className="flex justify-between items-center mt-6 pt-3 text-sm">
+                <div className="flex flex-row gap-2 items-center">
+                  <div className="w-3 h-3 bg-green-600 rounded-full"></div>
+                  <p className="font-medium">Binance</p>
+                </div>
+
+                <div>
+                  <p className="text-gray-500">2025</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Card 3 */}
+            <div className="w-full sm:w-80 md:w-96 flex flex-col justify-between p-4 bg-background rounded-2xl shadow-sm">
+              <div className="w-full aspect-video bg-hero2-dark rounded-2xl overflow-hidden">
+                <iframe
+                  className="w-full h-full"
+                  src="https://www.youtube.com/embed/ekl4Tc5-qJ4"
+                  title="YouTube video player"
+                  frameBorder="0"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  allowFullScreen
+                ></iframe>
+              </div>
+
+              <div className="h-8 w-32 bg-blue-500 text-white text-xs uppercase font-semibold flex items-center justify-center rounded-sm mt-5">
+                <p>learn & earn</p>
+              </div>
+
+              <div className="mt-4 font-medium text-lg">
+                <p>Learn about how to trade daily</p>
+              </div>
+
+              <div className="flex justify-between items-center mt-6 pt-3 text-sm">
+                <div className="flex flex-row gap-2 items-center">
+                  <div className="w-3 h-3 bg-green-600 rounded-full"></div>
+                  <p className="font-medium">Bybit</p>
+                </div>
+
+                <div>
+                  <p className="text-gray-500">2026</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
     </div>
   );
 }
