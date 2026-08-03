@@ -56,8 +56,17 @@ const Wallet = () => {
           </div>
 
 
-          <div className='bg-hero2-dark w-220 h-150 flex justify-between pl-10 pr-10 mt-9 rounded-2xl border-line-color border-2'>
-            
+          <div className='bg-hero2-dark w-220 h-150  pl-10 pr-10 mt-9 rounded-2xl border-line-color border-2'>
+            <div className='flex flex-row gap-20 pt-10'>
+              <p>#</p>
+              <p>Asset</p>
+              <p>Earn</p>
+              <p>On Order</p>
+              <p>Available Balance</p>
+              <p>Total Balance</p>
+            </div>
+
+            <hr className='text-line-color w-200 h-0 mt-4' />
           </div>
         </div>
       </div>
