@@ -1,4 +1,5 @@
 import React from 'react'
+import { Link } from 'react-router-dom'
 import { FaFacebook, FaLinkedin, FaTwitter } from 'react-icons/fa'
 import { FaWhatsapp, FaXTwitter } from 'react-icons/fa6'
 
@@ -23,15 +24,15 @@ const Footer = () => {
             <p className='hover:text-blue-500'>Spot</p>
             <p className='hover:text-blue-500'>Inverse Perpetual</p>
             <p className='hover:text-blue-500'>USDT Perpetual</p>
-            <p className='hover:text-blue-500'>Exchange</p>
+            <Link to="/exchange" className='hover:text-blue-500'>Exchange</Link>
             <p className='hover:text-blue-500'>Launchpad</p>
             <p className='hover:text-blue-500'>Anchor pay</p>
           </div>
 
           <div className='flex flex-col gap-4'>
             <h1 className='text-1xl font-bold '>SERVICES</h1>
-            <p className='hover:text-blue-500'>Buy Crypto</p>
-            <p className='hover:text-blue-500'>Markets</p>
+            <Link to="/buy-crypto" className='hover:text-blue-500'>Buy Crypto</Link>
+            <Link to="/markets" className='hover:text-blue-500'>Markets</Link>
             <p className='hover:text-blue-500'>Trading Fee</p>
             <p className='hover:text-blue-500'>Affiliate Program</p>
             <p className='hover:text-blue-500'>Referral Program</p>
@@ -53,7 +54,7 @@ const Footer = () => {
             <p className='hover:text-blue-500'>About Anchor Exchange</p>
             <p className='hover:text-blue-500'>Authenticity Check</p>
             <p className='hover:text-blue-500'>Careers</p>
-            <p className='hover:text-blue-500'>Contacts</p>
+            <Link to="/contact" className='hover:text-blue-500'>Contacts</Link>
             <p className='hover:text-blue-500'>Blog</p>
           </div>
         </div>

@@ -67,6 +67,11 @@ const Wallet = () => {
             </div>
 
             <hr className='text-line-color w-200 h-0 mt-4' />
+            
+            {/* Here im going to display coins that the user is holding */}
+            <div>
+
+            </div>
           </div>
         </div>
       </div>
