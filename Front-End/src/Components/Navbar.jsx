@@ -203,7 +203,7 @@ const Navbar = () => {
 
           ) : (
 
-            <Link to="/signin">
+            <Link to="/signin" className="border border-gray-300 dark:border-gray-600 rounded-full px-4 py-1 text-xs text-slate-900 dark:text-white hover:bg-blue-500 hover:text-white transition-colors">
               Sign In
             </Link>
 
