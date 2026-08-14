@@ -19,27 +19,30 @@ const QRAuth = () => {
                 return;
             }
 
-            // Check whether this phone has already logged in
+            // Check if this phone is already logged in
             const token = localStorage.getItem("token");
 
             if (!token) {
 
-                // Not logged in on this phone
+                // Phone is not logged in
+                // Send the user to login and keep the QR token
                 navigate(`/signin?qr=${qr_token}`);
-                return;
 
+                return;
             }
 
             try {
 
                 const response = await fetch(
-                    "http://10.21.152.182:5000/api/qr/verify",
+                    "http://192.168.0.117:5000/api/qr/verify",
                     {
                         method: "POST",
+
                         headers: {
                             "Content-Type": "application/json",
-                            Authorization: `Bearer ${token}`
+                            "Authorization": `Bearer ${token}`
                         },
+
                         body: JSON.stringify({
                             qr_token
                         })
@@ -50,17 +53,25 @@ const QRAuth = () => {
 
                 if (response.ok) {
 
-                    setMessage("✅ Login approved.");
+                    setMessage(
+                        "✅ Login approved. You can return to your computer."
+                    );
 
                 } else {
 
-                    setMessage(data.message);
+                    setMessage(
+                        data.message || "QR login failed."
+                    );
 
                 }
 
-            } catch (err) {
+            } catch (error) {
 
-                setMessage("Unable to connect to server.");
+                console.error("QR VERIFY ERROR:", error);
+
+                setMessage(
+                    "Unable to connect to Anchor Exchange server."
+                );
 
             }
 
@@ -68,7 +79,8 @@ const QRAuth = () => {
 
         verifyQR();
 
-    }, []);
+    }, [navigate, searchParams]);
+
 
     return (
 
@@ -78,7 +90,7 @@ const QRAuth = () => {
                 Anchor Exchange
             </h1>
 
-            <p className="mt-6 text-lg">
+            <p className="mt-6 text-lg text-center">
                 {message}
             </p>
 

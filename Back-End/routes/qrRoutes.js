@@ -5,7 +5,10 @@ const redis = require("../config/redis");
 const { getIO } = require("../socket");
 
 
-// Generate QR token
+// ==========================================
+// GENERATE QR CODE
+// ==========================================
+
 router.get("/init", async (req, res) => {
 
     try {
@@ -26,30 +29,26 @@ router.get("/init", async (req, res) => {
         );
 
 
-        // res.json({
+        // URL that the phone will open
+        const qrUrl =
+            `http://192.168.0.117:5173/qr-auth?token=${qr_token}`;
 
-        //     qr_token,
 
-        //     qrCode:
-        //     `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${qr_token}`,
+        res.json({
 
-        //     expires_in: 60
+            qr_token,
 
-        // });
+            qrCode:
+                `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(qrUrl)}`,
 
-       const qrUrl = `http://10.21.152.182:5173/qr-auth?token=${qr_token}`;
+            expires_in: 60
 
-            res.json({
-                qr_token,
-                qrCode: `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(qrUrl)}`,
-                expires_in: 60
-            });
+        });
 
 
     } catch (error) {
 
         console.log("QR INIT ERROR:", error);
-
 
         res.status(500).json({
 
@@ -62,38 +61,81 @@ router.get("/init", async (req, res) => {
 });
 
 
-// Verify QR login from phone
+// ==========================================
+// VERIFY QR CODE
+// ==========================================
+
 router.post("/verify", async (req, res) => {
 
     try {
 
-        const {
-            qr_token,
-            userId
-        } = req.body;
+        const { qr_token } = req.body;
 
 
-
-        if (!qr_token || !userId) {
+        // Check QR token
+        if (!qr_token) {
 
             return res.status(400).json({
 
-                message: "Missing data"
+                message: "Missing QR token"
 
             });
 
         }
 
 
-
-        // Check if QR exists
-        const exists = await redis.get(
-            `qr:${qr_token}`
-        );
+        // Check phone authentication
+        const authHeader =
+            req.headers.authorization;
 
 
+        if (!authHeader) {
 
-        if (!exists) {
+            return res.status(401).json({
+
+                message: "Phone is not logged in"
+
+            });
+
+        }
+
+
+        // Check that it is a Bearer token
+        if (!authHeader.startsWith("Bearer ")) {
+
+            return res.status(401).json({
+
+                message: "Invalid authentication"
+
+            });
+
+        }
+
+
+        const token =
+            authHeader.split(" ")[1];
+
+
+        if (!token) {
+
+            return res.status(401).json({
+
+                message: "Invalid token"
+
+            });
+
+        }
+
+
+        // ==========================================
+        // CHECK QR SESSION
+        // ==========================================
+
+        const qrData =
+            await redis.get(`qr:${qr_token}`);
+
+
+        if (!qrData) {
 
             return res.status(400).json({
 
@@ -104,29 +146,80 @@ router.post("/verify", async (req, res) => {
         }
 
 
+        const qrSession =
+            JSON.parse(qrData);
 
-        // Approve login
+
+        if (qrSession.status !== "pending") {
+
+            return res.status(400).json({
+
+                message: "QR code already used"
+
+            });
+
+        }
+
+
+        // ==========================================
+        // TEMPORARY USER IDENTIFICATION
+        // ==========================================
+        //
+        // We will replace this with your real JWT
+        // verification middleware.
+        //
+        // DO NOT trust a userId sent from the phone.
+        //
+
+        const userId = token;
+
+
+        // ==========================================
+        // APPROVE QR LOGIN
+        // ==========================================
+
         await redis.set(
+
             `qr:${qr_token}`,
+
             JSON.stringify({
 
                 status: "approved",
+
                 userId
 
             }),
+
             "EX",
+
             60
+
         );
+
+
+        // ==========================================
+        // TELL PC BROWSER LOGIN WAS APPROVED
+        // ==========================================
 
         const io = getIO();
 
 
-        io.to(qr_token)
-        .emit(
+        io.to(qr_token).emit(
+
             "qr-login-success",
+
             {
+
                 userId
+
             }
+
+        );
+
+
+        console.log(
+            "QR login approved:",
+            qr_token
         );
 
 
@@ -137,12 +230,12 @@ router.post("/verify", async (req, res) => {
         });
 
 
-
     } catch (error) {
 
-
-        console.log("QR VERIFY ERROR:", error);
-
+        console.log(
+            "QR VERIFY ERROR:",
+            error
+        );
 
 
         res.status(500).json({
@@ -154,9 +247,6 @@ router.post("/verify", async (req, res) => {
     }
 
 });
-
-
-
 
 
 module.exports = router;
