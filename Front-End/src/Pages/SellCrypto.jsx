@@ -314,7 +314,7 @@ const SellCrypto = () => {
                   </div>
 
                   <div className="bg-blue-500 p-3 rounded-full">
-                    ↕
+                    <img src="/src/assets/Group 564.png" alt="Exchange icon" />
                   </div>
 
                   {/* USD */}

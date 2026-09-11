@@ -377,8 +377,8 @@ const BuyCrypto = () => {
                   </div>
 
                   {/* SWAP ICON */}
-                  <div className="bg-blue-500 p-2.5 rounded-full text-white self-center mt-6 shrink-0">
-                    ↕
+                  <div className="bg-blue-500 p-3 rounded-full">
+                    <img src="/src/assets/Group 564.png" alt="Exchange icon" />
                   </div>
 
                   {/* RECEIVE */}
