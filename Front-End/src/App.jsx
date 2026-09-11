@@ -26,6 +26,7 @@ import QRAuth from './Pages/QRAuth'
 import Contact from './Pages/Contact'
 import Overview from './Pages/Overview'
 import SellCrypto from './Pages/SellCrypto'
+import ProfileAndSetting from './Pages/ProfileAndSetting'
 
 const App = () => {
 
@@ -64,6 +65,7 @@ const App = () => {
           <Route path="/" element={<Home />} />
           <Route path="/overview" element={<Overview />} />
           <Route path="/sell-crypto" element={<SellCrypto />} />
+          <Route path='/profile-setting' element={<ProfileAndSetting />} />
         </Routes>
       </main>
       {

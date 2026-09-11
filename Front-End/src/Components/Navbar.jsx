@@ -141,7 +141,7 @@ const Navbar = () => {
 
 
                     <Link 
-                      to="/profile"
+                      to="/profile-setting"
                       className="
                       block 
                       py-2
