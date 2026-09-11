@@ -165,7 +165,7 @@ const SellCrypto = () => {
         <div className="text-white font-sans">
 
           {/* PROGRESS */}
-          <div className="flex items-center gap-4 text-sm font-semibold mb-8">
+          <div className="flex items-center gap-4 text-sm font-semibold mb-8 pl-7">
 
             <div className="flex items-center gap-2">
               <div className="w-4 h-4 rounded-full border-2 border-green-500 flex items-center justify-center p-0.5">
