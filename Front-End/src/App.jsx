@@ -24,6 +24,8 @@ import Signup from './Pages/Signup'
 import Dashboard from "./Pages/Dashboard";
 import QRAuth from './Pages/QRAuth'
 import Contact from './Pages/Contact'
+import Overview from './Pages/Overview'
+import SellCrypto from './Pages/SellCrypto'
 
 const App = () => {
 
@@ -59,6 +61,9 @@ const App = () => {
           <Route path="/dashboard" element={<Dashboard />}/>
           <Route path="/qr-auth" element={<QRAuth />} />
           <Route path='/contact' element={<Contact />} />
+          <Route path="/" element={<Home />} />
+          <Route path="/overview" element={<Overview />} />
+          <Route path="/sell-crypto" element={<SellCrypto />} />
         </Routes>
       </main>
       {
