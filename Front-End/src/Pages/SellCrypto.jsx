@@ -159,7 +159,7 @@ const SellCrypto = () => {
 
         </div>
 
-        <div className="h-100 w-0 border-r-2 border-hero-dark"></div>
+        <div className="h-140 w-0 border-r-2 border-hero-dark"></div>
 
         {/* MAIN */}
         <div className="text-white font-sans">
