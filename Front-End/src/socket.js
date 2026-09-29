@@ -1,8 +1,9 @@
 import { io } from "socket.io-client";
+import { API_BASE_URL } from "./api/config";
 
 
 const socket = io(
-    "http://localhost:5000",
+    API_BASE_URL,
     {
         autoConnect:false
     }

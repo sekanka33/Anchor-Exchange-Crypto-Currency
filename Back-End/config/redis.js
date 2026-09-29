@@ -1,20 +1,19 @@
 const Redis = require("ioredis");
 
-
-const redis = new Redis({
-    host: "localhost",
-    port: 6379
-});
-
+// REDIS_URL wins (managed Redis usually hands you one); otherwise host/port.
+const redis = process.env.REDIS_URL
+    ? new Redis(process.env.REDIS_URL)
+    : new Redis({
+        host: process.env.REDIS_HOST || "localhost",
+        port: Number(process.env.REDIS_PORT) || 6379
+    });
 
 redis.on("connect", () => {
-    console.log("✅ Redis Connected");
+    console.log("Redis connected");
 });
-
 
 redis.on("error", (err) => {
-    console.log("Redis Error:", err);
+    console.error("Redis error:", err.message);
 });
-
 
 module.exports = redis;

@@ -1,6 +1,7 @@
-import React, { useState } from 'react'
+import { useState } from 'react'
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 import { Link } from 'react-router-dom'
+import { API_BASE_URL } from '../api/config'
 
 
 const Signup = () => {
@@ -156,7 +157,7 @@ const Signup = () => {
 
 
     try {
-        const response = await fetch("http://localhost:5000/register", {
+        const response = await fetch(`${API_BASE_URL}/api/auth/register`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json"
@@ -201,7 +202,7 @@ const Signup = () => {
 
       setPasswordMatch(false);
 
-    } catch (error) {
+    } catch {
       setError("Something went wrong. Please try again.");
     } finally {
       setLoading(false);
@@ -266,34 +267,34 @@ const Signup = () => {
   return (
     
     <div>
-      <div className='pr-20 pl-20 pt-10 h-27 w-full bg-mist-900'>
+      <div className='px-4 md:pr-20 md:pl-20 pt-6 md:pt-10 min-h-27 py-4 md:py-0 w-full bg-slate-100 dark:bg-dark-void text-slate-900 dark:text-white'>
         <h1 className='text-2xl font-semibold'>Register</h1>
       </div>
 
-      <div className='flex justify-center'>
+      <div className='flex justify-center px-4'>
         <div className='flex flex-col justify-between items-center'>
           <div>
-            <h1 className='text-3xl font-semibold pt-19'>Register to Anchor Exchange</h1>
+            <h2 className='text-3xl font-semibold pt-19 text-center'>Register to Anchor Exchange</h2>
             <p className='pt-3 text-center'>Register in advance and enjoy the event benefits</p>
           </div>
         </div>
-      </div> 
+      </div>
 
-      <div className='flex justify-center items-center'>
+      <div className='flex justify-center items-center px-4'>
 
-        <form onSubmit={handleSubmit} className='flex gap-5 flex-col pt-7'>
+        <form onSubmit={handleSubmit} className='flex gap-5 flex-col pt-7 w-full max-w-161'>
           <div className='flex flex-col gap-3'>
             <h2>Email</h2>
-            <div className='relative flex items-center w-130'>
-              <input id="email" name="email" type="email" value={formData.email} onChange={handleChange} required placeholder='Please fill in the email form.' className='h-13 w-full bg-gray-900 rounded-2xl pl-3 pr-44 text-white focus:outline-none' />
-              <button type='button' onClick={authenticateEmail} className='absolute left-120 h-13 w-40 bg-blue-500 hover:bg-blue-400 rounded-e-2xl font-medium'>Authenticate</button>
+            <div className='relative flex items-center w-full max-w-130'>
+              <input id="email" name="email" type="email" value={formData.email} onChange={handleChange} required aria-label="Email" autoComplete="email" placeholder='Please fill in the email form.' className='h-13 w-full bg-slate-100 dark:bg-gray-900 rounded-2xl pl-3 pr-32 sm:pr-44 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500' />
+              <button type='button' onClick={authenticateEmail} className='absolute right-0 h-13 w-28 sm:w-40 bg-blue-600 hover:bg-blue-700 rounded-e-2xl font-medium text-sm sm:text-base text-white'>Authenticate</button>
             </div>
           </div>
 
           <div className='flex flex-col gap-3'>
             <h2>Password</h2>
-            <div className='relative flex items-center w-161'>
-              <input name="password" type={showPassword ? "text" : "password"} required value={formData.password} onChange={handleChange} placeholder='Please enter a password.' className='h-13 w-full bg-gray-900 rounded-2xl text-white focus:outline-none pl-3 pr-10'/>
+            <div className='relative flex items-center w-full max-w-161'>
+              <input name="password" type={showPassword ? "text" : "password"} required value={formData.password} onChange={handleChange} aria-label="Password" autoComplete="new-password" placeholder='Please enter a password.' className='h-13 w-full bg-slate-100 dark:bg-gray-900 rounded-2xl text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 pl-3 pr-10'/>
               {
               showPassword 
               ? 
@@ -311,31 +312,31 @@ const Signup = () => {
 
             <div className="text-sm mt-2 flex flex-wrap gap-5 pb-5">
 
-              <p className={passwordStrength.length ? "text-green-500" : "text-gray-500"}>
+              <p className={passwordStrength.length ? "text-green-700 dark:text-green-400" : "text-gray-500 dark:text-gray-400"}>
               ✓ Minimum 8 characters
               </p>
 
-              <p className={passwordStrength.uppercase ? "text-green-500" : "text-gray-500"}>
+              <p className={passwordStrength.uppercase ? "text-green-700 dark:text-green-400" : "text-gray-500 dark:text-gray-400"}>
               ✓ Uppercase letter
               </p>
 
-              <p className={passwordStrength.lowercase ? "text-green-500" : "text-gray-500"}>
+              <p className={passwordStrength.lowercase ? "text-green-700 dark:text-green-400" : "text-gray-500 dark:text-gray-400"}>
               ✓ Lowercase letter
               </p>
 
-              <p className={passwordStrength.number ? "text-green-500" : "text-gray-500"}>
+              <p className={passwordStrength.number ? "text-green-700 dark:text-green-400" : "text-gray-500 dark:text-gray-400"}>
               ✓ Number
               </p>
 
-              <p className={passwordStrength.special ? "text-green-500" : "text-gray-500"}>
+              <p className={passwordStrength.special ? "text-green-700 dark:text-green-400" : "text-gray-500 dark:text-gray-400"}>
               ✓ Special character
               </p>
 
             </div>
             
 
-            <div className='relative flex items-center w-161'>
-              <input name="confirmPassword" type={showConfirmPassword ? "text" : "password"} required value={formData.confirmPassword} onChange={handleChange} placeholder='Please re-enter your password.' className='h-13 w-full bg-gray-900 rounded-2xl text-white focus:outline-none pl-3 pr-10'/>
+            <div className='relative flex items-center w-full max-w-161'>
+              <input name="confirmPassword" type={showConfirmPassword ? "text" : "password"} required value={formData.confirmPassword} onChange={handleChange} aria-label="Confirm password" autoComplete="new-password" placeholder='Please re-enter your password.' className='h-13 w-full bg-slate-100 dark:bg-gray-900 rounded-2xl text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 pl-3 pr-10'/>
               {
               showConfirmPassword 
               ?
@@ -352,7 +353,7 @@ const Signup = () => {
             </div>
 
             {formData.confirmPassword && (
-              <p className={passwordMatch ? "text-green-500 text-sm" : "text-red-500 text-sm"}>
+              <p className={passwordMatch ? "text-green-700 dark:text-green-400 text-sm" : "text-red-700 dark:text-red-400 text-sm"}>
                   {passwordMatch 
                       ? "✓ Passwords match" 
                       : "✗ Passwords do not match"
@@ -363,46 +364,46 @@ const Signup = () => {
 
           <div className='flex flex-col gap-3'>
             <h2>Full Names</h2>
-            <div className='items-center w-161'>
-              <input name="fullName" type="text" required value={formData.fullName} onChange={handleChange} placeholder='Please enter full names.' className='h-13 w-full bg-gray-900 rounded-2xl pl-3 text-white focus:outline-none'/>
+            <div className='items-center w-full max-w-161'>
+              <input name="fullName" type="text" required value={formData.fullName} onChange={handleChange} aria-label="Full names" autoComplete="given-name" placeholder='Please enter full names.' className='h-13 w-full bg-slate-100 dark:bg-gray-900 rounded-2xl pl-3 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500'/>
             </div>
           </div>
 
           <div className='flex flex-col gap-3'>
             <h2>Surname</h2>
-            <div className='items-center w-161'>
-              <input name="surname" type="text" required value={formData.surname} onChange={handleChange} placeholder='Please enter your surname.' className='h-13 w-full bg-gray-900 rounded-2xl pl-3 text-white focus:outline-none'/>
+            <div className='items-center w-full max-w-161'>
+              <input name="surname" type="text" required value={formData.surname} onChange={handleChange} aria-label="Surname" autoComplete="family-name" placeholder='Please enter your surname.' className='h-13 w-full bg-slate-100 dark:bg-gray-900 rounded-2xl pl-3 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500'/>
             </div>
           </div>
 
           <div className='flex flex-col gap-3'>
             <h2>Country</h2>
-            <div className='items-center w-161'>
-              <input name="country" type="text" required value={formData.country} onChange={handleChange} placeholder='e.g South Africa.' className='h-13 w-full bg-gray-900 rounded-2xl pl-3 text-white focus:outline-none'/>
+            <div className='items-center w-full max-w-161'>
+              <input name="country" type="text" required value={formData.country} onChange={handleChange} aria-label="Country" autoComplete="country-name" placeholder='e.g South Africa.' className='h-13 w-full bg-slate-100 dark:bg-gray-900 rounded-2xl pl-3 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500'/>
             </div>
           </div>
 
           <div className='flex flex-col gap-3'>
             <h2>Phone Number</h2>
-            <div className='items-center w-161'>
-              <input name="phoneNumber" type="text" required value={formData.phoneNumber} onChange={handleChange} placeholder='e.g +27 712 345 6789' className='h-13 w-full bg-gray-900 rounded-2xl pl-3 text-white focus:outline-none'/>
+            <div className='items-center w-full max-w-161'>
+              <input name="phoneNumber" type="text" required value={formData.phoneNumber} onChange={handleChange} aria-label="Phone number" autoComplete="tel" placeholder='e.g +27 712 345 6789' className='h-13 w-full bg-slate-100 dark:bg-gray-900 rounded-2xl pl-3 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500'/>
             </div>
           </div>
           
             {error && (
-              <p className="text-red-500 text-base mt-1">
+              <p role="alert" className="text-red-700 dark:text-red-400 text-base mt-1">
                 {error}
               </p>
             )}
 
             {message && (
-              <p className="text-green-500 text-base mt-1">
+              <p role="status" className="text-green-700 dark:text-green-400 text-base mt-1">
                 {message}
               </p>
             )}
 
-          <button type="submit" className='h-13 w-160 mt-3 bg-blue-600 rounded-full disabled:bg-gray-500 disabled:cursor-not-allowed' disabled={loading}>{loading ? "Registering..." : "Register"}</button>
-          <p className='pl-50'>Already have an account? <Link to="/signin" className='text-blue-500'>Log In</Link></p>
+          <button type="submit" className='h-13 w-full max-w-161 mt-3 bg-blue-600 text-white rounded-full disabled:bg-gray-500 disabled:cursor-not-allowed' disabled={loading}>{loading ? "Registering..." : "Register"}</button>
+          <p className='text-center'>Already have an account? <Link to="/signin" className='text-blue-700 dark:text-blue-400 underline'>Log In</Link></p>
         </form>
       </div>
     </div>

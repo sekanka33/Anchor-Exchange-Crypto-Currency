@@ -1,3 +1,5 @@
+const jwt = require("jsonwebtoken");
+
 let io;
 
 
@@ -9,7 +11,7 @@ const initSocket = (server) => {
     io = new Server(server, {
 
         cors: {
-            origin: "http://localhost:5173",
+            origin: process.env.FRONTEND_URL || "http://localhost:5173",
             methods:["GET","POST"]
         }
 
@@ -30,10 +32,6 @@ const initSocket = (server) => {
             (qr_token)=>{
 
 
-                console.log(
-                    "QR Joined:",
-                    qr_token
-                );
 
 
                 socket.join(qr_token);
@@ -41,6 +39,24 @@ const initSocket = (server) => {
             }
         );
 
+
+        // Personal room for real-time notifications (see utils/notify.js).
+        // Notification text is private financial information (trades,
+        // withdrawal alerts), so the client must present a valid JWT and the
+        // room is derived from the *verified* token — a claimed user id is
+        // never trusted, otherwise anyone could subscribe to anyone.
+        socket.on(
+            "join_user",
+            (token)=>{
+                try {
+                    const decoded = jwt.verify(token, process.env.JWT_SECRET, { algorithms: ["HS256"] });
+                    if (!decoded?.id) throw new Error("no id");
+                    socket.join(`user:${decoded.id}`);
+                } catch {
+                    socket.emit("join_user:error", "Invalid or expired token");
+                }
+            }
+        );
 
         socket.on(
             "disconnect",

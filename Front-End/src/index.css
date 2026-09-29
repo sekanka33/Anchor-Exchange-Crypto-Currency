@@ -4,6 +4,28 @@ body {
   @apply bg-slate-50 text-slate-900 dark:bg-zinc-950 dark:text-slate-50 transition-colors duration-300;
 }
 
+/* Figma ("Rocket") design tokens. Dark-mode roles, for reference when pairing
+   with a light-mode Tailwind utility via `dark:` (this codebase's existing
+   convention, e.g. `bg-white dark:bg-hero-dark`) rather than inventing a
+   parallel light-mode token set:
+     hero-dark / hero2-dark  - page background (dark)
+     dark-void               - deepest background, e.g. behind modals (dark)
+     crypto-color            - card/panel surface, one step lighter than the
+                               page background (dark) - pairs with `bg-white`
+     line-color              - card/table border (dark) - pairs with
+                               `border-gray-200`
+     input-field             - form input background (dark) - pairs with
+                               `bg-white` (inputs sit on white in light mode)
+     text-color              - muted/secondary text (dark) - pairs with
+                               `text-gray-500`
+     image-color             - placeholder/decorative fill (dark)
+   Light-mode surfaces don't need their own custom tokens: Figma's light
+   palette (page ~#F7F7F8, card #FFFFFF, border #E5E7EB, muted text #6B7280)
+   already maps directly onto Tailwind's stock slate/gray-50/200/500, which
+   this codebase already uses for light mode (see body rule below, Navbar,
+   Footer). Success/error accents likewise use Tailwind's green/red scale
+   (e.g. `text-green-600 dark:text-green-400`), already the established
+   pattern in Signin/Forgot/etc. */
 @theme {
   --color-hero-dark: #18191D;
   --color-hero2-dark: #18191D;
@@ -11,6 +33,20 @@ body {
   --color-crypto-color: #121318;
   --color-line-color: #23262F;
   --color-input-field: #222630;
-  --color-text-color: #777E90;
+  /* Muted-label gray used almost everywhere on the app's fixed-dark surfaces
+     (hero-dark/crypto-color/line-color/input-field cards, which never react
+     to the light/dark toggle). #777E90 read at ~3.6-4.4:1 against those
+     backgrounds, below the WCAG AA 4.5:1 minimum; #99A1AF (Tailwind gray-400)
+     clears 5.7:1+ against all of them. */
+  --color-text-color: #99A1AF;
   --color-image-color: #3C404B;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
 }

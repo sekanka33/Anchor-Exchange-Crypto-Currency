@@ -1,4 +1,3 @@
-import React from 'react'
 import { Link } from 'react-router-dom'
 import { FaFacebook, FaLinkedin, FaTwitter } from 'react-icons/fa'
 import { FaWhatsapp, FaXTwitter } from 'react-icons/fa6'
@@ -7,10 +6,10 @@ const Footer = () => {
   return (
     <footer className='w-full h-auto'>
       {/* Top Footer */}
-      <div className='hidden md:flex justify-between py-20 px-8 max-w-7xl mx-auto w-full'>
+      <div className='hidden md:flex md:flex-wrap justify-between gap-x-8 gap-y-10 py-20 px-8 max-w-7xl mx-auto w-full'>
         <div className='flex flex-col gap-4'>
           {/* Logo */}
-          <h1 className='text-2xl font-extrabold '>Anchor Exchange</h1>
+          <h2 className='text-2xl font-extrabold '>Anchor Exchange</h2>
           <p className='text-1xl font-semibold'>Let's talk! 🤙</p>
           <p>+27 123 456 7890</p>
           <p>Anchor@exchange.com</p>
@@ -18,7 +17,7 @@ const Footer = () => {
         </div>
 
         {/* Fixed: changed gap-20 to md:gap-20 so it doesn't inflate layout width on mobile background DOM */}
-        <div className='hidden md:flex md:gap-20 justify-between'>
+        <div className='hidden md:flex md:flex-wrap gap-8 lg:gap-20 justify-between'>
           <div className='flex flex-col gap-4'>
             <h2 className='text-1xl font-bold '>PRODUCTS</h2>
             <p className='hover:text-blue-500'>Spot</p>
@@ -30,7 +29,7 @@ const Footer = () => {
           </div>
 
           <div className='flex flex-col gap-4'>
-            <h1 className='text-1xl font-bold '>SERVICES</h1>
+            <h2 className='text-1xl font-bold '>SERVICES</h2>
             <Link to="/buy-crypto" className='hover:text-blue-500'>Buy Crypto</Link>
             <Link to="/markets" className='hover:text-blue-500'>Markets</Link>
             <p className='hover:text-blue-500'>Trading Fee</p>
@@ -40,9 +39,9 @@ const Footer = () => {
           </div>
 
           <div className='flex flex-col gap-4'>
-            <h1 className='text-1xl font-bold '>SUPPORT</h1>
+            <h2 className='text-1xl font-bold '>SUPPORT</h2>
             <p className='hover:text-blue-500'>Anchor Learn</p>
-            <p className='hover:text-blue-500'>Help Center</p>
+            <Link to="/faq" className='hover:text-blue-500'>Help Center</Link>
             <p className='hover:text-blue-500'>User Feedback</p>
             <p className='hover:text-blue-500'>Submit Request</p>
             <p className='hover:text-blue-500'>API Documentation</p>
@@ -50,28 +49,28 @@ const Footer = () => {
           </div>
 
           <div className='flex flex-col gap-4'>
-            <h1 className='text-1xl font-bold '>ABOUT US</h1>
+            <h2 className='text-1xl font-bold '>ABOUT US</h2>
             <p className='hover:text-blue-500'>About Anchor Exchange</p>
             <p className='hover:text-blue-500'>Authenticity Check</p>
             <p className='hover:text-blue-500'>Careers</p>
             <Link to="/contact" className='hover:text-blue-500'>Contacts</Link>
-            <p className='hover:text-blue-500'>Blog</p>
+            <Link to="/blog" className='hover:text-blue-500'>Blog</Link>
           </div>
         </div>
       </div>
 
 
       <div className='hidden md:block h-20 w-full bg-white border-t border-gray-200 text-gray-600 dark:bg-mist-900 dark:border-transparent dark:text-white transition-colors duration-300'>
-        <div className='flex justify-between pl-20 pr-20 pt-6'>
+        <div className='flex flex-wrap gap-4 justify-between px-4 md:pl-20 md:pr-20 pt-6'>
           <div>
             <p>Copyright &copy; {new Date().getFullYear()} Free For all of the World people</p>
           </div>
 
           <div className='flex gap-5 text-gray-500 dark:text-gray-400'>
-            <button className='hover:text-blue-500'><FaFacebook size={20} /> </button>
-            <button className='hover:text-blue-500'><FaWhatsapp size={20} /> </button>
-            <button className='hover:text-blue-500'><FaLinkedin size={20} /> </button>
-            <button className='hover:text-blue-500'><FaXTwitter size={20} /> </button>
+            <button className='hover:text-blue-500' aria-label='Facebook'><FaFacebook size={20} /> </button>
+            <button className='hover:text-blue-500' aria-label='WhatsApp'><FaWhatsapp size={20} /> </button>
+            <button className='hover:text-blue-500' aria-label='LinkedIn'><FaLinkedin size={20} /> </button>
+            <button className='hover:text-blue-500' aria-label='X (Twitter)'><FaXTwitter size={20} /> </button>
           </div>
         </div>
       </div>
@@ -81,7 +80,7 @@ const Footer = () => {
       <div className='flex md:hidden flex-col justify-between px-7 py-7 w-full box-border'>
         <div className='flex flex-col gap-2'>
           {/* Logo */}
-          <h1 className='text-lg font-extrabold '>Anchor Exchange</h1>
+          <h2 className='text-lg font-extrabold '>Anchor Exchange</h2>
           <p className='text-base font-semibold'>Let's talk! 🤙</p>
           <p className='text-base'>+27 123 456 7890</p>
           <p className='text-base'>Anchor@exchange.com</p>
@@ -100,7 +99,7 @@ const Footer = () => {
           </div>
 
           <div className='flex flex-col gap-4'>
-            <h1 className='text-lg font-bold '>SERVICES</h1>
+            <h2 className='text-lg font-bold '>SERVICES</h2>
             <p className='text-base'>Buy Crypto</p>
             <p className='text-base'>Markets</p>
             <p className='text-base'>Trading Fee</p>
@@ -110,7 +109,7 @@ const Footer = () => {
           </div>
 
           <div className='flex flex-col gap-4'>
-            <h1 className='text-lg font-bold '>SUPPORT</h1>
+            <h2 className='text-lg font-bold '>SUPPORT</h2>
             <p className='text-base'>Anchor Learn</p>
             <p className='text-base'>Help Center</p>
             <p className='text-base'>User Feedback</p>
@@ -120,7 +119,7 @@ const Footer = () => {
           </div>
 
           <div className='flex flex-col gap-4'>
-            <h1 className='text-lg font-bold '>ABOUT US</h1>
+            <h2 className='text-lg font-bold '>ABOUT US</h2>
             <p className='text-base'>About Anchor Exchange</p>
             <p className='text-base'>Authenticity Check</p>
             <p className='text-base'>Careers</p>
@@ -137,10 +136,10 @@ const Footer = () => {
           </div>
 
           <div className='flex gap-2 text-gray-500 dark:text-gray-400'>
-            <button className='text-base'><FaFacebook size={20} /> </button>
-            <button className='text-base'><FaWhatsapp size={20} /> </button>
-            <button className='text-base'><FaLinkedin size={20} /> </button>
-            <button className='text-base'><FaXTwitter size={20} /> </button>
+            <button className='text-base' aria-label='Facebook'><FaFacebook size={20} /> </button>
+            <button className='text-base' aria-label='WhatsApp'><FaWhatsapp size={20} /> </button>
+            <button className='text-base' aria-label='LinkedIn'><FaLinkedin size={20} /> </button>
+            <button className='text-base' aria-label='X (Twitter)'><FaXTwitter size={20} /> </button>
           </div>
         </div>
       </div>

@@ -5,7 +5,11 @@
   "main": "server.js",
   "scripts": {
     "dev": "nodemon server.js",
-    "start": "node server.js"
+    "start": "node server.js",
+    "pretest": "node tests/helpers/setupDb.js",
+    "test": "node --test --test-concurrency=1 --test-force-exit tests/unit tests/api",
+    "test:unit": "node --test --test-force-exit tests/unit",
+    "db:migrate": "node db/migrate.js"
   },
   "keywords": [],
   "author": "",
@@ -16,15 +20,15 @@
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
-    "html5-qrcode": "^2.3.8",
+    "express-rate-limit": "^8.7.0",
+    "helmet": "^8.3.0",
     "ioredis": "^5.11.1",
     "jsonwebtoken": "^9.0.3",
+    "nodemailer": "^10.0.10",
     "pg": "^8.22.0",
     "qrcode": "^1.5.4",
-    "redis": "^6.1.0",
     "socket.io": "^4.8.3",
-    "socket.io-client": "^4.8.3",
-    "uuid": "^14.0.1"
+    "socket.io-client": "^4.8.3"
   },
   "devDependencies": {
     "nodemon": "^3.1.14"

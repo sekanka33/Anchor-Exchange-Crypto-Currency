@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ChangeListManager">
+    <list default="true" id="9fac0b73-1fbc-46c7-8f3c-a115425450fb" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/Back-End/.env.example" beforeDir="false" afterPath="$PROJECT_DIR$/Back-End/.env.example" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Back-End/config/database.js" beforeDir="false" afterPath="$PROJECT_DIR$/Back-End/config/database.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Back-End/config/redis.js" beforeDir="false" afterPath="$PROJECT_DIR$/Back-End/config/redis.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Back-End/controllers/authController.js" beforeDir="false" afterPath="$PROJECT_DIR$/Back-End/controllers/authController.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Back-End/controllers/qrController.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Back-End/controllers/userController.js" beforeDir="false" afterPath="$PROJECT_DIR$/Back-End/controllers/userController.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Back-End/controllers/walletController.js" beforeDir="false" afterPath="$PROJECT_DIR$/Back-End/controllers/walletController.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Back-End/hash.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Back-End/middleware/authenticate.js" beforeDir="false" afterPath="$PROJECT_DIR$/Back-End/middleware/authenticate.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Back-End/package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/Back-End/package-lock.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Back-End/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/Back-End/package.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Back-End/routes/authRoutes.js" beforeDir="false" afterPath="$PROJECT_DIR$/Back-End/routes/authRoutes.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Back-End/routes/qrRoutes.js" beforeDir="false" afterPath="$PROJECT_DIR$/Back-End/routes/qrRoutes.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Back-End/routes/userRoutes.js" beforeDir="false" afterPath="$PROJECT_DIR$/Back-End/routes/userRoutes.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Back-End/routes/walletRoutes.js" beforeDir="false" afterPath="$PROJECT_DIR$/Back-End/routes/walletRoutes.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Back-End/server.js" beforeDir="false" afterPath="$PROJECT_DIR$/Back-End/server.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Back-End/socket.js" beforeDir="false" afterPath="$PROJECT_DIR$/Back-End/socket.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Back-End/utils/qrStore.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Front-End/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/Front-End/.gitignore" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Front-End/index.html" beforeDir="false" afterPath="$PROJECT_DIR$/Front-End/index.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Front-End/package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/Front-End/package-lock.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Front-End/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/Front-End/package.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Front-End/src/App.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/Front-End/src/App.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Front-End/src/Components/CreateAnAccoutSection.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/Front-End/src/Components/CreateAnAccoutSection.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Front-End/src/Components/CryptoMarketBar.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/Front-End/src/Components/CryptoMarketBar.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Front-End/src/Components/DerivativesMarketTable.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/Front-End/src/Components/DerivativesMarketTable.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Front-End/src/Components/Footer.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/Front-End/src/Components/Footer.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Front-End/src/Components/Navbar.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/Front-End/src/Components/Navbar.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Front-End/src/Pages/BuyCrypto.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/Front-End/src/Pages/BuyCrypto.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Front-End/src/Pages/Contact.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/Front-End/src/Pages/Contact.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Front-End/src/Pages/Dashboard.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/Front-End/src/Pages/Dashboard.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Front-End/src/Pages/Exchange.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/Front-End/src/Pages/Exchange.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Front-End/src/Pages/Forgot.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/Front-End/src/Pages/Forgot.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Front-End/src/Pages/Home.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/Front-End/src/Pages/Home.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Front-End/src/Pages/Markets.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/Front-End/src/Pages/Markets.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Front-End/src/Pages/Notifications.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/Front-End/src/Pages/Notifications.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Front-End/src/Pages/OrdersTrades.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/Front-End/src/Pages/OrdersTrades.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Front-End/src/Pages/Overview.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/Front-End/src/Pages/Overview.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Front-End/src/Pages/ProfileAndSetting.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/Front-End/src/Pages/ProfileAndSetting.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Front-End/src/Pages/QRAuth.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/Front-End/src/Pages/QRAuth.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Front-End/src/Pages/QRScanner.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/Front-End/src/Pages/QRScanner.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Front-End/src/Pages/SellCrypto.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/Front-End/src/Pages/SellCrypto.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Front-End/src/Pages/Signin.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/Front-End/src/Pages/Signin.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Front-End/src/Pages/Signup.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/Front-End/src/Pages/Signup.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Front-End/src/Pages/Wallet.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/Front-End/src/Pages/Wallet.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Front-End/src/api/coingecko.js" beforeDir="false" afterPath="$PROJECT_DIR$/Front-End/src/api/coingecko.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Front-End/src/index.css" beforeDir="false" afterPath="$PROJECT_DIR$/Front-End/src/index.css" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Front-End/src/socket.js" beforeDir="false" afterPath="$PROJECT_DIR$/Front-End/src/socket.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Front-End/vite.config.js" beforeDir="false" afterPath="$PROJECT_DIR$/Front-End/vite.config.js" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="McpProjectServerCommands">
+    <commands />
+    <urls />
+  </component>
+  <component name="ProjectColorInfo">{
+  &quot;customColor&quot;: &quot;&quot;,
+  &quot;associatedIndex&quot;: 6
+}</component>
+  <component name="ProjectId" id="3JV6XoF8mqKLGGkSA5gguMKSvch" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "ModuleVcsDetector.initialDetectionPerformed": "true",
+    "RunOnceActivity.MCP Project settings loaded": "true",
+    "RunOnceActivity.typescript.service.memoryLimit.init": "true",
+    "codeWithMe.voiceChat.enabledByDefault": "false",
+    "git-widget-placeholder": "main",
+    "last_opened_file_path": "/home/wtc/Documents/Anchor-Exchange-Crypto-Currency"
+  }
+}]]></component>
+  <component name="SharedIndexes">
+    <attachedChunks>
+      <set>
+        <option value="bundled-js-predefined-d6986cc7102b-4abd2a77f808-JavaScript-WS-262.10968.77" />
+      </set>
+    </attachedChunks>
+  </component>
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="9fac0b73-1fbc-46c7-8f3c-a115425450fb" name="Changes" comment="" />
+      <created>1789733931819</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1789733931819</updated>
+      <workItem from="1789733933530" duration="3000" />
+      <workItem from="1789983177016" duration="2000" />
+    </task>
+    <servers />
+  </component>
+</project>

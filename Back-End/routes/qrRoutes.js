@@ -1,15 +1,42 @@
 const express = require("express");
 const router = express.Router();
+const jwt = require("jsonwebtoken");
+const rateLimit = require("express-rate-limit");
 
+const pool = require("../config/database");
 const redis = require("../config/redis");
 const { getIO } = require("../socket");
+
+// The Sign In page auto-generates a QR code on mount and regenerates it every
+// 60s for as long as the tab stays open (so the code shown is never stale) —
+// that alone is ~15 calls per open tab per 15-minute window, before counting
+// every redirect back to /signin from a protected route. /init only mints an
+// unauthenticated, side-effect-free session id, so it gets a generous cap;
+// /verify actually approves a login and keeps the tighter one.
+const qrInitLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    skip: () => process.env.NODE_ENV === "test",
+    max: 120,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { message: "Too many attempts. Please try again later." }
+});
+
+const qrLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    skip: () => process.env.NODE_ENV === "test",
+    max: 30,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { message: "Too many attempts. Please try again later." }
+});
 
 
 // ==========================================
 // GENERATE QR CODE
 // ==========================================
 
-router.get("/init", async (req, res) => {
+router.get("/init", qrInitLimiter, async (req, res) => {
 
     try {
 
@@ -30,8 +57,9 @@ router.get("/init", async (req, res) => {
 
 
         // URL that the phone will open
+        const frontendUrl = process.env.FRONTEND_URL || "http://localhost:5173";
         const qrUrl =
-            `http://192.168.0.117:5173/qr-auth?token=${qr_token}`;
+            `${frontendUrl}/qr-auth?token=${qr_token}`;
 
 
         res.json({
@@ -65,7 +93,7 @@ router.get("/init", async (req, res) => {
 // VERIFY QR CODE
 // ==========================================
 
-router.post("/verify", async (req, res) => {
+router.post("/verify", qrLimiter, async (req, res) => {
 
     try {
 
@@ -128,6 +156,62 @@ router.post("/verify", async (req, res) => {
 
 
         // ==========================================
+        // VERIFY THE PHONE'S TOKEN
+        // ==========================================
+        //
+        // The raw token must never be trusted as-is (it was previously
+        // assigned directly to `userId`, meaning any string sent as a
+        // Bearer token would be accepted as an authenticated identity).
+        // It's cryptographically verified here exactly like the
+        // `authenticate` middleware does, and the numeric user id is taken
+        // only from the verified payload.
+
+        let decoded;
+
+        try {
+
+            decoded = jwt.verify(token, process.env.JWT_SECRET, { algorithms: ["HS256"] });
+
+        } catch (jwtError) {
+
+            return res.status(401).json({
+
+                message: "Invalid or expired token"
+
+            });
+
+        }
+
+
+        const userResult = await pool.query(
+            "SELECT id, email, fullname, role, is_suspended FROM users WHERE id = $1",
+            [decoded.id]
+        );
+
+        if (userResult.rows.length === 0) {
+
+            return res.status(401).json({
+
+                message: "Invalid or expired token"
+
+            });
+
+        }
+
+        const user = userResult.rows[0];
+
+        if (user.is_suspended) {
+
+            return res.status(403).json({
+
+                message: "This account has been suspended. Contact support for assistance."
+
+            });
+
+        }
+
+
+        // ==========================================
         // CHECK QR SESSION
         // ==========================================
 
@@ -162,16 +246,19 @@ router.post("/verify", async (req, res) => {
 
 
         // ==========================================
-        // TEMPORARY USER IDENTIFICATION
+        // ISSUE A FRESH SESSION TOKEN FOR THE DESKTOP
         // ==========================================
         //
-        // We will replace this with your real JWT
-        // verification middleware.
-        //
-        // DO NOT trust a userId sent from the phone.
-        //
+        // The desktop browser gets its own new JWT — it must never reuse
+        // the phone's token (that would mean one device's token grants a
+        // second, independent session with no way to tell them apart or
+        // revoke one without the other).
 
-        const userId = token;
+        const desktopToken = jwt.sign(
+            { id: user.id, email: user.email },
+            process.env.JWT_SECRET,
+            { expiresIn: "1h" }
+        );
 
 
         // ==========================================
@@ -186,7 +273,7 @@ router.post("/verify", async (req, res) => {
 
                 status: "approved",
 
-                userId
+                userId: user.id
 
             }),
 
@@ -210,17 +297,26 @@ router.post("/verify", async (req, res) => {
 
             {
 
-                userId
+                token: desktopToken,
+
+                user: {
+
+                    id: user.id,
+
+                    email: user.email,
+
+                    fullname: user.fullname,
+
+                    role: user.role
+
+                }
 
             }
 
         );
 
 
-        console.log(
-            "QR login approved:",
-            qr_token
-        );
+        console.log("QR login approved");
 
 
         res.json({
