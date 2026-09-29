@@ -54,7 +54,7 @@ export default function DerivativesMarketTable() {
               className={`px-6 py-2 rounded-lg text-sm font-semibold transition-all ${
                 mainTab === tab
                   ? "bg-[#155dfc] text-white shadow-md shadow-blue-500/20"
-                  : "text-gray-500 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-[#1f2432]"
+                  : "text-gray-600 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-[#1f2432]"
               }`}
             >
               {tab}
@@ -69,7 +69,7 @@ export default function DerivativesMarketTable() {
               key={sub}
               onClick={() => setSubTab(sub)}
               className={`relative pb-3 transition-colors ${
-                subTab === sub ? "text-slate-900 dark:text-white font-semibold" : "text-gray-500 dark:text-gray-400 hover:text-slate-700 dark:hover:text-gray-200"
+                subTab === sub ? "text-slate-900 dark:text-white font-semibold" : "text-gray-600 dark:text-gray-400 hover:text-slate-700 dark:hover:text-gray-200"
               }`}
             >
               {sub}
@@ -91,7 +91,7 @@ export default function DerivativesMarketTable() {
                 className={`px-4 py-1.5 rounded-full text-xs font-semibold transition-all ${
                   isActive
                     ? "bg-[#155dfc] text-white shadow-md shadow-blue-500/20"
-                    : "text-gray-500 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-[#202534]"
+                    : "text-gray-600 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-[#202534]"
                 }`}
               >
                 {cat.name}
@@ -104,7 +104,7 @@ export default function DerivativesMarketTable() {
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm border-collapse">
             <thead>
-              <tr className="text-gray-500 dark:text-gray-400 text-xs font-medium border-b border-gray-200 dark:border-[#232938]">
+              <tr className="text-gray-600 dark:text-gray-400 text-xs font-medium border-b border-gray-200 dark:border-[#232938]">
                 <th className="py-3 px-2 w-10">#</th>
                 <th className="py-3 px-2">
                   <div className="flex items-center gap-1 cursor-pointer hover:text-slate-900 dark:hover:text-white">
@@ -158,7 +158,7 @@ export default function DerivativesMarketTable() {
                       className="border-b border-gray-200 dark:border-[#1e2330] hover:bg-gray-50 dark:hover:bg-[#1e2332] transition-colors"
                     >
                       {/* Rank & Favorite Star */}
-                      <td className="py-3.5 px-2 text-gray-500 dark:text-gray-400 text-xs">
+                      <td className="py-3.5 px-2 text-gray-600 dark:text-gray-400 text-xs">
                         <div className="flex items-center gap-2">
                           <span className="text-gray-400 dark:text-gray-500 hover:text-yellow-400 cursor-pointer">
                             ☆
@@ -178,7 +178,7 @@ export default function DerivativesMarketTable() {
                           <span className="font-semibold text-slate-900 dark:text-white">
                             {coin.name}
                           </span>
-                          <span className="text-xs text-gray-500 dark:text-gray-400 uppercase font-medium">
+                          <span className="text-xs text-gray-600 dark:text-gray-400 uppercase font-medium">
                             | {coin.symbol}
                           </span>
                         </div>
@@ -195,7 +195,7 @@ export default function DerivativesMarketTable() {
                       {/* 24h Change % */}
                       <td
                         className={`py-3.5 px-2 text-right font-semibold ${
-                          isPositive ? "text-[#22c55e]" : "text-[#f87171]"
+                          isPositive ? "text-green-700 dark:text-[#22c55e]" : "text-red-600 dark:text-[#f87171]"
                         }`}
                       >
                         {isPositive ? "+" : ""}
@@ -294,7 +294,7 @@ function MiniSparkline({ data, isPositive }) {
 // Sort Arrow Icon Helper
 function SortIcon() {
   return (
-    <span className="text-[10px] text-gray-500 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white flex flex-col leading-none">
+    <span className="text-[10px] text-gray-600 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white flex flex-col leading-none">
       ▲▼
     </span>
   );

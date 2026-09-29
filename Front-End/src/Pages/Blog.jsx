@@ -44,7 +44,7 @@ const Blog = () => {
                 className={`px-4 py-1.5 rounded-full text-sm font-semibold transition-colors ${
                   category === cat
                     ? "bg-blue-600 text-white"
-                    : "text-gray-500 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-hero-dark"
+                    : "text-gray-600 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-hero-dark"
                 }`}
               >
                 {cat}
@@ -53,7 +53,7 @@ const Blog = () => {
           </div>
 
           {visiblePosts.length === 0 && (
-            <p className="text-gray-500 dark:text-gray-400 py-10 text-center">No posts match this filter.</p>
+            <p className="text-gray-600 dark:text-gray-400 py-10 text-center">No posts match this filter.</p>
           )}
 
           <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
@@ -68,7 +68,7 @@ const Blog = () => {
                     {post.category}
                   </span>
                   <h2 className="font-bold text-slate-900 dark:text-white leading-snug">{post.title}</h2>
-                  <div className="mt-auto flex items-center justify-between text-xs text-gray-500 dark:text-gray-400 pt-2">
+                  <div className="mt-auto flex items-center justify-between text-xs text-gray-600 dark:text-gray-400 pt-2">
                     <span className="flex items-center gap-1.5">
                       <span className="w-2 h-2 rounded-full bg-green-500" />
                       {post.author}
@@ -94,7 +94,7 @@ const Blog = () => {
 
           <div>
             <h3 className="font-bold text-slate-900 dark:text-white mb-3">Categories</h3>
-            <ul className="flex flex-col gap-2 text-sm text-gray-500 dark:text-gray-400">
+            <ul className="flex flex-col gap-2 text-sm text-gray-600 dark:text-gray-400">
               {CATEGORIES.filter((c) => c !== "View All").map((cat) => (
                 <li key={cat}>
                   <button

@@ -204,7 +204,7 @@ const CryptoWithdraw = () => {
           {step === 1 && (
             <div className="bg-white dark:bg-[#16181e] p-8 rounded-2xl border border-gray-200 dark:border-gray-800/50 shadow-xl">
               <h2 className="text-2xl font-bold mb-1">Withdraw Crypto</h2>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mb-6">Send crypto from your Anchor Exchange wallet to an external address.</p>
+              <p className="text-xs text-gray-600 dark:text-gray-400 mb-6">Send crypto from your Anchor Exchange wallet to an external address.</p>
 
               {error && (
                 <div role="alert" className="mb-5 p-3 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-sm">{error}</div>
@@ -224,7 +224,7 @@ const CryptoWithdraw = () => {
                         <span className="w-5 h-5 rounded-full bg-orange-500 flex items-center justify-center text-xs">{selectedAsset.icon}</span>
                         {selectedAsset.symbol}
                       </span>
-                      <span className="text-gray-500 dark:text-gray-400">▼</span>
+                      <span className="text-gray-600 dark:text-gray-400">▼</span>
                     </button>
 
                     {showAssetDropdown && (
@@ -242,7 +242,7 @@ const CryptoWithdraw = () => {
                             <span className="w-6 h-6 rounded-full bg-orange-500 flex items-center justify-center text-xs">{a.icon}</span>
                             <div>
                               <p className="text-sm font-semibold">{a.symbol}</p>
-                              <p className="text-xs text-gray-500 dark:text-gray-400">{a.name}</p>
+                              <p className="text-xs text-gray-600 dark:text-gray-400">{a.name}</p>
                             </div>
                           </button>
                         ))}
@@ -278,7 +278,7 @@ const CryptoWithdraw = () => {
                       className="w-full bg-transparent outline-none focus:ring-2 focus:ring-blue-500 text-slate-900 dark:text-white text-sm"
                       aria-label="Withdrawal amount" placeholder="0.00"
                     />
-                    <span className="text-xs font-semibold text-gray-500 dark:text-gray-400 ml-2">{selectedAsset.symbol}</span>
+                    <span className="text-xs font-semibold text-gray-600 dark:text-gray-400 ml-2">{selectedAsset.symbol}</span>
                   </div>
                 </div>
 
@@ -324,24 +324,24 @@ const CryptoWithdraw = () => {
           {step === 2 && (
             <div className="bg-white dark:bg-[#16181e] p-8 rounded-2xl border border-gray-200 dark:border-gray-800/50 shadow-xl">
               <h2 className="text-2xl font-bold mb-2">Review Withdrawal</h2>
-              <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">Double-check the destination address — crypto sent to the wrong address cannot be recovered.</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">Double-check the destination address — crypto sent to the wrong address cannot be recovered.</p>
 
               <div className="space-y-4">
                 <div className="flex justify-between">
-                  <span className="text-gray-500 dark:text-gray-400">Amount</span>
+                  <span className="text-gray-600 dark:text-gray-400">Amount</span>
                   <span className="font-semibold">{amount} {selectedAsset.symbol}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-500 dark:text-gray-400">Network</span>
+                  <span className="text-gray-600 dark:text-gray-400">Network</span>
                   <span>{currentNetwork?.label}</span>
                 </div>
                 <div className="flex justify-between gap-6">
-                  <span className="text-gray-500 dark:text-gray-400 flex-shrink-0">Address</span>
+                  <span className="text-gray-600 dark:text-gray-400 flex-shrink-0">Address</span>
                   <span className="font-mono text-sm text-right break-all">{address}</span>
                 </div>
                 {memo && (
                   <div className="flex justify-between">
-                    <span className="text-gray-500 dark:text-gray-400">Memo</span>
+                    <span className="text-gray-600 dark:text-gray-400">Memo</span>
                     <span className="font-mono">{memo}</span>
                   </div>
                 )}
@@ -376,7 +376,7 @@ const CryptoWithdraw = () => {
                 <>
                   <div className="w-14 h-14 rounded-full bg-amber-500/20 text-amber-400 flex items-center justify-center mx-auto mb-4 text-2xl animate-pulse">✉</div>
                   <h2 className="text-2xl font-bold mb-2">Check your email</h2>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
                     We sent a confirmation link to your email. This page updates automatically once you confirm it there.
                   </p>
                 </>
@@ -395,17 +395,17 @@ const CryptoWithdraw = () => {
                   <h2 className="text-2xl font-bold mb-4">
                     {withdrawal.status === "CANCELLED" ? "Withdrawal cancelled" : "Confirmation link expired"}
                   </h2>
-                  <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">Your funds have been released back to your available balance.</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">Your funds have been released back to your available balance.</p>
                 </>
               )}
 
               <div className="bg-slate-100 dark:bg-[#21242d] text-slate-900 dark:text-white rounded-xl p-5 mt-4 text-left space-y-3">
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-500 dark:text-gray-400">Amount</span>
+                  <span className="text-gray-600 dark:text-gray-400">Amount</span>
                   <span className="font-semibold">{withdrawal.amount} {withdrawal.asset}</span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-500 dark:text-gray-400">Network fee</span>
+                  <span className="text-gray-600 dark:text-gray-400">Network fee</span>
                   <span>{withdrawal.fee} {withdrawal.asset}</span>
                 </div>
                 <div className="border-t border-gray-200 dark:border-gray-700 pt-3 flex justify-between font-semibold text-sm">

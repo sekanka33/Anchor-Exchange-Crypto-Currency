@@ -89,7 +89,7 @@ const Exchange = () => {
 
           <div className='flex flex-col gap-1'>
             <p className='text-sm text-gray-500 dark:text-text-color'>24H Change</p>
-            <p className='text-green-600'>+1.45%</p>
+            <p className='text-green-700 dark:text-green-600'>+1.45%</p>
           </div>
 
           <div className='flex flex-col gap-1'>

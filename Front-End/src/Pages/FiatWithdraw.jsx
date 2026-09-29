@@ -182,7 +182,7 @@ const FiatWithdraw = () => {
           {step === 1 && (
             <div className="bg-white dark:bg-[#16181e] p-8 rounded-2xl border border-gray-200 dark:border-gray-800/50 shadow-xl">
               <h2 className="text-2xl font-bold mb-1">Withdraw to Bank</h2>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mb-6">Send funds from your USD balance to your bank account.</p>
+              <p className="text-xs text-gray-600 dark:text-gray-400 mb-6">Send funds from your USD balance to your bank account.</p>
 
               {error && (
                 <div role="alert" className="mb-5 p-3 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-sm">{error}</div>
@@ -203,7 +203,7 @@ const FiatWithdraw = () => {
                       className="w-full bg-transparent outline-none focus:ring-2 focus:ring-blue-500 text-slate-900 dark:text-white text-sm"
                       aria-label="Amount in USD" placeholder="0.00"
                     />
-                    <span className="text-xs font-semibold text-gray-500 dark:text-gray-400 ml-2">USD</span>
+                    <span className="text-xs font-semibold text-gray-600 dark:text-gray-400 ml-2">USD</span>
                   </div>
                 </div>
 
@@ -243,7 +243,7 @@ const FiatWithdraw = () => {
                 {/* BREAKDOWN */}
                 <div className="bg-slate-100 dark:bg-[#21242d] text-slate-900 dark:text-white rounded-xl p-4 space-y-3">
                   <div className="flex justify-between text-sm">
-                    <span className="text-gray-500 dark:text-gray-400">Withdrawal fee (1%)</span>
+                    <span className="text-gray-600 dark:text-gray-400">Withdrawal fee (1%)</span>
                     <span>{formatUSD(fee)}</span>
                   </div>
                   <div className="border-t border-gray-200 dark:border-gray-700 pt-3 flex justify-between font-semibold">
@@ -266,23 +266,23 @@ const FiatWithdraw = () => {
           {step === 2 && (
             <div className="bg-white dark:bg-[#16181e] p-8 rounded-2xl border border-gray-200 dark:border-gray-800/50 shadow-xl">
               <h2 className="text-2xl font-bold mb-2">Review Withdrawal</h2>
-              <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">Please confirm these details are correct.</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">Please confirm these details are correct.</p>
 
               <div className="space-y-4">
                 <div className="flex justify-between">
-                  <span className="text-gray-500 dark:text-gray-400">Amount</span>
+                  <span className="text-gray-600 dark:text-gray-400">Amount</span>
                   <span className="font-semibold">{formatUSD(numericAmount)}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-500 dark:text-gray-400">Fee</span>
+                  <span className="text-gray-600 dark:text-gray-400">Fee</span>
                   <span>{formatUSD(fee)}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-500 dark:text-gray-400">Bank</span>
+                  <span className="text-gray-600 dark:text-gray-400">Bank</span>
                   <span>{bankName}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-500 dark:text-gray-400">Account</span>
+                  <span className="text-gray-600 dark:text-gray-400">Account</span>
                   <span className="font-mono">•••• {accountNumber.slice(-4)}</span>
                 </div>
                 <div className="border-t border-gray-200 dark:border-gray-700 pt-4 flex justify-between font-bold">
@@ -320,7 +320,7 @@ const FiatWithdraw = () => {
                 <>
                   <div className="w-14 h-14 rounded-full bg-amber-500/20 text-amber-400 flex items-center justify-center mx-auto mb-4 text-2xl animate-pulse">✉</div>
                   <h2 className="text-2xl font-bold mb-2">Check your email</h2>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
                     We sent a confirmation link to your email. This page updates automatically once you confirm it there.
                   </p>
                 </>
@@ -339,17 +339,17 @@ const FiatWithdraw = () => {
                   <h2 className="text-2xl font-bold mb-4">
                     {withdrawal.status === "CANCELLED" ? "Withdrawal cancelled" : "Confirmation link expired"}
                   </h2>
-                  <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">Your funds have been released back to your available balance.</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">Your funds have been released back to your available balance.</p>
                 </>
               )}
 
               <div className="bg-slate-100 dark:bg-[#21242d] text-slate-900 dark:text-white rounded-xl p-5 mt-4 text-left space-y-3">
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-500 dark:text-gray-400">Amount</span>
+                  <span className="text-gray-600 dark:text-gray-400">Amount</span>
                   <span className="font-semibold">{formatUSD(withdrawal.amount)}</span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-500 dark:text-gray-400">Fee</span>
+                  <span className="text-gray-600 dark:text-gray-400">Fee</span>
                   <span>{formatUSD(withdrawal.fee)}</span>
                 </div>
                 <div className="border-t border-gray-200 dark:border-gray-700 pt-3 flex justify-between font-semibold text-sm">

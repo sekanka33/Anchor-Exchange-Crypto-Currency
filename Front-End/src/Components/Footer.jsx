@@ -66,7 +66,7 @@ const Footer = () => {
             <p>Copyright &copy; {new Date().getFullYear()} Free For all of the World people</p>
           </div>
 
-          <div className='flex gap-5 text-gray-500 dark:text-gray-400'>
+          <div className='flex gap-5 text-gray-600 dark:text-gray-400'>
             <button className='hover:text-blue-500' aria-label='Facebook'><FaFacebook size={20} /> </button>
             <button className='hover:text-blue-500' aria-label='WhatsApp'><FaWhatsapp size={20} /> </button>
             <button className='hover:text-blue-500' aria-label='LinkedIn'><FaLinkedin size={20} /> </button>
@@ -135,7 +135,7 @@ const Footer = () => {
             <p className='text-base'>Copyright &copy; {new Date().getFullYear()} Anchor Exchange</p>
           </div>
 
-          <div className='flex gap-2 text-gray-500 dark:text-gray-400'>
+          <div className='flex gap-2 text-gray-600 dark:text-gray-400'>
             <button className='text-base' aria-label='Facebook'><FaFacebook size={20} /> </button>
             <button className='text-base' aria-label='WhatsApp'><FaWhatsapp size={20} /> </button>
             <button className='text-base' aria-label='LinkedIn'><FaLinkedin size={20} /> </button>

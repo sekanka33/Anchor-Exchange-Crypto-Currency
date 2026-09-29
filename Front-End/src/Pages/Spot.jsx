@@ -56,7 +56,7 @@ const Spot = () => {
 
           <div className='flex flex-col gap-1'>
             <p className='text-sm text-gray-500 dark:text-text-color'>24H Change</p>
-            <p className={Number(marketData?.price_change_percentage_24h) < 0 ? "text-red-600 dark:text-red-400" : "text-green-600 dark:text-green-400"}>
+            <p className={Number(marketData?.price_change_percentage_24h) < 0 ? "text-red-600 dark:text-red-400" : "text-green-700 dark:text-green-400"}>
               {loading ? "…" : `${Number(marketData?.price_change_percentage_24h ?? 1.45).toFixed(2)}%`}
             </p>
           </div>

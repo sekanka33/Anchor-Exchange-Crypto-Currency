@@ -15,8 +15,8 @@ const statusStyles = {
   PENDING: "bg-amber-500/10 text-amber-400",
   PENDING_CONFIRMATION: "bg-amber-500/10 text-amber-400",
   FAILED: "bg-red-500/10 text-red-400",
-  CANCELLED: "bg-gray-500/10 text-gray-500 dark:text-gray-400",
-  EXPIRED: "bg-gray-500/10 text-gray-500 dark:text-gray-400",
+  CANCELLED: "bg-gray-500/10 text-gray-600 dark:text-gray-400",
+  EXPIRED: "bg-gray-500/10 text-gray-600 dark:text-gray-400",
 };
 
 const TABS = ["Overview", "Users", "Transactions", "Deposits", "Withdrawals", "Orders"];
@@ -25,7 +25,7 @@ const PaginationBar = ({ pagination, page, setPage }) => {
   if (!pagination || pagination.totalPages <= 1) return null;
 
   return (
-    <div className="flex items-center justify-between px-5 py-4 border-t border-gray-200 dark:border-gray-800 text-sm text-gray-500 dark:text-gray-400">
+    <div className="flex items-center justify-between px-5 py-4 border-t border-gray-200 dark:border-gray-800 text-sm text-gray-600 dark:text-gray-400">
       <span>
         Page {pagination.page} of {pagination.totalPages} ({pagination.total} total)
       </span>
@@ -52,7 +52,7 @@ const PaginationBar = ({ pagination, page, setPage }) => {
 };
 
 const StatusBadge = ({ status }) => (
-  <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${statusStyles[status] || "bg-gray-500/10 text-gray-500 dark:text-gray-400"}`}>
+  <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${statusStyles[status] || "bg-gray-500/10 text-gray-600 dark:text-gray-400"}`}>
     {status}
   </span>
 );
@@ -309,7 +309,7 @@ const AdminDashboard = () => {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 dark:bg-[#0d0e12] text-slate-900 dark:text-white gap-4">
         <h1 className="text-2xl font-bold">Access denied</h1>
-        <p className="text-gray-500 dark:text-gray-400">This area is restricted to Anchor Exchange administrators.</p>
+        <p className="text-gray-600 dark:text-gray-400">This area is restricted to Anchor Exchange administrators.</p>
         <Link to="/dashboard" className="text-blue-400 hover:underline">Back to Dashboard</Link>
       </div>
     );
@@ -319,7 +319,7 @@ const AdminDashboard = () => {
     <div className="min-h-screen bg-slate-50 dark:bg-[#0d0e12] text-slate-900 dark:text-white font-sans pb-20">
       <div className="px-4 md:px-8 pt-6 md:pt-10 pb-6 border-b border-gray-200 dark:border-gray-800/50">
         <h1 className="text-2xl font-semibold">Admin Panel</h1>
-        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Manage users, transactions, deposits, withdrawals and orders.</p>
+        <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">Manage users, transactions, deposits, withdrawals and orders.</p>
       </div>
 
       {/* TABS */}
@@ -330,7 +330,7 @@ const AdminDashboard = () => {
             aria-pressed={activeTab === tab}
                     onClick={() => setActiveTab(tab)}
             className={`px-5 py-2.5 text-sm font-semibold rounded-t-lg transition-colors ${
-              activeTab === tab ? "bg-white dark:bg-[#16181e] text-slate-900 dark:text-white border-b-2 border-indigo-500" : "text-gray-500 dark:text-gray-400 hover:text-slate-900 dark:hover:text-gray-200"
+              activeTab === tab ? "bg-white dark:bg-[#16181e] text-slate-900 dark:text-white border-b-2 border-indigo-500" : "text-gray-600 dark:text-gray-400 hover:text-slate-900 dark:hover:text-gray-200"
             }`}
           >
             {tab}
@@ -345,13 +345,13 @@ const AdminDashboard = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
 
             <div className="bg-white dark:bg-[#16181e] rounded-2xl border border-gray-200 dark:border-gray-800/50 p-5">
-              <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Total Users</p>
+              <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">Total Users</p>
               <p className="text-2xl font-bold">{stats.users.total}</p>
               <p className="text-xs text-gray-500 mt-2">{stats.users.verified} verified · {stats.users.newLast7Days} new (7d)</p>
             </div>
 
             <div className="bg-white dark:bg-[#16181e] rounded-2xl border border-gray-200 dark:border-gray-800/50 p-5">
-              <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Fiat Deposits</p>
+              <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">Fiat Deposits</p>
               <p className="text-2xl font-bold">{formatUSD(stats.deposits.fiatCompletedTotalUsd)}</p>
               <p className="text-xs text-gray-500 mt-2">
                 {stats.deposits.fiatCompletedCount} fiat · {stats.deposits.cryptoCompletedCount} crypto · {stats.deposits.pending} pending
@@ -359,7 +359,7 @@ const AdminDashboard = () => {
             </div>
 
             <div className="bg-white dark:bg-[#16181e] rounded-2xl border border-gray-200 dark:border-gray-800/50 p-5">
-              <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Fiat Withdrawals</p>
+              <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">Fiat Withdrawals</p>
               <p className="text-2xl font-bold">{formatUSD(stats.withdrawals.fiatCompletedTotalUsd)}</p>
               <p className="text-xs text-gray-500 mt-2">
                 {stats.withdrawals.fiatCompletedCount} fiat · {stats.withdrawals.cryptoCompletedCount} crypto · {stats.withdrawals.pendingConfirmation} awaiting confirmation
@@ -367,13 +367,13 @@ const AdminDashboard = () => {
             </div>
 
             <div className="bg-white dark:bg-[#16181e] rounded-2xl border border-gray-200 dark:border-gray-800/50 p-5">
-              <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Orders</p>
+              <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">Orders</p>
               <p className="text-2xl font-bold">{stats.orders.total}</p>
               <p className="text-xs text-gray-500 mt-2">{stats.orders.buy} buy · {stats.orders.sell} sell</p>
             </div>
 
             <div className="bg-white dark:bg-[#16181e] rounded-2xl border border-gray-200 dark:border-gray-800/50 p-5">
-              <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Total Transactions</p>
+              <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">Total Transactions</p>
               <p className="text-2xl font-bold">{stats.transactions.total}</p>
             </div>
 
@@ -397,7 +397,7 @@ const AdminDashboard = () => {
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="text-left text-gray-500 dark:text-gray-400 border-b border-gray-200 dark:border-gray-800">
+                    <tr className="text-left text-gray-600 dark:text-gray-400 border-b border-gray-200 dark:border-gray-800">
                       <th className="px-5 py-3 font-medium">Email</th>
                       <th className="px-5 py-3 font-medium">Name</th>
                       <th className="px-5 py-3 font-medium">Role</th>
@@ -414,9 +414,9 @@ const AdminDashboard = () => {
                         className="border-b border-gray-200 dark:border-gray-800/50 hover:bg-gray-50 dark:hover:bg-[#1c1f27] cursor-pointer transition-colors"
                       >
                         <td className="px-5 py-3">{u.email}</td>
-                        <td className="px-5 py-3 text-gray-500 dark:text-gray-400">{u.fullname || "—"}</td>
+                        <td className="px-5 py-3 text-gray-600 dark:text-gray-400">{u.fullname || "—"}</td>
                         <td className="px-5 py-3">
-                          <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${u.role === "admin" ? "bg-indigo-500/10 text-indigo-400" : "bg-gray-500/10 text-gray-500 dark:text-gray-400"}`}>
+                          <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${u.role === "admin" ? "bg-indigo-500/10 text-indigo-400" : "bg-gray-500/10 text-gray-600 dark:text-gray-400"}`}>
                             {u.role}
                           </span>
                         </td>
@@ -424,7 +424,7 @@ const AdminDashboard = () => {
                         <td className="px-5 py-3">
                           {u.is_suspended ? <span className="text-red-400 font-semibold">Suspended</span> : <span className="text-green-400">Active</span>}
                         </td>
-                        <td className="px-5 py-3 text-gray-500 dark:text-gray-400 whitespace-nowrap">{new Date(u.created_at).toLocaleDateString()}</td>
+                        <td className="px-5 py-3 text-gray-600 dark:text-gray-400 whitespace-nowrap">{new Date(u.created_at).toLocaleDateString()}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -456,7 +456,7 @@ const AdminDashboard = () => {
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="text-left text-gray-500 dark:text-gray-400 border-b border-gray-200 dark:border-gray-800">
+                    <tr className="text-left text-gray-600 dark:text-gray-400 border-b border-gray-200 dark:border-gray-800">
                       <th className="px-5 py-3 font-medium">Date</th>
                       <th className="px-5 py-3 font-medium">User</th>
                       <th className="px-5 py-3 font-medium">Type</th>
@@ -468,7 +468,7 @@ const AdminDashboard = () => {
                   <tbody>
                     {transactions.map((t) => (
                       <tr key={t.id} className="border-b border-gray-200 dark:border-gray-800/50">
-                        <td className="px-5 py-3 text-gray-500 dark:text-gray-400 whitespace-nowrap">{new Date(t.created_at).toLocaleString()}</td>
+                        <td className="px-5 py-3 text-gray-600 dark:text-gray-400 whitespace-nowrap">{new Date(t.created_at).toLocaleString()}</td>
                         <td className="px-5 py-3">{t.user_email}</td>
                         <td className="px-5 py-3 font-semibold">{t.type}</td>
                         <td className="px-5 py-3">{t.asset}</td>
@@ -504,7 +504,7 @@ const AdminDashboard = () => {
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="text-left text-gray-500 dark:text-gray-400 border-b border-gray-200 dark:border-gray-800">
+                    <tr className="text-left text-gray-600 dark:text-gray-400 border-b border-gray-200 dark:border-gray-800">
                       <th className="px-5 py-3 font-medium">Date</th>
                       <th className="px-5 py-3 font-medium">User</th>
                       <th className="px-5 py-3 font-medium">Type</th>
@@ -516,7 +516,7 @@ const AdminDashboard = () => {
                   <tbody>
                     {deposits.map((d) => (
                       <tr key={d.id} className="border-b border-gray-200 dark:border-gray-800/50">
-                        <td className="px-5 py-3 text-gray-500 dark:text-gray-400 whitespace-nowrap">{new Date(d.created_at).toLocaleString()}</td>
+                        <td className="px-5 py-3 text-gray-600 dark:text-gray-400 whitespace-nowrap">{new Date(d.created_at).toLocaleString()}</td>
                         <td className="px-5 py-3">{d.user_email}</td>
                         <td className="px-5 py-3">{d.type}</td>
                         <td className="px-5 py-3">{d.asset}</td>
@@ -553,7 +553,7 @@ const AdminDashboard = () => {
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="text-left text-gray-500 dark:text-gray-400 border-b border-gray-200 dark:border-gray-800">
+                    <tr className="text-left text-gray-600 dark:text-gray-400 border-b border-gray-200 dark:border-gray-800">
                       <th className="px-5 py-3 font-medium">Date</th>
                       <th className="px-5 py-3 font-medium">User</th>
                       <th className="px-5 py-3 font-medium">Type</th>
@@ -566,7 +566,7 @@ const AdminDashboard = () => {
                   <tbody>
                     {withdrawals.map((w) => (
                       <tr key={w.id} className="border-b border-gray-200 dark:border-gray-800/50">
-                        <td className="px-5 py-3 text-gray-500 dark:text-gray-400 whitespace-nowrap">{new Date(w.created_at).toLocaleString()}</td>
+                        <td className="px-5 py-3 text-gray-600 dark:text-gray-400 whitespace-nowrap">{new Date(w.created_at).toLocaleString()}</td>
                         <td className="px-5 py-3">{w.user_email}</td>
                         <td className="px-5 py-3">{w.type}</td>
                         <td className="px-5 py-3">{w.asset}</td>
@@ -613,7 +613,7 @@ const AdminDashboard = () => {
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="text-left text-gray-500 dark:text-gray-400 border-b border-gray-200 dark:border-gray-800">
+                    <tr className="text-left text-gray-600 dark:text-gray-400 border-b border-gray-200 dark:border-gray-800">
                       <th className="px-5 py-3 font-medium">Date</th>
                       <th className="px-5 py-3 font-medium">User</th>
                       <th className="px-5 py-3 font-medium">Pair</th>
@@ -625,7 +625,7 @@ const AdminDashboard = () => {
                   <tbody>
                     {orders.map((o) => (
                       <tr key={o.id} className="border-b border-gray-200 dark:border-gray-800/50">
-                        <td className="px-5 py-3 text-gray-500 dark:text-gray-400 whitespace-nowrap">{new Date(o.created_at).toLocaleString()}</td>
+                        <td className="px-5 py-3 text-gray-600 dark:text-gray-400 whitespace-nowrap">{new Date(o.created_at).toLocaleString()}</td>
                         <td className="px-5 py-3">{o.user_email}</td>
                         <td className="px-5 py-3">{o.pair}</td>
                         <td className={`px-5 py-3 font-semibold ${o.side === "BUY" ? "text-emerald-400" : "text-rose-500"}`}>{o.side}</td>
@@ -648,41 +648,41 @@ const AdminDashboard = () => {
         <Modal onClose={() => setSelectedUser(null)} titleId="user-detail-title" className="bg-white dark:bg-[#16181e] border border-gray-200 dark:border-gray-800 rounded-2xl p-6 max-w-lg w-full text-slate-900 dark:text-white max-h-[85vh] overflow-y-auto">
             <div className="flex justify-between items-start mb-4">
               <h3 id="user-detail-title" className="text-lg font-bold">{selectedUser.email}</h3>
-              <button onClick={() => setSelectedUser(null)} aria-label="Close dialog" className="text-gray-500 dark:text-gray-400 hover:text-white">✕</button>
+              <button onClick={() => setSelectedUser(null)} aria-label="Close dialog" className="text-gray-600 dark:text-gray-400 hover:text-white">✕</button>
             </div>
 
-            {!userDetail && <p className="text-sm text-gray-500 dark:text-gray-400">Loading...</p>}
+            {!userDetail && <p className="text-sm text-gray-600 dark:text-gray-400">Loading...</p>}
 
             {userDetail && (
               <div className="space-y-5 text-sm">
 
                 <div className="grid grid-cols-2 gap-3">
-                  <div><span className="text-gray-500 dark:text-gray-400">Full name</span><p>{userDetail.user.fullname} {userDetail.user.surname}</p></div>
-                  <div><span className="text-gray-500 dark:text-gray-400">Country</span><p>{userDetail.user.country || "—"}</p></div>
-                  <div><span className="text-gray-500 dark:text-gray-400">Verified</span><p>{userDetail.user.is_verified ? "Yes" : "No"}</p></div>
-                  <div><span className="text-gray-500 dark:text-gray-400">KYC status</span><p>{userDetail.user.kyc_status}</p></div>
-                  <div><span className="text-gray-500 dark:text-gray-400">Joined</span><p>{new Date(userDetail.user.created_at).toLocaleDateString()}</p></div>
-                  <div><span className="text-gray-500 dark:text-gray-400">Role</span><p className="capitalize">{userDetail.user.role}</p></div>
+                  <div><span className="text-gray-600 dark:text-gray-400">Full name</span><p>{userDetail.user.fullname} {userDetail.user.surname}</p></div>
+                  <div><span className="text-gray-600 dark:text-gray-400">Country</span><p>{userDetail.user.country || "—"}</p></div>
+                  <div><span className="text-gray-600 dark:text-gray-400">Verified</span><p>{userDetail.user.is_verified ? "Yes" : "No"}</p></div>
+                  <div><span className="text-gray-600 dark:text-gray-400">KYC status</span><p>{userDetail.user.kyc_status}</p></div>
+                  <div><span className="text-gray-600 dark:text-gray-400">Joined</span><p>{new Date(userDetail.user.created_at).toLocaleDateString()}</p></div>
+                  <div><span className="text-gray-600 dark:text-gray-400">Role</span><p className="capitalize">{userDetail.user.role}</p></div>
                 </div>
 
                 <div className="flex justify-between bg-slate-100 dark:bg-[#21242d] rounded-xl p-4">
                   <div className="text-center">
                     <p className="text-lg font-bold">{userDetail.counts.orders}</p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">Orders</p>
+                    <p className="text-xs text-gray-600 dark:text-gray-400">Orders</p>
                   </div>
                   <div className="text-center">
                     <p className="text-lg font-bold">{userDetail.counts.deposits}</p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">Deposits</p>
+                    <p className="text-xs text-gray-600 dark:text-gray-400">Deposits</p>
                   </div>
                   <div className="text-center">
                     <p className="text-lg font-bold">{userDetail.counts.withdrawals}</p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">Withdrawals</p>
+                    <p className="text-xs text-gray-600 dark:text-gray-400">Withdrawals</p>
                   </div>
                 </div>
 
                 {userDetail.balances.length > 0 && (
                   <div>
-                    <p className="text-gray-500 dark:text-gray-400 mb-2">Wallet balances</p>
+                    <p className="text-gray-600 dark:text-gray-400 mb-2">Wallet balances</p>
                     <div className="grid grid-cols-2 gap-2">
                       {userDetail.balances.filter((b) => Number(b.available_balance) > 0 || Number(b.locked_balance) > 0).map((b) => (
                         <div key={b.asset_symbol} className="flex justify-between bg-slate-100 dark:bg-[#21242d] rounded-lg px-3 py-2">

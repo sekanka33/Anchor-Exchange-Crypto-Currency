@@ -91,7 +91,7 @@ const Home = () => {
                   key={cat.name}
                   type="button"
                   onClick={() => setCategory(cat.id)}
-                  className={category === cat.id ? "text-blue-600 dark:text-blue-400 font-semibold" : "text-gray-500 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white"}
+                  className={category === cat.id ? "text-blue-600 dark:text-blue-400 font-semibold" : "text-gray-600 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white"}
                 >
                   {cat.name}
                 </button>
@@ -99,7 +99,7 @@ const Home = () => {
             </div>
 
             <div className='relative'>
-              <FaSearch className='absolute left-4 top-1/2 -translate-y-1/2 text-gray-400'/>
+              <FaSearch className='absolute left-4 top-1/2 -translate-y-1/2 text-gray-600 dark:text-gray-400'/>
               <input
                 aria-label="Search coin"
                 placeholder='Search Coin'
@@ -112,7 +112,7 @@ const Home = () => {
 
           <div className='overflow-x-auto'>
            <div className='min-w-[820px]'>
-            <div className='flex justify-center pt-11 pb-5 text-gray-500 dark:text-gray-400 text-sm font-semibold'>
+            <div className='flex justify-center pt-11 pb-5 text-gray-600 dark:text-gray-400 text-sm font-semibold'>
               <p className='pr-5'></p>
               <p className='pr-52'>Name</p>
               <p className='pr-22'>Last Price</p>
@@ -123,11 +123,11 @@ const Home = () => {
             </div>
 
             {coinsLoading && (
-              <p className='text-center text-gray-500 dark:text-gray-400 py-10'>Loading market data…</p>
+              <p className='text-center text-gray-600 dark:text-gray-400 py-10'>Loading market data…</p>
             )}
 
             {!coinsLoading && visibleCoins.length === 0 && (
-              <p className='text-center text-gray-500 dark:text-gray-400 py-10'>No coins match your search.</p>
+              <p className='text-center text-gray-600 dark:text-gray-400 py-10'>No coins match your search.</p>
             )}
 
             {!coinsLoading && visibleCoins.map((coin, index) => (
@@ -147,14 +147,14 @@ const Home = () => {
                   <p className='pr-10'>{index + 1}</p>
                   <p className='pr-60 flex items-center gap-2'>
                     {coin.image && <img src={coin.image} alt="" className='w-5 h-5 rounded-full' />}
-                    {coin.name} <span className='text-gray-500 dark:text-gray-400 text-xs uppercase'>{coin.symbol}</span>
+                    {coin.name} <span className='text-gray-600 dark:text-gray-400 text-xs uppercase'>{coin.symbol}</span>
                   </p>
                   <p className='pr-26'>${Number(coin.current_price).toLocaleString(undefined, { maximumFractionDigits: 2 })}</p>
-                  <p className={`pr-40 ${Number(coin.price_change_percentage_24h) >= 0 ? "text-green-600 dark:text-green-500" : "text-red-600 dark:text-red-500"}`}>
+                  <p className={`pr-40 ${Number(coin.price_change_percentage_24h) >= 0 ? "text-green-700 dark:text-green-500" : "text-red-600 dark:text-red-500"}`}>
                     {Number(coin.price_change_percentage_24h ?? 0) >= 0 ? "+" : ""}{Number(coin.price_change_percentage_24h ?? 0).toFixed(2)}%
                   </p>
                   <p className='pr-40'>${Number(coin.market_cap).toLocaleString()}</p>
-                  <p className='pr-12 text-gray-500 dark:text-gray-400 text-xs'>—</p>
+                  <p className='pr-12 text-gray-600 dark:text-gray-400 text-xs'>—</p>
                   <Link
                     to="/exchange"
                     className='w-20 h-8 flex items-center justify-center border-2 rounded-full border-slate-900 dark:border-white hover:bg-blue-600 hover:border-blue-500 hover:text-white ml-8'
@@ -181,30 +181,30 @@ const Home = () => {
               <div className='flex flex-col sm:flex-row flex-wrap justify-center gap-10 md:gap-20 lg:gap-40 pt-10 md:pt-20 px-4'>
                 <div>
                   <img src="src/assets/Bitcoin Cloud.png" alt="bitcoin-cloud" className='pl-13' />
-                  <p className='text-center text-gray-400 pt-3'>Step 1</p>
+                  <p className='text-center text-gray-600 dark:text-gray-400 pt-3'>Step 1</p>
                   <p className='text-center text-slate-900 dark:text-white text-1xl pt-3'>Download</p>
-                  <p className='text-center text-sm text-gray-400 pt-3'>Stacks is a production-ready <br />library of stackable content blocks <br /> built in React Native.</p>
+                  <p className='text-center text-sm text-gray-600 dark:text-gray-400 pt-3'>Stacks is a production-ready <br />library of stackable content blocks <br /> built in React Native.</p>
                 </div>
 
                 <div>
                   <img src="src/assets/Bitcoin Wallet.png" alt="wallet" className='pl-13' />
-                  <p className='text-center text-gray-400 pt-3'>Step 2</p>
+                  <p className='text-center text-gray-600 dark:text-gray-400 pt-3'>Step 2</p>
                   <p className='text-center text-slate-900 dark:text-white text-1xl pt-3'>Connect Wallet</p>
-                  <p className='text-center text-sm text-gray-400 pt-3'>Stacks is a production-ready <br />library of stackable content blocks <br />  built in React Native.</p>
+                  <p className='text-center text-sm text-gray-600 dark:text-gray-400 pt-3'>Stacks is a production-ready <br />library of stackable content blocks <br />  built in React Native.</p>
                 </div>
 
                 <div>
                   <img src="src/assets/Bitcoin Mining.png" alt="mining" className='pl-13' />
-                  <p className='text-center text-gray-400 pt-3'>Step 3</p>
+                  <p className='text-center text-gray-600 dark:text-gray-400 pt-3'>Step 3</p>
                   <p className='text-center text-slate-900 dark:text-white text-1xl pt-3'>Start Trading</p>
-                  <p className='text-center text-sm text-gray-400 pt-3'>Stacks is a production-ready <br />library of stackable content blocks <br />built in React Native.</p>
+                  <p className='text-center text-sm text-gray-600 dark:text-gray-400 pt-3'>Stacks is a production-ready <br />library of stackable content blocks <br />built in React Native.</p>
                 </div>
 
                 <div>
                   <img src="src/assets/Bitcoin Comparison.png" alt="Comparing" className='pl-13' />
-                  <p className='text-center text-gray-400 pt-3'>Step 4</p>
+                  <p className='text-center text-gray-600 dark:text-gray-400 pt-3'>Step 4</p>
                   <p className='text-center text-slate-900 dark:text-white text-1xl pt-3'>Earn Money</p>
-                  <p className='text-center text-sm text-gray-400 pt-3'>Stacks is a production-ready <br />library of stackable content blocks <br />built in React Native.</p>
+                  <p className='text-center text-sm text-gray-600 dark:text-gray-400 pt-3'>Stacks is a production-ready <br />library of stackable content blocks <br />built in React Native.</p>
                 </div>
               </div>
             </div>
@@ -245,18 +245,18 @@ const Home = () => {
               <h2 className='text-3xl md:text-4xl font-bold'>Free your money &</h2>
               <h2 className='text-3xl md:text-4xl font-bold'>Invest with confident</h2>
             </div>
-            <p className='text-gray-400'>With Cryptor Trade, you can be sure your trading skills are matched</p>
+            <p className='text-gray-600 dark:text-gray-400'>With Cryptor Trade, you can be sure your trading skills are matched</p>
             <div className='flex flex-row gap-3 items-center'>
               <FaCheckCircle className='text-blue-500 text-1xl'/>
               <p className='text-2xl'>Buy, Sell, And Trade On The Go</p>
             </div>
-            <p className='text-gray-400 pl-7'>Managa your holdings from your mobile decive</p>
+            <p className='text-gray-600 dark:text-gray-400 pl-7'>Managa your holdings from your mobile decive</p>
 
             <div className='flex flex-row gap-3 items-center'>
               <FaCheckCircle className='text-blue-500 text-1xl'/>
               <p className='text-2xl'>Take Control Of Your Wealth</p>
             </div>
-            <p className='text-gray-400 pl-7'>Rest assured you (and only you) have access to your funds</p>
+            <p className='text-gray-600 dark:text-gray-400 pl-7'>Rest assured you (and only you) have access to your funds</p>
 
             <div className='flex flex-row flex-wrap gap-4 md:gap-8'>
               <div className='w-55 h-20 bg-black text-white rounded-md border-2 border-transparent flex flex-row gap-7 hover:bg-hero-dark'>
@@ -289,7 +289,7 @@ const Home = () => {
               <h2 className='text-4xl font-bold'> what we do</h2>
             </div>
             <p className='font-bold'>Transform your idea into reality with finsweet</p>
-            <p className='text-gray-500 dark:text-gray-400'>It is a long established fact that a reader will be distracted by <br /> the readable content of a page when looking at its layout. </p>
+            <p className='text-gray-600 dark:text-gray-400'>It is a long established fact that a reader will be distracted by <br /> the readable content of a page when looking at its layout. </p>
             <div className='flex flex-row gap-5'>
               <div className='bg-gray-500 w-15 h-15 rounded-full'>
                 <img src="src\assets\ape.jpg" alt="ape" className='rounded-full w-15 h-15' />

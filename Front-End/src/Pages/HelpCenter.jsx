@@ -56,7 +56,7 @@ const FAQItem = ({ faq, isOpen, onToggle }) => (
     </button>
 
     {isOpen && (
-      <div className="pb-5 text-sm text-gray-500 dark:text-gray-400 leading-relaxed">
+      <div className="pb-5 text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
         <p>{faq.answer}</p>
         {faq.link && (
           <Link to={faq.link.to} className="inline-block mt-2 text-blue-600 dark:text-blue-400 hover:underline">
@@ -77,7 +77,7 @@ const HelpCenter = () => {
 
       <div className="flex flex-col items-center px-4 py-14 md:py-20">
         <h1 className="text-3xl md:text-4xl font-bold text-center">Frequently Asked Questions</h1>
-        <p className="text-gray-500 dark:text-gray-400 mt-3 text-center">Learn how to get started with Anchor Exchange</p>
+        <p className="text-gray-600 dark:text-gray-400 mt-3 text-center">Learn how to get started with Anchor Exchange</p>
 
         <div className="w-full max-w-2xl mt-10">
           {FAQS.map((faq, index) => (
