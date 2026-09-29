@@ -344,16 +344,16 @@ const Dashboard = () => {
 
           {/* 9. Connect Header Data */}
           <div className='flex flex-col gap-2 shrink-0'>
-            <p className='text-gray-500 dark:text-gray-400'>Last Prices</p>
+            <p className='text-gray-600 dark:text-gray-400'>Last Prices</p>
             <div className='flex flex-row gap-3'>
               <p className='text-lg'>{Number(marketData?.lastPrice).toFixed(2)}</p>
             </div>
           </div>
 
           <div className='flex flex-col gap-2 shrink-0'>
-            <p className='text-gray-500 dark:text-gray-400'>24h Change</p>
+            <p className='text-gray-600 dark:text-gray-400'>24h Change</p>
             <div className='flex flex-row gap-3'>
-              <p className='text-lg text-green-600 dark:text-green-500'>{Number(marketData?.priceChange).toFixed(2)}</p>
+              <p className='text-lg text-green-700 dark:text-green-500'>{Number(marketData?.priceChange).toFixed(2)}</p>
               <div>
                 <div className='w-18 h-7 bg-green-700 rounded-full flex items-center justify-center px-2'>
                   <p className='text-base text-white'>{Number(marketData?.priceChangePercent).toFixed(2)}%</p>
@@ -363,21 +363,21 @@ const Dashboard = () => {
           </div>
 
           <div className='shrink-0'>
-            <p className='text-gray-500 dark:text-gray-400'>24h High</p>
+            <p className='text-gray-600 dark:text-gray-400'>24h High</p>
             <div className='flex flex-row gap-3'>
               <p className='text-lg'>{marketData?.highPrice}</p>
             </div>
           </div>
 
           <div className='shrink-0'>
-            <p className='text-gray-500 dark:text-gray-400'>24h Low</p>
+            <p className='text-gray-600 dark:text-gray-400'>24h Low</p>
             <div className='flex flex-row gap-3'>
               <p className='text-lg'>{marketData?.lowPrice}</p>
             </div>
           </div>
 
           <div className='shrink-0'>
-            <p className='text-gray-500 dark:text-gray-400'>24h Volume</p>
+            <p className='text-gray-600 dark:text-gray-400'>24h Volume</p>
             <div className='flex flex-row gap-3'>
               <p className='text-lg'>{marketData?.volume}</p>
             </div>
@@ -403,7 +403,7 @@ const Dashboard = () => {
                       className={`cursor-pointer ${
                         timeframe === tf.value
                           ? "text-blue-500 font-bold"
-                          : "text-gray-500 dark:text-gray-400 hover:text-blue-500"
+                          : "text-gray-600 dark:text-gray-400 hover:text-blue-500"
                       }`}
                     >
                       {tf.label}
@@ -430,7 +430,7 @@ const Dashboard = () => {
                     className={`cursor-pointer pb-2 transition ${
                       ordersTab === "HISTORY"
                         ? "text-slate-900 dark:text-white border-b-2 border-indigo-500 font-bold"
-                        : "text-gray-500 dark:text-gray-400 hover:text-slate-900 dark:hover:text-gray-200"
+                        : "text-gray-600 dark:text-gray-400 hover:text-slate-900 dark:hover:text-gray-200"
                     }`}
                   >
                     Order History
@@ -441,7 +441,7 @@ const Dashboard = () => {
                     className={`cursor-pointer pb-2 transition ${
                       ordersTab === "OPEN"
                         ? "text-slate-900 dark:text-white border-b-2 border-indigo-500 font-bold"
-                        : "text-gray-500 dark:text-gray-400 hover:text-slate-900 dark:hover:text-gray-200"
+                        : "text-gray-600 dark:text-gray-400 hover:text-slate-900 dark:hover:text-gray-200"
                     }`}
                   >
                     Open Orders
@@ -452,7 +452,7 @@ const Dashboard = () => {
                     className={`cursor-pointer pb-2 transition ${
                       ordersTab === "CLOSED"
                         ? "text-slate-900 dark:text-white border-b-2 border-indigo-500 font-bold"
-                        : "text-gray-500 dark:text-gray-400 hover:text-slate-900 dark:hover:text-gray-200"
+                        : "text-gray-600 dark:text-gray-400 hover:text-slate-900 dark:hover:text-gray-200"
                     }`}
                   >
                     Closed Orders
@@ -470,11 +470,11 @@ const Dashboard = () => {
               {/* 11. Order History */}
               <div className="overflow-x-auto mt-2">
                 {ordersLoading && (
-                  <p className="text-gray-500 dark:text-gray-400 text-sm py-6">Loading orders...</p>
+                  <p className="text-gray-600 dark:text-gray-400 text-sm py-6">Loading orders...</p>
                 )}
 
                 {!ordersLoading && recentOrders.length === 0 && (
-                  <p className="text-gray-500 dark:text-gray-400 text-sm py-6">
+                  <p className="text-gray-600 dark:text-gray-400 text-sm py-6">
                     {ordersTab === "OPEN"
                       ? "No open orders — orders fill instantly on Anchor Exchange, so none stay open."
                       : "No orders yet."}
@@ -546,7 +546,7 @@ const Dashboard = () => {
                 <hr className='ml-48 mr-10 border-gray-200 dark:border-gray-700'/>
               </div>
 
-              <div className='flex flex-row gap-5 justify-center pt-2 text-gray-500 dark:text-gray-400'>
+              <div className='flex flex-row gap-5 justify-center pt-2 text-gray-600 dark:text-gray-400'>
                 <p className='text-sm cursor-pointer'>Limit</p>
                 <p className='text-sm cursor-pointer'>Market</p>
                 <p className='text-sm cursor-pointer'>Stop limit</p>
@@ -587,7 +587,7 @@ const Dashboard = () => {
 
             <div className='w-full h-112 bg-white dark:bg-crypto-color text-slate-900 dark:text-white rounded-2xl border border-gray-200 dark:border-transparent'>
               <div className='flex justify-center flex-col gap-2 pt-7 mt-7 px-10 items-center'>
-                <p className='text-gray-500 dark:text-gray-400'>Your Balance</p>
+                <p className='text-gray-600 dark:text-gray-400'>Your Balance</p>
                 <p className='text-2xl font-medium'>
                   {walletSummary
                     ? walletSummary.portfolioValue.toLocaleString(undefined, { style: "currency", currency: "USD" })
@@ -606,9 +606,9 @@ const Dashboard = () => {
               </div>
 
               <div className='px-6 pt-3 flex flex-col gap-2'>
-                {!walletSummary && <p className='text-sm text-gray-500 dark:text-gray-400'>Loading...</p>}
+                {!walletSummary && <p className='text-sm text-gray-600 dark:text-gray-400'>Loading...</p>}
                 {walletSummary && walletSummary.balances.every((b) => b.totalBalance === 0) && (
-                  <p className='text-sm text-gray-500 dark:text-gray-400'>No assets yet.</p>
+                  <p className='text-sm text-gray-600 dark:text-gray-400'>No assets yet.</p>
                 )}
                 {walletSummary &&
                   walletSummary.balances
@@ -632,7 +632,7 @@ const Dashboard = () => {
             <div>
               <h2 className="text-lg font-bold text-slate-900 dark:text-white mb-4">Order book</h2>
 
-              <div className="grid grid-cols-3 text-gray-500 dark:text-gray-400 font-semibold mb-3 text-base">
+              <div className="grid grid-cols-3 text-gray-600 dark:text-gray-400 font-semibold mb-3 text-base">
                 <span>Price(BTC)</span>
                 <span className="text-center">Amount(ETH)</span>
                 <span className="text-right border-b border-blue-500 pb-0.5 w-max justify-self-end text-blue-600 dark:text-blue-400">
@@ -658,15 +658,15 @@ const Dashboard = () => {
               {/* Price Banner */}
               <div className="my-5 py-3 border-y border-gray-200 dark:border-gray-800/60 flex items-center justify-between">
                 <div>
-                  <p className="text-base text-gray-500 dark:text-gray-400 uppercase">Last Price</p>
+                  <p className="text-base text-gray-600 dark:text-gray-400 uppercase">Last Price</p>
                   <p className="text-lg font-bold text-slate-900 dark:text-white">0.020367</p>
                 </div>
                 <div>
-                  <p className="text-base text-gray-500 dark:text-gray-400 uppercase">USD</p>
+                  <p className="text-base text-gray-600 dark:text-gray-400 uppercase">USD</p>
                   <p className="text-lg font-semibold text-slate-900 dark:text-white">148.65</p>
                 </div>
                 <div>
-                  <p className="text-base text-gray-500 dark:text-gray-400 uppercase">Change</p>
+                  <p className="text-base text-gray-600 dark:text-gray-400 uppercase">Change</p>
                   <p className="text-lg font-semibold text-red-600 dark:text-red-500">-0.52%</p>
                 </div>
               </div>
@@ -692,7 +692,7 @@ const Dashboard = () => {
           <div className="bg-white dark:bg-[#0f1117] rounded-2xl p-5 shadow-lg border border-gray-200 dark:border-gray-800/40">
             <h2 className="text-lg font-bold text-slate-900 dark:text-white mb-4">Recent trades</h2>
 
-            <div className="grid grid-cols-3 text-gray-500 dark:text-gray-400 font-semibold mb-3 text-base">
+            <div className="grid grid-cols-3 text-gray-600 dark:text-gray-400 font-semibold mb-3 text-base">
               <span>Time</span>
               <span className="text-center">Price(BTC)</span>
               <span className="text-right">Amount (ETH)</span>
@@ -701,7 +701,7 @@ const Dashboard = () => {
             <div className="space-y-2 overflow-hidden text-sm">
               {recentTrades.map((trade, idx) => (
                 <div key={idx} className="grid grid-cols-3 items-center">
-                  <span className="text-gray-500 dark:text-gray-400">{trade.time}</span>
+                  <span className="text-gray-600 dark:text-gray-400">{trade.time}</span>
                   <span
                     className={`text-center font-semibold ${
                       trade.type === "sell" ? "text-red-600 dark:text-red-500" : "text-emerald-600 dark:text-emerald-400"
@@ -719,7 +719,7 @@ const Dashboard = () => {
           <div className="bg-white dark:bg-[#0f1117] rounded-2xl p-5 shadow-lg border border-gray-200 dark:border-gray-800/40">
             <div className="flex items-center justify-between mb-4 ">
               <div className="flex items-center space-x-4">
-                <FaRegStar className="text-gray-500 dark:text-gray-400 cursor-pointer hover:text-slate-900 dark:hover:text-white" />
+                <FaRegStar className="text-gray-600 dark:text-gray-400 cursor-pointer hover:text-slate-900 dark:hover:text-white" />
                 {["BTC", "ETH", "USDT"].map((tab) => (
                   <button
                     key={tab}
@@ -728,7 +728,7 @@ const Dashboard = () => {
                     className={`px-3 py-1 rounded-full text-xs font-semibold transition-all ${
                       activeTab === tab
                         ? "bg-blue-600 text-white"
-                        : "text-gray-500 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white"
+                        : "text-gray-600 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white"
                     }`}
                   >
                     {tab}
@@ -737,7 +737,7 @@ const Dashboard = () => {
               </div>
             </div>
 
-            <div className="grid grid-cols-3 text-gray-500 dark:text-gray-400 font-semibold mb-3 text-base">
+            <div className="grid grid-cols-3 text-gray-600 dark:text-gray-400 font-semibold mb-3 text-base">
               <span>Pair</span>
               <span className="text-center">Last price</span>
               <span className="text-right">Change</span>
@@ -745,7 +745,7 @@ const Dashboard = () => {
 
             <div className="space-y-2.5 overflow-hidden text-sm">
               {loading ? (
-                <div className="text-center py-10 text-gray-500 dark:text-gray-400">Loading pairs...</div>
+                <div className="text-center py-10 text-gray-600 dark:text-gray-400">Loading pairs...</div>
               ) : (
                 marketPairs.map((item) => (
                   <div key={item.id} className="grid grid-cols-3 items-center">

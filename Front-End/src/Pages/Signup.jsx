@@ -312,23 +312,23 @@ const Signup = () => {
 
             <div className="text-sm mt-2 flex flex-wrap gap-5 pb-5">
 
-              <p className={passwordStrength.length ? "text-green-700 dark:text-green-400" : "text-gray-500 dark:text-gray-400"}>
+              <p className={passwordStrength.length ? "text-green-700 dark:text-green-400" : "text-gray-600 dark:text-gray-400"}>
               ✓ Minimum 8 characters
               </p>
 
-              <p className={passwordStrength.uppercase ? "text-green-700 dark:text-green-400" : "text-gray-500 dark:text-gray-400"}>
+              <p className={passwordStrength.uppercase ? "text-green-700 dark:text-green-400" : "text-gray-600 dark:text-gray-400"}>
               ✓ Uppercase letter
               </p>
 
-              <p className={passwordStrength.lowercase ? "text-green-700 dark:text-green-400" : "text-gray-500 dark:text-gray-400"}>
+              <p className={passwordStrength.lowercase ? "text-green-700 dark:text-green-400" : "text-gray-600 dark:text-gray-400"}>
               ✓ Lowercase letter
               </p>
 
-              <p className={passwordStrength.number ? "text-green-700 dark:text-green-400" : "text-gray-500 dark:text-gray-400"}>
+              <p className={passwordStrength.number ? "text-green-700 dark:text-green-400" : "text-gray-600 dark:text-gray-400"}>
               ✓ Number
               </p>
 
-              <p className={passwordStrength.special ? "text-green-700 dark:text-green-400" : "text-gray-500 dark:text-gray-400"}>
+              <p className={passwordStrength.special ? "text-green-700 dark:text-green-400" : "text-gray-600 dark:text-gray-400"}>
               ✓ Special character
               </p>
 

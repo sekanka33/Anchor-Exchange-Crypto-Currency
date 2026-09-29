@@ -102,7 +102,7 @@ const OrdersTrades = () => {
                   className={`cursor-pointer pb-1 ${
                     activeTab === tab.key
                       ? "text-slate-900 dark:text-white border-b-2 border-indigo-500"
-                      : "text-gray-500 dark:text-gray-400 hover:text-slate-900 dark:hover:text-gray-200"
+                      : "text-gray-600 dark:text-gray-400 hover:text-slate-900 dark:hover:text-gray-200"
                   }`}
                 >
                   {tab.label}
@@ -112,7 +112,7 @@ const OrdersTrades = () => {
 
             <div className="flex flex-wrap gap-3 items-end">
               <div>
-                <label htmlFor="ot-side-filter" className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Side</label>
+                <label htmlFor="ot-side-filter" className="block text-xs text-gray-600 dark:text-gray-400 mb-1">Side</label>
                 <select
                   id="ot-side-filter"
                   value={sideFilter}
@@ -126,7 +126,7 @@ const OrdersTrades = () => {
               </div>
 
               <div>
-                <label htmlFor="ot-asset-filter" className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Asset</label>
+                <label htmlFor="ot-asset-filter" className="block text-xs text-gray-600 dark:text-gray-400 mb-1">Asset</label>
                 <input
                   id="ot-asset-filter"
                   type="text"
@@ -152,24 +152,24 @@ const OrdersTrades = () => {
           {/* TABLE */}
           <div className="bg-white dark:bg-[#16181e] rounded-2xl border border-gray-200 dark:border-gray-800/50 overflow-hidden">
 
-            {loading && <p className="text-gray-500 dark:text-gray-400 text-sm p-6">Loading orders...</p>}
+            {loading && <p className="text-gray-600 dark:text-gray-400 text-sm p-6">Loading orders...</p>}
             {!loading && error && <p className="text-red-500 text-sm p-6">{error}</p>}
 
             {!loading && !error && orders.length === 0 && activeTab === "OPEN" && (
-              <p className="text-gray-500 dark:text-gray-400 text-sm p-6">
+              <p className="text-gray-600 dark:text-gray-400 text-sm p-6">
                 No open orders — Anchor Exchange currently only executes market orders, which fill instantly, so orders never stay open.
               </p>
             )}
 
             {!loading && !error && orders.length === 0 && activeTab !== "OPEN" && (
-              <p className="text-gray-500 dark:text-gray-400 text-sm p-6">No orders match these filters.</p>
+              <p className="text-gray-600 dark:text-gray-400 text-sm p-6">No orders match these filters.</p>
             )}
 
             {!loading && !error && orders.length > 0 && (
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="text-left text-gray-500 dark:text-gray-400 border-b border-gray-200 dark:border-gray-800">
+                    <tr className="text-left text-gray-600 dark:text-gray-400 border-b border-gray-200 dark:border-gray-800">
                       <th className="px-5 py-3 font-medium">Date</th>
                       <th className="px-5 py-3 font-medium">Pair</th>
                       <th className="px-5 py-3 font-medium">Side</th>
@@ -186,7 +186,7 @@ const OrdersTrades = () => {
                         onClick={() => setSelectedOrder(order)}
                         className="border-b border-gray-200 dark:border-gray-800/50 hover:bg-gray-50 dark:hover:bg-[#1c1f27] cursor-pointer transition-colors"
                       >
-                        <td className="px-5 py-3 text-gray-500 dark:text-gray-400 whitespace-nowrap">
+                        <td className="px-5 py-3 text-gray-600 dark:text-gray-400 whitespace-nowrap">
                           {new Date(order.created_at).toLocaleString()}
                         </td>
                         <td className="px-5 py-3 font-semibold">{order.pair}</td>
@@ -195,7 +195,7 @@ const OrdersTrades = () => {
                         <td className="px-5 py-3">{formatAmount(order.amount)}</td>
                         <td className="px-5 py-3">${formatAmount(order.total)}</td>
                         <td className="px-5 py-3">
-                          <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${statusStyles[order.status] || "bg-gray-500/10 text-gray-500 dark:text-gray-400"}`}>
+                          <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${statusStyles[order.status] || "bg-gray-500/10 text-gray-600 dark:text-gray-400"}`}>
                             {order.status}
                           </span>
                         </td>
@@ -208,7 +208,7 @@ const OrdersTrades = () => {
 
             {/* PAGINATION */}
             {!loading && !error && pagination.total > 0 && (
-              <div className="flex items-center justify-between px-5 py-4 border-t border-gray-200 dark:border-gray-800 text-sm text-gray-500 dark:text-gray-400">
+              <div className="flex items-center justify-between px-5 py-4 border-t border-gray-200 dark:border-gray-800 text-sm text-gray-600 dark:text-gray-400">
                 <span>
                   Page {pagination.page} of {pagination.totalPages} ({pagination.total} total)
                 </span>
@@ -243,40 +243,40 @@ const OrdersTrades = () => {
         <Modal onClose={() => setSelectedOrder(null)} titleId="order-detail-title" className="bg-white dark:bg-[#16181e] border border-gray-200 dark:border-gray-800 rounded-2xl p-6 max-w-md w-full text-slate-900 dark:text-white">
             <div className="flex justify-between items-start mb-4">
               <h3 id="order-detail-title" className="text-lg font-bold">Order #{selectedOrder.id}</h3>
-              <button onClick={() => setSelectedOrder(null)} aria-label="Close dialog" className="text-gray-500 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white">✕</button>
+              <button onClick={() => setSelectedOrder(null)} aria-label="Close dialog" className="text-gray-600 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white">✕</button>
             </div>
 
             <div className="space-y-3 text-sm">
               <div className="flex justify-between">
-                <span className="text-gray-500 dark:text-gray-400">Pair</span>
+                <span className="text-gray-600 dark:text-gray-400">Pair</span>
                 <span className="font-semibold">{selectedOrder.pair}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-500 dark:text-gray-400">Side</span>
+                <span className="text-gray-600 dark:text-gray-400">Side</span>
                 <span className={`font-semibold ${sideStyles[selectedOrder.side] || ""}`}>{selectedOrder.side}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-500 dark:text-gray-400">Type</span>
+                <span className="text-gray-600 dark:text-gray-400">Type</span>
                 <span>{selectedOrder.type}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-500 dark:text-gray-400">Status</span>
+                <span className="text-gray-600 dark:text-gray-400">Status</span>
                 <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${statusStyles[selectedOrder.status] || ""}`}>{selectedOrder.status}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-500 dark:text-gray-400">Price</span>
+                <span className="text-gray-600 dark:text-gray-400">Price</span>
                 <span>${formatAmount(selectedOrder.price)}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-500 dark:text-gray-400">Amount</span>
+                <span className="text-gray-600 dark:text-gray-400">Amount</span>
                 <span>{formatAmount(selectedOrder.amount)}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-500 dark:text-gray-400">Filled</span>
+                <span className="text-gray-600 dark:text-gray-400">Filled</span>
                 <span>{formatAmount(selectedOrder.filled_amount)}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-500 dark:text-gray-400">Fee</span>
+                <span className="text-gray-600 dark:text-gray-400">Fee</span>
                 <span>${formatAmount(selectedOrder.fee)}</span>
               </div>
               <div className="border-t border-gray-200 dark:border-gray-700 pt-3 flex justify-between font-semibold">
@@ -284,7 +284,7 @@ const OrdersTrades = () => {
                 <span>${formatAmount(selectedOrder.total)}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-500 dark:text-gray-400">Date</span>
+                <span className="text-gray-600 dark:text-gray-400">Date</span>
                 <span>{new Date(selectedOrder.created_at).toLocaleString()}</span>
               </div>
             </div>

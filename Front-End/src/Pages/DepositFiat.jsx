@@ -168,7 +168,7 @@ const DepositFiat = () => {
             <div className="bg-white dark:bg-[#16181e] p-8 rounded-2xl max-w-2xl border border-gray-200 dark:border-gray-800/50 shadow-xl">
 
               <h2 className="text-2xl font-bold mb-1">Deposit Amount</h2>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mb-6">
+              <p className="text-xs text-gray-600 dark:text-gray-400 mb-6">
                 Add funds to your Anchor Exchange USD balance.
               </p>
 
@@ -203,7 +203,7 @@ const DepositFiat = () => {
                       className="flex items-center gap-1.5 text-xs font-semibold text-slate-900 dark:text-white ml-2"
                     >
                       <span>{currency}</span>
-                      <span className="text-[10px] text-gray-500 dark:text-gray-400">▼</span>
+                      <span className="text-[10px] text-gray-600 dark:text-gray-400">▼</span>
                     </button>
 
                     {showCurrencyDropdown && (
@@ -223,7 +223,7 @@ const DepositFiat = () => {
                           >
                             <div>
                               <p className="text-sm font-semibold text-slate-900 dark:text-white">{c.code}</p>
-                              <p className="text-xs text-gray-500 dark:text-gray-400">{c.label}</p>
+                              <p className="text-xs text-gray-600 dark:text-gray-400">{c.label}</p>
                             </div>
                             {!c.enabled && <span className="text-[10px] text-gray-500">Coming soon</span>}
                           </button>
@@ -236,7 +236,7 @@ const DepositFiat = () => {
                 {/* BREAKDOWN */}
                 <div className="bg-slate-100 dark:bg-[#21242d] text-slate-900 dark:text-white rounded-xl p-4 mb-6 space-y-3">
                   <div className="flex justify-between text-sm">
-                    <span className="text-gray-500 dark:text-gray-400">Estimated fee</span>
+                    <span className="text-gray-600 dark:text-gray-400">Estimated fee</span>
                     <span>{formatUSD(fee)}</span>
                   </div>
                   <div className="border-t border-gray-200 dark:border-gray-700 pt-3 flex justify-between font-semibold">
@@ -245,7 +245,7 @@ const DepositFiat = () => {
                   </div>
                 </div>
 
-                <p className="text-xs text-gray-500 dark:text-gray-400 mb-5">
+                <p className="text-xs text-gray-600 dark:text-gray-400 mb-5">
                   The exact fee depends on the payment method you choose next.
                 </p>
 
@@ -268,13 +268,13 @@ const DepositFiat = () => {
             <div className="bg-white dark:bg-[#16181e] p-8 rounded-2xl max-w-2xl border border-gray-200 dark:border-gray-800/50 shadow-xl">
 
               <h2 className="text-2xl font-bold mb-2">Important Notes</h2>
-              <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
                 Please review your deposit before continuing.
               </p>
 
               <div className="space-y-4">
                 <div className="flex justify-between">
-                  <span className="text-gray-500 dark:text-gray-400">Deposit amount</span>
+                  <span className="text-gray-600 dark:text-gray-400">Deposit amount</span>
                   <span className="font-semibold">{formatUSD(numericAmount)} {currency}</span>
                 </div>
               </div>
@@ -310,7 +310,7 @@ const DepositFiat = () => {
             <div className="bg-white dark:bg-[#16181e] p-8 rounded-2xl max-w-2xl border border-gray-200 dark:border-gray-800/50 shadow-xl">
 
               <h2 className="text-2xl font-bold mb-2">Payment Method</h2>
-              <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
                 Select how you would like to fund your deposit.
               </p>
 
@@ -323,7 +323,7 @@ const DepositFiat = () => {
                   }`}
                 >
                   <p className="font-semibold">Debit / Credit Card</p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Instant — 1.5% fee</p>
+                  <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">Instant — 1.5% fee</p>
                 </button>
 
                 <button
@@ -334,17 +334,17 @@ const DepositFiat = () => {
                   }`}
                 >
                   <p className="font-semibold">Bank Transfer</p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">No fee</p>
+                  <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">No fee</p>
                 </button>
               </div>
 
               <div className="bg-slate-100 dark:bg-[#21242d] text-slate-900 dark:text-white rounded-xl p-5 mt-6">
                 <div className="flex justify-between mb-3">
-                  <span className="text-gray-500 dark:text-gray-400">Amount</span>
+                  <span className="text-gray-600 dark:text-gray-400">Amount</span>
                   <span>{formatUSD(numericAmount)}</span>
                 </div>
                 <div className="flex justify-between mb-3">
-                  <span className="text-gray-500 dark:text-gray-400">Fee</span>
+                  <span className="text-gray-600 dark:text-gray-400">Fee</span>
                   <span>-{formatUSD(fee)}</span>
                 </div>
                 <div className="flex justify-between font-bold">
@@ -391,7 +391,7 @@ const DepositFiat = () => {
                     ⏳
                   </div>
                   <h2 className="text-2xl font-bold mb-2">Confirming your deposit...</h2>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
                     We're waiting for your payment provider to confirm this deposit. This page will update automatically.
                   </p>
                 </>
@@ -412,7 +412,7 @@ const DepositFiat = () => {
                     ✕
                   </div>
                   <h2 className="text-2xl font-bold mb-4">Deposit failed</h2>
-                  <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
                     Your payment could not be processed. No funds were added to your wallet.
                   </p>
                 </>
@@ -420,11 +420,11 @@ const DepositFiat = () => {
 
               <div className="bg-slate-100 dark:bg-[#21242d] text-slate-900 dark:text-white rounded-xl p-5 mt-4 text-left space-y-3">
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-500 dark:text-gray-400">Amount</span>
+                  <span className="text-gray-600 dark:text-gray-400">Amount</span>
                   <span className="font-semibold">{formatUSD(deposit.amount)}</span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-500 dark:text-gray-400">Fee</span>
+                  <span className="text-gray-600 dark:text-gray-400">Fee</span>
                   <span>{formatUSD(deposit.fee)}</span>
                 </div>
                 <div className="border-t border-gray-200 dark:border-gray-700 pt-3 flex justify-between font-semibold text-sm">

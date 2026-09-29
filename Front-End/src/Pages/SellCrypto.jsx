@@ -194,7 +194,7 @@ const SellCrypto = () => {
                 Sell Crypto
               </h2>
 
-              <p className="text-xs text-gray-500 dark:text-gray-400 mb-6">
+              <p className="text-xs text-gray-600 dark:text-gray-400 mb-6">
 
                 {loading ? (
                   "Loading current price..."
@@ -251,7 +251,7 @@ const SellCrypto = () => {
 
                         {selectedCoin.symbol}
 
-                        <span className="text-gray-500 dark:text-gray-400">
+                        <span className="text-gray-600 dark:text-gray-400">
                           ▼
                         </span>
 
@@ -320,7 +320,7 @@ const SellCrypto = () => {
                 <div className="bg-slate-100 dark:bg-[#21242d] text-slate-900 dark:text-white rounded-xl p-4 space-y-3 mb-6">
 
                   <div className="flex justify-between text-sm">
-                    <span className="text-gray-500 dark:text-gray-400">
+                    <span className="text-gray-600 dark:text-gray-400">
                       Market value
                     </span>
 
@@ -330,7 +330,7 @@ const SellCrypto = () => {
                   </div>
 
                   <div className="flex justify-between text-sm">
-                    <span className="text-gray-500 dark:text-gray-400">
+                    <span className="text-gray-600 dark:text-gray-400">
                       Selling fee (1%)
                     </span>
 
@@ -351,7 +351,7 @@ const SellCrypto = () => {
 
                 </div>
 
-                <p className="text-xs text-gray-500 dark:text-gray-400 mb-5">
+                <p className="text-xs text-gray-600 dark:text-gray-400 mb-5">
                   Market price provided by CoinGecko.
                   The final execution price may change.
                 </p>
@@ -383,7 +383,7 @@ const SellCrypto = () => {
               <div className="space-y-4">
 
                 <div className="flex justify-between">
-                  <span className="text-gray-500 dark:text-gray-400">
+                  <span className="text-gray-600 dark:text-gray-400">
                     Selling
                   </span>
 
@@ -393,7 +393,7 @@ const SellCrypto = () => {
                 </div>
 
                 <div className="flex justify-between">
-                  <span className="text-gray-500 dark:text-gray-400">
+                  <span className="text-gray-600 dark:text-gray-400">
                     Market value
                   </span>
 
@@ -403,7 +403,7 @@ const SellCrypto = () => {
                 </div>
 
                 <div className="flex justify-between">
-                  <span className="text-gray-500 dark:text-gray-400">
+                  <span className="text-gray-600 dark:text-gray-400">
                     Fee
                   </span>
 
@@ -453,14 +453,14 @@ const SellCrypto = () => {
                 Payment Details
               </h2>
 
-              <p className="text-gray-500 dark:text-gray-400 text-sm mb-6">
+              <p className="text-gray-600 dark:text-gray-400 text-sm mb-6">
                 Choose where you want to receive your
                 funds.
               </p>
 
               <div className="bg-slate-100 dark:bg-[#21242d] text-slate-900 dark:text-white p-5 rounded-xl">
 
-                <p className="text-sm text-gray-500 dark:text-gray-400">
+                <p className="text-sm text-gray-600 dark:text-gray-400">
                   Amount to receive
                 </p>
 
@@ -511,17 +511,17 @@ const SellCrypto = () => {
 
               <div className="bg-slate-100 dark:bg-[#21242d] text-slate-900 dark:text-white rounded-xl p-5 text-left space-y-3">
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-500 dark:text-gray-400">You sold</span>
+                  <span className="text-gray-600 dark:text-gray-400">You sold</span>
                   <span className="font-semibold">
                     {orderResult.order.amount} {selectedCoin.symbol}
                   </span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-500 dark:text-gray-400">Price</span>
+                  <span className="text-gray-600 dark:text-gray-400">Price</span>
                   <span>{formatUSD(orderResult.order.price)}</span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-500 dark:text-gray-400">Fee</span>
+                  <span className="text-gray-600 dark:text-gray-400">Fee</span>
                   <span>-{formatUSD(orderResult.order.fee)}</span>
                 </div>
                 <div className="border-t border-gray-200 dark:border-gray-700 pt-3 flex justify-between font-semibold text-sm">

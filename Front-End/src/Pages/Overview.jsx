@@ -21,7 +21,7 @@ const Overview = () => {
             Crypto Overview
           </h2>
 
-          <p className="text-gray-500 dark:text-gray-400 mb-8">
+          <p className="text-gray-600 dark:text-gray-400 mb-8">
             Track cryptocurrency prices, market movements
             and discover assets available on Anchor Exchange.
           </p>
@@ -29,7 +29,7 @@ const Overview = () => {
           <div className="grid grid-cols-3 gap-4">
 
             <div className="bg-white dark:bg-[#16181e] p-6 rounded-2xl border border-gray-200 dark:border-transparent">
-              <p className="text-gray-500 dark:text-gray-400 text-sm">
+              <p className="text-gray-600 dark:text-gray-400 text-sm">
                 Buy Crypto
               </p>
 
@@ -42,7 +42,7 @@ const Overview = () => {
             </div>
 
             <div className="bg-white dark:bg-[#16181e] p-6 rounded-2xl border border-gray-200 dark:border-transparent">
-              <p className="text-gray-500 dark:text-gray-400 text-sm">
+              <p className="text-gray-600 dark:text-gray-400 text-sm">
                 Sell Crypto
               </p>
 
@@ -55,7 +55,7 @@ const Overview = () => {
             </div>
 
             <div className="bg-white dark:bg-[#16181e] p-6 rounded-2xl border border-gray-200 dark:border-transparent">
-              <p className="text-gray-500 dark:text-gray-400 text-sm">
+              <p className="text-gray-600 dark:text-gray-400 text-sm">
                 Market
               </p>
 

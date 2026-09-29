@@ -107,7 +107,7 @@ const TransactionHistory = () => {
           <div className="bg-white dark:bg-[#16181e] p-5 rounded-2xl border border-gray-200 dark:border-gray-800/50 mb-6 flex flex-wrap gap-3 items-end">
 
             <div>
-              <label htmlFor="tx-type-filter" className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Type</label>
+              <label htmlFor="tx-type-filter" className="block text-xs text-gray-600 dark:text-gray-400 mb-1">Type</label>
               <select
                 id="tx-type-filter"
                 value={typeFilter}
@@ -122,7 +122,7 @@ const TransactionHistory = () => {
             </div>
 
             <div>
-              <label htmlFor="tx-asset-filter" className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Asset</label>
+              <label htmlFor="tx-asset-filter" className="block text-xs text-gray-600 dark:text-gray-400 mb-1">Asset</label>
               <input
                 id="tx-asset-filter"
                 type="text"
@@ -134,7 +134,7 @@ const TransactionHistory = () => {
             </div>
 
             <div>
-              <label htmlFor="tx-status-filter" className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Status</label>
+              <label htmlFor="tx-status-filter" className="block text-xs text-gray-600 dark:text-gray-400 mb-1">Status</label>
               <select
                 id="tx-status-filter"
                 value={statusFilter}
@@ -149,7 +149,7 @@ const TransactionHistory = () => {
             </div>
 
             <div>
-              <label htmlFor="tx-start-date" className="block text-xs text-gray-500 dark:text-gray-400 mb-1">From</label>
+              <label htmlFor="tx-start-date" className="block text-xs text-gray-600 dark:text-gray-400 mb-1">From</label>
               <input
                 id="tx-start-date"
                 type="date"
@@ -160,7 +160,7 @@ const TransactionHistory = () => {
             </div>
 
             <div>
-              <label htmlFor="tx-end-date" className="block text-xs text-gray-500 dark:text-gray-400 mb-1">To</label>
+              <label htmlFor="tx-end-date" className="block text-xs text-gray-600 dark:text-gray-400 mb-1">To</label>
               <input
                 id="tx-end-date"
                 type="date"
@@ -185,18 +185,18 @@ const TransactionHistory = () => {
           {/* TABLE */}
           <div className="bg-white dark:bg-[#16181e] rounded-2xl border border-gray-200 dark:border-gray-800/50 overflow-hidden">
 
-            {loading && <p className="text-gray-500 dark:text-gray-400 text-sm p-6">Loading transactions...</p>}
+            {loading && <p className="text-gray-600 dark:text-gray-400 text-sm p-6">Loading transactions...</p>}
             {!loading && error && <p className="text-red-500 text-sm p-6">{error}</p>}
 
             {!loading && !error && transactions.length === 0 && (
-              <p className="text-gray-500 dark:text-gray-400 text-sm p-6">No transactions match these filters.</p>
+              <p className="text-gray-600 dark:text-gray-400 text-sm p-6">No transactions match these filters.</p>
             )}
 
             {!loading && !error && transactions.length > 0 && (
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="text-left text-gray-500 dark:text-gray-400 border-b border-gray-200 dark:border-gray-800">
+                    <tr className="text-left text-gray-600 dark:text-gray-400 border-b border-gray-200 dark:border-gray-800">
                       <th className="px-5 py-3 font-medium">Date</th>
                       <th className="px-5 py-3 font-medium">Type</th>
                       <th className="px-5 py-3 font-medium">Asset</th>
@@ -213,16 +213,16 @@ const TransactionHistory = () => {
                         onClick={() => setSelectedTx(tx)}
                         className="border-b border-gray-200 dark:border-gray-800/50 hover:bg-gray-50 dark:hover:bg-[#1c1f27] cursor-pointer transition-colors"
                       >
-                        <td className="px-5 py-3 text-gray-500 dark:text-gray-400 whitespace-nowrap">
+                        <td className="px-5 py-3 text-gray-600 dark:text-gray-400 whitespace-nowrap">
                           {new Date(tx.created_at).toLocaleString()}
                         </td>
                         <td className={`px-5 py-3 font-semibold ${typeStyles[tx.type] || ""}`}>{tx.type}</td>
                         <td className="px-5 py-3">{tx.asset}</td>
                         <td className="px-5 py-3">{formatAmount(tx.amount)}</td>
-                        <td className="px-5 py-3 text-gray-500 dark:text-gray-400">{formatAmount(tx.fee)}</td>
+                        <td className="px-5 py-3 text-gray-600 dark:text-gray-400">{formatAmount(tx.fee)}</td>
                         <td className="px-5 py-3">{formatAmount(tx.total)}</td>
                         <td className="px-5 py-3">
-                          <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${statusStyles[tx.status] || "bg-gray-500/10 text-gray-500 dark:text-gray-400"}`}>
+                          <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${statusStyles[tx.status] || "bg-gray-500/10 text-gray-600 dark:text-gray-400"}`}>
                             {tx.status}
                           </span>
                         </td>
@@ -235,7 +235,7 @@ const TransactionHistory = () => {
 
             {/* PAGINATION */}
             {!loading && !error && pagination.total > 0 && (
-              <div className="flex items-center justify-between px-5 py-4 border-t border-gray-200 dark:border-gray-800 text-sm text-gray-500 dark:text-gray-400">
+              <div className="flex items-center justify-between px-5 py-4 border-t border-gray-200 dark:border-gray-800 text-sm text-gray-600 dark:text-gray-400">
                 <span>
                   Page {pagination.page} of {pagination.totalPages} ({pagination.total} total)
                 </span>
@@ -270,48 +270,48 @@ const TransactionHistory = () => {
         <Modal onClose={() => setSelectedTx(null)} titleId="tx-detail-title" className="bg-white dark:bg-[#16181e] border border-gray-200 dark:border-gray-800 rounded-2xl p-6 max-w-md w-full text-slate-900 dark:text-white">
             <div className="flex justify-between items-start mb-4">
               <h3 id="tx-detail-title" className="text-lg font-bold">Transaction #{selectedTx.id}</h3>
-              <button onClick={() => setSelectedTx(null)} aria-label="Close dialog" className="text-gray-500 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white">✕</button>
+              <button onClick={() => setSelectedTx(null)} aria-label="Close dialog" className="text-gray-600 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white">✕</button>
             </div>
 
             <div className="space-y-3 text-sm">
               <div className="flex justify-between">
-                <span className="text-gray-500 dark:text-gray-400">Type</span>
+                <span className="text-gray-600 dark:text-gray-400">Type</span>
                 <span className={`font-semibold ${typeStyles[selectedTx.type] || ""}`}>{selectedTx.type}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-500 dark:text-gray-400">Status</span>
+                <span className="text-gray-600 dark:text-gray-400">Status</span>
                 <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${statusStyles[selectedTx.status] || ""}`}>{selectedTx.status}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-500 dark:text-gray-400">Asset</span>
+                <span className="text-gray-600 dark:text-gray-400">Asset</span>
                 <span>{selectedTx.asset}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-500 dark:text-gray-400">Amount</span>
+                <span className="text-gray-600 dark:text-gray-400">Amount</span>
                 <span>{formatAmount(selectedTx.amount)} {selectedTx.asset}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-500 dark:text-gray-400">Fee</span>
+                <span className="text-gray-600 dark:text-gray-400">Fee</span>
                 <span>{formatAmount(selectedTx.fee)} {selectedTx.asset}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-500 dark:text-gray-400">Total</span>
+                <span className="text-gray-600 dark:text-gray-400">Total</span>
                 <span>{formatAmount(selectedTx.total)} {selectedTx.asset}</span>
               </div>
               {selectedTx.reference && (
                 <div className="flex justify-between gap-4">
-                  <span className="text-gray-500 dark:text-gray-400 flex-shrink-0">Reference</span>
+                  <span className="text-gray-600 dark:text-gray-400 flex-shrink-0">Reference</span>
                   <span className="text-right break-all font-mono text-xs">{selectedTx.reference}</span>
                 </div>
               )}
               {selectedTx.tx_hash && (
                 <div className="flex justify-between gap-4">
-                  <span className="text-gray-500 dark:text-gray-400 flex-shrink-0">Tx hash</span>
+                  <span className="text-gray-600 dark:text-gray-400 flex-shrink-0">Tx hash</span>
                   <span className="text-right break-all font-mono text-xs">{selectedTx.tx_hash}</span>
                 </div>
               )}
               <div className="flex justify-between">
-                <span className="text-gray-500 dark:text-gray-400">Date</span>
+                <span className="text-gray-600 dark:text-gray-400">Date</span>
                 <span>{new Date(selectedTx.created_at).toLocaleString()}</span>
               </div>
             </div>

@@ -29,7 +29,7 @@ const StepIndicator = ({ steps, currentStep }) => {
               className={`flex items-center gap-2 ${
                 isDone || isCurrent
                   ? "text-slate-900 dark:text-white"
-                  : "text-gray-400 dark:text-gray-500"
+                  : "text-gray-600 dark:text-gray-400"
               }`}
             >
               <span

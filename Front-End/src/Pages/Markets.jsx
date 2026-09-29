@@ -137,7 +137,7 @@ export default function Markets() {
                   className={`px-5 py-2 rounded-full text-sm font-semibold whitespace-nowrap transition-all duration-200 ${
                     isActive
                       ? "bg-[#155dfc] text-white shadow-lg  scale-105"
-                      : "text-gray-500 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-[#1a1e2b]"
+                      : "text-gray-600 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-[#1a1e2b]"
                   }`}
                 >
                   {category.name}
@@ -193,8 +193,8 @@ export default function Markets() {
                         <div
                           className={`inline-flex items-center gap-1 text-xs font-bold px-2.5 py-1 rounded-full ${
                             isPositive
-                              ? "bg-[#22c55e]/15 text-[#22c55e]"
-                              : "bg-[#ef4444]/15 text-[#f87171]"
+                              ? "bg-green-100 text-green-700 dark:bg-[#22c55e]/15 dark:text-[#22c55e]"
+                              : "bg-red-100 text-red-700 dark:bg-[#ef4444]/15 dark:text-[#f87171]"
                           }`}
                         >
                           <span>{isPositive ? "↑" : "↓"}</span>
@@ -210,7 +210,7 @@ export default function Markets() {
 
                     <div className="mt-4 flex items-end justify-between">
                       <div>
-                        <span className="text-xs text-gray-500 dark:text-gray-400 font-medium block mb-1">
+                        <span className="text-xs text-gray-600 dark:text-gray-400 font-medium block mb-1">
                           {coin.name}
                         </span>
                         <span className="text-lg font-bold text-slate-900 dark:text-white tracking-wide">
@@ -218,7 +218,7 @@ export default function Markets() {
                         </span>
                       </div>
 
-                      <span className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                      <span className="text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
                         {coin.symbol}
                       </span>
                     </div>
@@ -279,7 +279,7 @@ export default function Markets() {
                 </div>
 
                 <div>
-                  <p className="text-gray-500 dark:text-gray-400">2025</p>
+                  <p className="text-gray-600 dark:text-gray-400">2025</p>
                 </div>
               </div>
             </div>
@@ -312,7 +312,7 @@ export default function Markets() {
                 </div>
 
                 <div>
-                  <p className="text-gray-500 dark:text-gray-400">2025</p>
+                  <p className="text-gray-600 dark:text-gray-400">2025</p>
                 </div>
               </div>
             </div>
@@ -345,7 +345,7 @@ export default function Markets() {
                 </div>
 
                 <div>
-                  <p className="text-gray-500 dark:text-gray-400">2026</p>
+                  <p className="text-gray-600 dark:text-gray-400">2026</p>
                 </div>
               </div>
             </div>

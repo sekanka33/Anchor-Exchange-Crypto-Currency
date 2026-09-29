@@ -13,13 +13,13 @@ const PageHeader = ({ title, crumbs = [] }) => {
         </h1>
 
         {crumbs.length > 0 && (
-          <nav aria-label="Breadcrumb" className="text-sm text-gray-500 dark:text-text-color">
+          <nav aria-label="Breadcrumb" className="text-sm text-gray-600 dark:text-text-color">
             <ol className="flex items-center gap-2">
               {crumbs.map((crumb, index) => (
                 <li key={crumb.label} className="flex items-center gap-2">
                   {index > 0 && <span aria-hidden="true">/</span>}
                   {crumb.to ? (
-                    <Link to={crumb.to} className="hover:text-blue-600 dark:hover:text-blue-400">
+                    <Link to={crumb.to} className="text-gray-600 dark:text-text-color hover:text-blue-600 dark:hover:text-blue-400">
                       {crumb.label}
                     </Link>
                   ) : (

@@ -195,7 +195,7 @@ const CryptoDeposit = () => {
           <div className="bg-white dark:bg-[#16181e] p-8 rounded-2xl border border-gray-200 dark:border-gray-800/50 shadow-xl">
 
             <h2 className="text-2xl font-bold mb-1">Receive Crypto</h2>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mb-6">
+            <p className="text-xs text-gray-600 dark:text-gray-400 mb-6">
               Send crypto from an external wallet to your Anchor Exchange address.
             </p>
 
@@ -215,7 +215,7 @@ const CryptoDeposit = () => {
                     </span>
                     {selectedAsset.symbol}
                   </span>
-                  <span className="text-gray-500 dark:text-gray-400">▼</span>
+                  <span className="text-gray-600 dark:text-gray-400">▼</span>
                 </button>
 
                 {showAssetDropdown && (
@@ -235,7 +235,7 @@ const CryptoDeposit = () => {
                         </span>
                         <div>
                           <p className="text-sm font-semibold">{a.symbol}</p>
-                          <p className="text-xs text-gray-500 dark:text-gray-400">{a.name}</p>
+                          <p className="text-xs text-gray-600 dark:text-gray-400">{a.name}</p>
                         </div>
                       </button>
                     ))}
@@ -262,7 +262,7 @@ const CryptoDeposit = () => {
 
             </div>
 
-            {addressLoading && <p className="text-sm text-gray-500 dark:text-gray-400">Generating your deposit address...</p>}
+            {addressLoading && <p className="text-sm text-gray-600 dark:text-gray-400">Generating your deposit address...</p>}
 
             {addressError && (
               <div role="alert" className="mb-5 p-3 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-sm">
@@ -288,7 +288,7 @@ const CryptoDeposit = () => {
 
                   <div className="flex-1 w-full space-y-4">
                     <div>
-                      <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">
+                      <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">
                         {selectedAsset.symbol} address ({addressData.networkLabel})
                       </p>
                       <div className="flex items-center gap-2 bg-slate-100 dark:bg-[#21242d] text-slate-900 dark:text-white rounded-xl px-4 py-3">
@@ -321,7 +321,7 @@ const CryptoDeposit = () => {
                       </div>
                     )}
 
-                    <div className="text-xs text-gray-500 dark:text-gray-400 space-y-1">
+                    <div className="text-xs text-gray-600 dark:text-gray-400 space-y-1">
                       <p>Minimum deposit: {addressData.minDeposit} {selectedAsset.symbol}</p>
                       <p>Required confirmations: {addressData.requiredConfirmations}</p>
                     </div>
@@ -334,7 +334,7 @@ const CryptoDeposit = () => {
             {addressData && (
               <div className="border border-dashed border-gray-300 dark:border-gray-700 rounded-xl p-5 mt-2">
                 <p className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">Demo Tools</p>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">
+                <p className="text-xs text-gray-600 dark:text-gray-400 mb-4">
                   There's no real blockchain being watched in this demo. In production, an incoming transaction to the
                   address above would be detected automatically. Use this to simulate that happening.
                 </p>
@@ -369,7 +369,7 @@ const CryptoDeposit = () => {
                 {activeDeposit && (
                   <div className="mt-1">
                     <div className="flex justify-between text-sm mb-2">
-                      <span className="text-gray-500 dark:text-gray-400">
+                      <span className="text-gray-600 dark:text-gray-400">
                         {activeDeposit.amount} {activeDeposit.asset}
                       </span>
                       <span
