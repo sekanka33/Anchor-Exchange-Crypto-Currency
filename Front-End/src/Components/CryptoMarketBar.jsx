@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
+import { getCoinsMarkets } from "../api/coingecko";
 
 const CATEGORIES = [
   { name: "Crypto", id: "" },
@@ -58,16 +59,13 @@ export default function CryptoMarketBar() {
       setLoading(true);
       setError(null);
       try {
-        const categoryParam = selectedCategory.id
-          ? `&category=${selectedCategory.id}`
-          : "";
-        const url = `https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd${categoryParam}&order=market_cap_desc&per_page=15&page=1&sparkline=true&price_change_percentage=24h`;
-
-        const response = await fetch(url);
-        if (!response.ok) {
-          throw new Error("Failed to fetch market data from CoinGecko");
-        }
-        const data = await response.json();
+        const data = await getCoinsMarkets({
+          category: selectedCategory.id || "all",
+          perPage: 15,
+          page: 1,
+          sparkline: true,
+          priceChangePercentage: "24h",
+        });
         setCoins(data);
       } catch (err) {
         setError(err.message);
@@ -81,9 +79,9 @@ export default function CryptoMarketBar() {
 
   return (
     <div className="relative px-4 md:px-12 lg:px-20 py-6 bottom-50">
-      <div className="w-full bg-[#111319] p-6 rounded-2xl border border-[#212634] shadow-2xl">
+      <div className="w-full bg-white dark:bg-[#111319] text-slate-900 dark:text-white p-6 rounded-2xl border border-gray-200 dark:border-[#212634] shadow-2xl">
         {/* Top Navigation Bar / Categories */}
-        <div className="flex items-center gap-2 overflow-x-auto pb-4 mb-6 border-b border-[#1e2330] scrollbar-none">
+        <div className="flex items-center gap-2 overflow-x-auto pb-4 mb-6 border-b border-gray-200 dark:border-[#1e2330] scrollbar-none">
           {CATEGORIES.map((category) => {
             const isActive = selectedCategory.name === category.name;
             return (
@@ -92,8 +90,8 @@ export default function CryptoMarketBar() {
                 onClick={() => setSelectedCategory(category)}
                 className={`px-5 py-2 rounded-full text-sm font-semibold whitespace-nowrap transition-all duration-200 ${
                   isActive
-                    ? "bg-[#3b82f6] text-white shadow-lg shadow-blue-500/25 scale-105"
-                    : "text-gray-400 hover:text-white hover:bg-[#1a1e2b]"
+                    ? "bg-[#155dfc] text-white shadow-lg shadow-blue-500/25 scale-105"
+                    : "text-gray-500 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-[#1a1e2b]"
                 }`}
               >
                 {category.name}
@@ -108,7 +106,7 @@ export default function CryptoMarketBar() {
             {[...Array(4)].map((_, i) => (
               <div
                 key={i}
-                className="min-w-[280px] h-[140px] bg-[#161a25] animate-pulse rounded-2xl border border-[#232938]"
+                className="min-w-[280px] h-[140px] bg-gray-100 dark:bg-[#161a25] animate-pulse rounded-2xl border border-gray-200 dark:border-[#232938]"
               />
             ))}
           </div>
@@ -117,7 +115,7 @@ export default function CryptoMarketBar() {
             {error} — Please try again shortly.
           </div>
         ) : (
-          <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-gray-800 scrollbar-track-transparent">
+          <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-gray-800 scrollbar-track-transparent" tabIndex={0} role="region" aria-label="Coin cards, scroll horizontally">
             {coins.map((coin) => {
               const isPositive = coin.price_change_percentage_24h >= 0;
               const priceFormatted = coin.current_price?.toLocaleString(
@@ -131,7 +129,7 @@ export default function CryptoMarketBar() {
               return (
                 <div
                   key={coin.id}
-                  className="min-w-[280px] flex-1 bg-[#151821] hover:bg-[#1a1e2b] transition-all duration-200 border border-[#212735] rounded-2xl p-4 flex flex-col justify-between"
+                  className="min-w-[280px] flex-1 bg-white dark:bg-[#151821] hover:bg-gray-50 dark:hover:bg-[#1a1e2b] transition-all duration-200 border border-gray-200 dark:border-[#212735] rounded-2xl p-4 flex flex-col justify-between"
                 >
                   <div className="flex items-start justify-between gap-2">
                     <img
@@ -150,7 +148,7 @@ export default function CryptoMarketBar() {
                         className={`inline-flex items-center gap-1 text-xs font-bold px-2.5 py-1 rounded-full ${
                           isPositive
                             ? "bg-[#22c55e]/15 text-[#22c55e]"
-                            : "bg-[#ef4444]/15 text-[#ef4444]"
+                            : "bg-[#ef4444]/15 text-[#f87171]"
                         }`}
                       >
                         <span>{isPositive ? "↑" : "↓"}</span>
@@ -166,15 +164,15 @@ export default function CryptoMarketBar() {
 
                   <div className="mt-4 flex items-end justify-between">
                     <div>
-                      <span className="text-xs text-gray-400 font-medium block mb-1">
+                      <span className="text-xs text-gray-500 dark:text-gray-400 font-medium block mb-1">
                         {coin.name}
                       </span>
-                      <span className="text-lg font-bold text-white tracking-wide">
+                      <span className="text-lg font-bold text-slate-900 dark:text-white tracking-wide">
                         USD {priceFormatted}
                       </span>
                     </div>
 
-                    <span className="text-sm font-semibold text-gray-500 uppercase tracking-wider">
+                    <span className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                       {coin.symbol}
                     </span>
                   </div>

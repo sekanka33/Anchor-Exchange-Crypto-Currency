@@ -1,7 +1,11 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import CreateAnAccoutSection from "../Components/CreateAnAccoutSection";
+import PageHeader from "../Components/PageHeader";
+import MoneyFlowSidebar from "../Components/MoneyFlowSidebar";
+import StepIndicator from "../Components/StepIndicator";
 import { getCoinPrice } from "../api/coingecko";
+import { API_BASE_URL } from "../api/config";
 
 const cryptocurrencies = [
   {
@@ -52,6 +56,10 @@ const SellCrypto = () => {
   const [step, setStep] = useState(1);
 
   const [showDropdown, setShowDropdown] = useState(false);
+
+  const [submitting, setSubmitting] = useState(false);
+  const [orderResult, setOrderResult] = useState(null);
+  const [orderError, setOrderError] = useState("");
 
   const feePercentage = 0.01;
 
@@ -121,113 +129,72 @@ const SellCrypto = () => {
     }).format(value);
   };
 
+  /*
+   * Submit the sale to the backend — the backend recalculates price, fee,
+   * and validates the available balance from scratch.
+   */
+  const handleConfirmSale = async () => {
+    if (submitting) return;
+
+    setSubmitting(true);
+    setOrderError("");
+
+    try {
+      const token = localStorage.getItem("token");
+
+      const response = await fetch(`${API_BASE_URL}/api/orders/sell`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          asset: selectedCoin.symbol,
+          amount: cryptoAmount,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setOrderError(data.message || "Unable to complete sale.");
+        return;
+      }
+
+      setOrderResult(data);
+      setStep(4);
+    } catch {
+      setOrderError("Unable to connect to Anchor Exchange server.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   return (
     <div>
 
-      {/* HEADER */}
-      <div className="pr-20 pl-20 pt-10 h-27 w-full bg-mist-900">
-        <h1 className="text-2xl font-semibold">
-          Sell Crypto
-        </h1>
-      </div>
+      <PageHeader title="Sell Crypto" crumbs={[{ label: "Home", to: "/" }, { label: "Sell Crypto" }]} />
 
-      <div className="flex flex-row gap-30 pt-20 pb-20 pr-30 pl-30">
+      <div className="flex flex-col md:flex-row gap-6 md:gap-16 lg:gap-30 pt-6 md:pt-20 pb-10 md:pb-20 px-4 md:px-16 lg:px-30">
 
-        {/* SIDEBAR */}
-        <div className="flex flex-col justify-center gap-7 pb-50">
+        <MoneyFlowSidebar />
 
-          <Link
-            to="/overview"
-            className="w-50 h-10 flex items-center px-4 rounded-full hover:bg-blue-500 transition-colors"
-          >
-            Overview
-          </Link>
-
-          <Link
-            to="/buy-crypto"
-            className="w-50 h-10 flex items-center px-4 rounded-full hover:bg-blue-500 transition-colors"
-          >
-            Buy Crypto
-          </Link>
-
-          <Link
-            to="/sell-crypto"
-            className="w-50 h-10 flex items-center px-4 rounded-full bg-blue-500"
-          >
-            Sell Crypto
-          </Link>
-
-        </div>
-
-        <div className="h-140 w-0 border-r-2 border-hero-dark"></div>
+        <div className="hidden md:block h-140 w-0 border-r-2 border-gray-200 dark:border-hero-dark"></div>
 
         {/* MAIN */}
-        <div className="text-white font-sans">
+        <div className="text-slate-900 dark:text-white font-sans w-full">
 
-          {/* PROGRESS */}
-          <div className="flex items-center gap-4 text-sm font-semibold mb-8 pl-7">
-
-            <div className="flex items-center gap-2">
-              <div className="w-4 h-4 rounded-full border-2 border-green-500 flex items-center justify-center p-0.5">
-                <div className="w-full h-full bg-green-500 rounded-full"></div>
-              </div>
-
-              <span>
-                Select currency
-              </span>
-            </div>
-
-            <div className="text-gray-600">
-              --------
-            </div>
-
-            <div className={`flex items-center gap-2 ${
-              step >= 2 ? "text-white" : "text-gray-400"
-            }`}>
-
-              <div className={`w-3 h-3 rounded-full ${
-                step >= 2
-                  ? "bg-green-500"
-                  : "bg-white"
-              }`}></div>
-
-              <span>
-                Important Notes
-              </span>
-
-            </div>
-
-            <div className="text-gray-600">
-              --------
-            </div>
-
-            <div className={`flex items-center gap-2 ${
-              step >= 3 ? "text-white" : "text-gray-400"
-            }`}>
-
-              <div className={`w-3 h-3 rounded-full ${
-                step >= 3
-                  ? "bg-green-500"
-                  : "bg-white"
-              }`}></div>
-
-              <span>
-                Payment Details
-              </span>
-
-            </div>
-
-          </div>
+          <StepIndicator steps={["Select currency", "Important Notes", "Payment Details"]} currentStep={step} />
 
           {/* STEP 1 */}
           {step === 1 && (
-            <div className="bg-[#16181e] p-8 rounded-2xl max-w-2xl border border-gray-800/50 shadow-xl">
+            <div className="bg-white dark:bg-[#16181e] p-8 rounded-2xl max-w-2xl border border-gray-200 dark:border-gray-800/50 shadow-xl">
 
               <h2 className="text-2xl font-bold mb-1">
                 Sell Crypto
               </h2>
 
-              <p className="text-xs text-gray-400 mb-6">
+              <p className="text-xs text-gray-500 dark:text-gray-400 mb-6">
 
                 {loading ? (
                   "Loading current price..."
@@ -240,7 +207,7 @@ const SellCrypto = () => {
               </p>
 
               {error && (
-                <div className="mb-5 p-3 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-sm">
+                <div role="alert" className="mb-5 p-3 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-sm">
                   {error}
                 </div>
               )}
@@ -252,13 +219,14 @@ const SellCrypto = () => {
                   {/* CRYPTO */}
                   <div className="flex-1">
 
-                    <label className="block text-base font-semibold text-gray-300 mb-2">
+                    <label htmlFor="sell-amount" className="block text-base font-semibold text-gray-700 dark:text-gray-300 mb-2">
                       Sell
                     </label>
 
-                    <div className="flex items-center bg-input-field border border-blue-500 rounded-xl px-4 py-3">
+                    <div className="flex items-center bg-slate-100 dark:bg-input-field text-slate-900 dark:text-white border border-blue-500 rounded-xl px-4 py-3">
 
                       <input
+                        id="sell-amount"
                         type="number"
                         min="0"
                         step="0.00000001"
@@ -266,7 +234,7 @@ const SellCrypto = () => {
                         onChange={(e) =>
                           setAmount(e.target.value)
                         }
-                        className="w-full bg-transparent outline-none text-white text-sm"
+                        className="w-full bg-transparent outline-none focus:ring-2 focus:ring-blue-500 text-slate-900 dark:text-white text-sm"
                       />
 
                       <button
@@ -283,7 +251,7 @@ const SellCrypto = () => {
 
                         {selectedCoin.symbol}
 
-                        <span className="text-gray-400">
+                        <span className="text-gray-500 dark:text-gray-400">
                           ▼
                         </span>
 
@@ -292,7 +260,7 @@ const SellCrypto = () => {
                     </div>
 
                     {showDropdown && (
-                      <div className="absolute mt-2 bg-[#21242d] border border-gray-700 rounded-xl overflow-hidden z-50">
+                      <div className="absolute mt-2 bg-white dark:bg-[#21242d] text-slate-900 dark:text-white border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden z-50">
 
                         {cryptocurrencies.map((coin) => (
                           <button
@@ -313,20 +281,21 @@ const SellCrypto = () => {
 
                   </div>
 
-                  <div className="bg-blue-500 p-3 rounded-full">
+                  <div className="bg-blue-600 p-3 rounded-full text-white">
                     <img src="/src/assets/Group 564.png" alt="Exchange icon" />
                   </div>
 
                   {/* USD */}
                   <div className="flex-1">
 
-                    <label className="block text-base font-semibold text-gray-300 mb-2">
+                    <label htmlFor="sell-receive-amount" className="block text-base font-semibold text-gray-700 dark:text-gray-300 mb-2">
                       Receive
                     </label>
 
-                    <div className="flex items-center bg-[#21242d] rounded-xl px-4 py-3">
+                    <div className="flex items-center bg-slate-100 dark:bg-[#21242d] text-slate-900 dark:text-white rounded-xl px-4 py-3">
 
                       <input
+                        id="sell-receive-amount"
                         type="text"
                         readOnly
                         value={
@@ -334,7 +303,7 @@ const SellCrypto = () => {
                             ? formatUSD(grossUSD)
                             : "$0.00"
                         }
-                        className="w-full bg-transparent outline-none text-white text-sm"
+                        className="w-full bg-transparent outline-none focus:ring-2 focus:ring-blue-500 text-slate-900 dark:text-white text-sm"
                       />
 
                       <span className="text-sm font-semibold">
@@ -348,10 +317,10 @@ const SellCrypto = () => {
                 </div>
 
                 {/* BREAKDOWN */}
-                <div className="bg-[#21242d] rounded-xl p-4 space-y-3 mb-6">
+                <div className="bg-slate-100 dark:bg-[#21242d] text-slate-900 dark:text-white rounded-xl p-4 space-y-3 mb-6">
 
                   <div className="flex justify-between text-sm">
-                    <span className="text-gray-400">
+                    <span className="text-gray-500 dark:text-gray-400">
                       Market value
                     </span>
 
@@ -361,7 +330,7 @@ const SellCrypto = () => {
                   </div>
 
                   <div className="flex justify-between text-sm">
-                    <span className="text-gray-400">
+                    <span className="text-gray-500 dark:text-gray-400">
                       Selling fee (1%)
                     </span>
 
@@ -370,7 +339,7 @@ const SellCrypto = () => {
                     </span>
                   </div>
 
-                  <div className="border-t border-gray-700 pt-3 flex justify-between font-semibold">
+                  <div className="border-t border-gray-200 dark:border-gray-700 pt-3 flex justify-between font-semibold">
                     <span>
                       You receive
                     </span>
@@ -382,7 +351,7 @@ const SellCrypto = () => {
 
                 </div>
 
-                <p className="text-xs text-gray-500 mb-5">
+                <p className="text-xs text-gray-500 dark:text-gray-400 mb-5">
                   Market price provided by CoinGecko.
                   The final execution price may change.
                 </p>
@@ -391,7 +360,7 @@ const SellCrypto = () => {
 
                   <button
                     type="submit"
-                    className="bg-blue-500 hover:bg-blue-400 w-40 text-white font-semibold text-sm px-8 py-2.5 rounded-full"
+                    className="bg-blue-600 hover:bg-blue-600 w-40 text-white font-semibold text-sm px-8 py-2.5 rounded-full"
                   >
                     Continue
                   </button>
@@ -405,7 +374,7 @@ const SellCrypto = () => {
 
           {/* STEP 2 */}
           {step === 2 && (
-            <div className="bg-[#16181e] p-8 rounded-2xl max-w-2xl border border-gray-800/50">
+            <div className="bg-white dark:bg-[#16181e] p-8 rounded-2xl max-w-2xl border border-gray-200 dark:border-gray-800/50">
 
               <h2 className="text-2xl font-bold mb-4">
                 Confirm Sale
@@ -414,7 +383,7 @@ const SellCrypto = () => {
               <div className="space-y-4">
 
                 <div className="flex justify-between">
-                  <span className="text-gray-400">
+                  <span className="text-gray-500 dark:text-gray-400">
                     Selling
                   </span>
 
@@ -424,7 +393,7 @@ const SellCrypto = () => {
                 </div>
 
                 <div className="flex justify-between">
-                  <span className="text-gray-400">
+                  <span className="text-gray-500 dark:text-gray-400">
                     Market value
                   </span>
 
@@ -434,7 +403,7 @@ const SellCrypto = () => {
                 </div>
 
                 <div className="flex justify-between">
-                  <span className="text-gray-400">
+                  <span className="text-gray-500 dark:text-gray-400">
                     Fee
                   </span>
 
@@ -443,7 +412,7 @@ const SellCrypto = () => {
                   </span>
                 </div>
 
-                <div className="border-t border-gray-700 pt-4 flex justify-between font-bold">
+                <div className="border-t border-gray-200 dark:border-gray-700 pt-4 flex justify-between font-bold">
                   <span>
                     You receive
                   </span>
@@ -459,14 +428,14 @@ const SellCrypto = () => {
 
                 <button
                   onClick={() => setStep(1)}
-                  className="px-6 py-2.5 rounded-full border border-gray-700"
+                  className="px-6 py-2.5 rounded-full border border-gray-300 dark:border-gray-700"
                 >
                   Back
                 </button>
 
                 <button
                   onClick={() => setStep(3)}
-                  className="bg-blue-500 px-8 py-2.5 rounded-full"
+                  className="bg-blue-600 px-8 py-2.5 rounded-full text-white"
                 >
                   Continue
                 </button>
@@ -478,20 +447,20 @@ const SellCrypto = () => {
 
           {/* STEP 3 */}
           {step === 3 && (
-            <div className="bg-[#16181e] p-8 rounded-2xl max-w-2xl border border-gray-800/50">
+            <div className="bg-white dark:bg-[#16181e] p-8 rounded-2xl max-w-2xl border border-gray-200 dark:border-gray-800/50">
 
               <h2 className="text-2xl font-bold mb-4">
                 Payment Details
               </h2>
 
-              <p className="text-gray-400 text-sm mb-6">
+              <p className="text-gray-500 dark:text-gray-400 text-sm mb-6">
                 Choose where you want to receive your
                 funds.
               </p>
 
-              <div className="bg-[#21242d] p-5 rounded-xl">
+              <div className="bg-slate-100 dark:bg-[#21242d] text-slate-900 dark:text-white p-5 rounded-xl">
 
-                <p className="text-sm text-gray-400">
+                <p className="text-sm text-gray-500 dark:text-gray-400">
                   Amount to receive
                 </p>
 
@@ -501,26 +470,88 @@ const SellCrypto = () => {
 
               </div>
 
+              {orderError && (
+                <div role="alert" className="mt-5 p-3 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-sm">
+                  {orderError}
+                </div>
+              )}
+
               <div className="flex justify-between mt-8">
 
                 <button
                   onClick={() => setStep(2)}
-                  className="px-6 py-2.5 rounded-full border border-gray-700"
+                  disabled={submitting}
+                  className="px-6 py-2.5 rounded-full border border-gray-300 dark:border-gray-700 disabled:opacity-50"
                 >
                   Back
                 </button>
 
                 <button
-                  onClick={() =>
-                    alert(
-                      "Sell order will be connected to the backend."
-                    )
-                  }
-                  className="bg-blue-500 px-8 py-2.5 rounded-full"
+                  onClick={handleConfirmSale}
+                  disabled={submitting}
+                  className="bg-blue-600 px-8 py-2.5 rounded-full disabled:opacity-50 disabled:cursor-not-allowed text-white"
                 >
-                  Confirm Sale
+                  {submitting ? "Processing..." : "Confirm Sale"}
                 </button>
 
+              </div>
+
+            </div>
+          )}
+
+          {/* STEP 4 — CONFIRMATION */}
+          {step === 4 && orderResult && (
+            <div className="bg-white dark:bg-[#16181e] p-8 rounded-2xl max-w-2xl border border-gray-200 dark:border-gray-800/50 text-center">
+
+              <div className="w-14 h-14 rounded-full bg-green-500/20 text-green-400 flex items-center justify-center mx-auto mb-4 text-2xl">
+                ✓
+              </div>
+
+              <h2 className="text-2xl font-bold mb-4">Sale completed</h2>
+
+              <div className="bg-slate-100 dark:bg-[#21242d] text-slate-900 dark:text-white rounded-xl p-5 text-left space-y-3">
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-500 dark:text-gray-400">You sold</span>
+                  <span className="font-semibold">
+                    {orderResult.order.amount} {selectedCoin.symbol}
+                  </span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-500 dark:text-gray-400">Price</span>
+                  <span>{formatUSD(orderResult.order.price)}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-500 dark:text-gray-400">Fee</span>
+                  <span>-{formatUSD(orderResult.order.fee)}</span>
+                </div>
+                <div className="border-t border-gray-200 dark:border-gray-700 pt-3 flex justify-between font-semibold text-sm">
+                  <span>You received</span>
+                  <span>{formatUSD(orderResult.transaction.total)}</span>
+                </div>
+                <div className="flex justify-between text-xs text-gray-500">
+                  <span>Reference</span>
+                  <span>{orderResult.transaction.reference}</span>
+                </div>
+              </div>
+
+              <div className="flex justify-center gap-4 mt-8">
+                <Link
+                  to="/wallet"
+                  className="px-6 py-2.5 rounded-full border border-gray-300 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 text-sm font-semibold"
+                >
+                  View Wallet
+                </Link>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setStep(1);
+                    setOrderResult(null);
+                    setAmount("0.001");
+                  }}
+                  className="bg-blue-600 hover:bg-blue-700 px-8 py-2.5 rounded-full text-sm font-semibold text-white"
+                >
+                  Sell again
+                </button>
               </div>
 
             </div>

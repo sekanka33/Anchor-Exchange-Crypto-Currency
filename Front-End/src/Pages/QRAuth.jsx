@@ -1,5 +1,6 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
+import { API_BASE_URL } from "../api/config";
 
 const QRAuth = () => {
 
@@ -34,7 +35,7 @@ const QRAuth = () => {
             try {
 
                 const response = await fetch(
-                    "http://192.168.0.117:5000/api/qr/verify",
+                    `${API_BASE_URL}/api/qr/verify`,
                     {
                         method: "POST",
 

@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import CryptoMarketBar from "../Components/DerivativesMarketTable";
+import { getCoinsMarkets, getGlobalMarketData } from "../api/coingecko";
 
 const CATEGORIES = [
   { name: "Crypto", id: "" },
@@ -59,9 +60,7 @@ export default function Markets() {
   useEffect(() => {
     const fetchGlobalData = async () => {
       try {
-        const response = await fetch("https://api.coingecko.com/api/v3/global");
-        if (!response.ok) throw new Error("Failed to fetch global stats");
-        const json = await response.json();
+        const json = await getGlobalMarketData();
         const totalCapUSD = json.data?.total_market_cap?.usd;
 
         if (totalCapUSD) {
@@ -86,16 +85,13 @@ export default function Markets() {
       setLoading(true);
       setError(null);
       try {
-        const categoryParam = selectedCategory.id
-          ? `&category=${selectedCategory.id}`
-          : "";
-        const url = `https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd${categoryParam}&order=market_cap_desc&per_page=15&page=1&sparkline=true&price_change_percentage=24h`;
-
-        const response = await fetch(url);
-        if (!response.ok) {
-          throw new Error("Failed to fetch market data from CoinGecko");
-        }
-        const data = await response.json();
+        const data = await getCoinsMarkets({
+          category: selectedCategory.id || "all",
+          perPage: 15,
+          page: 1,
+          sparkline: true,
+          priceChangePercentage: "24h",
+        });
         setCoins(data);
       } catch (err) {
         setError(err.message);
@@ -109,8 +105,9 @@ export default function Markets() {
 
   return (
     <div>
+      <h1 className="sr-only">Markets</h1>
       {/* Hero Header Section */}
-      <div className="w-full h-110 bg-hero2-dark pr-35 pl-35 pt-20">
+      <div className="w-full min-h-70 md:h-110 bg-slate-100 dark:bg-hero2-dark text-slate-900 dark:text-white px-4 md:pr-35 md:pl-35 pt-10 md:pt-20 pb-6 md:pb-0">
         <div className="flex flex-col gap-2 text-4xl md:text-5xl font-bold tracking-tight">
           <p>Today’s</p>
           <p>Cryptocurrency</p>
@@ -118,9 +115,9 @@ export default function Markets() {
         </div>
 
         {/* Dynamic Global Market Cap Paragraph */}
-        <p className="text-gray-400 pt-4 text-xl md:text-2xl">
+        <p className="text-gray-600 dark:text-gray-400 pt-4 text-xl md:text-2xl">
           The global crypto market cap is{" "}
-          <span className="text-white font-semibold">
+          <span className="text-slate-900 dark:text-white font-semibold">
             {globalMarketCap || "loading..."}
           </span>
         </p>
@@ -128,9 +125,9 @@ export default function Markets() {
 
       {/* Main Market Bar Container */}
       <div className="relative px-4 md:px-12 lg:px-20 py-6 bottom-20">
-        <div className="w-full bg-line-color p-6 rounded-2xl border border-[#212634] shadow-2xl">
+        <div className="w-full bg-white dark:bg-line-color text-slate-900 dark:text-white p-6 rounded-2xl border border-gray-200 dark:border-[#212634] shadow-2xl">
           {/* Top Navigation Bar / Categories */}
-          <div className="flex items-center gap-2 overflow-x-auto pb-4 mb-6 border-b border-[#1e2330] scrollbar-none">
+          <div className="flex items-center gap-2 overflow-x-auto pb-4 mb-6 border-b border-gray-200 dark:border-[#1e2330] scrollbar-none">
             {CATEGORIES.map((category) => {
               const isActive = selectedCategory.name === category.name;
               return (
@@ -139,8 +136,8 @@ export default function Markets() {
                   onClick={() => setSelectedCategory(category)}
                   className={`px-5 py-2 rounded-full text-sm font-semibold whitespace-nowrap transition-all duration-200 ${
                     isActive
-                      ? "bg-[#3b82f6] text-white shadow-lg  scale-105"
-                      : "text-gray-400 hover:text-white hover:bg-[#1a1e2b]"
+                      ? "bg-[#155dfc] text-white shadow-lg  scale-105"
+                      : "text-gray-500 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-[#1a1e2b]"
                   }`}
                 >
                   {category.name}
@@ -155,7 +152,7 @@ export default function Markets() {
               {[...Array(4)].map((_, i) => (
                 <div
                   key={i}
-                  className="min-w-[280px] h-[140px] bg-[#161a25] animate-pulse rounded-2xl border border-[#232938]"
+                  className="min-w-[280px] h-[140px] bg-gray-100 dark:bg-[#161a25] animate-pulse rounded-2xl border border-gray-200 dark:border-[#232938]"
                 />
               ))}
             </div>
@@ -164,7 +161,7 @@ export default function Markets() {
               {error} — Please try again shortly.
             </div>
           ) : (
-            <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-gray-800 scrollbar-track-transparent">
+            <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-gray-800 scrollbar-track-transparent" tabIndex={0} role="region" aria-label="Coin cards, scroll horizontally">
               {coins.map((coin) => {
                 const isPositive = coin.price_change_percentage_24h >= 0;
                 const priceFormatted = coin.current_price?.toLocaleString(
@@ -178,7 +175,7 @@ export default function Markets() {
                 return (
                   <div
                     key={coin.id}
-                    className="min-w-[280px] flex-1 bg-[#151821] hover:bg-[#1a1e2b] transition-all duration-200 border border-[#212735] rounded-2xl p-4 flex flex-col justify-between"
+                    className="min-w-[280px] flex-1 bg-white dark:bg-[#151821] hover:bg-gray-50 dark:hover:bg-[#1a1e2b] transition-all duration-200 border border-gray-200 dark:border-[#212735] rounded-2xl p-4 flex flex-col justify-between"
                   >
                     <div className="flex items-start justify-between gap-2">
                       <img
@@ -197,7 +194,7 @@ export default function Markets() {
                           className={`inline-flex items-center gap-1 text-xs font-bold px-2.5 py-1 rounded-full ${
                             isPositive
                               ? "bg-[#22c55e]/15 text-[#22c55e]"
-                              : "bg-[#ef4444]/15 text-[#ef4444]"
+                              : "bg-[#ef4444]/15 text-[#f87171]"
                           }`}
                         >
                           <span>{isPositive ? "↑" : "↓"}</span>
@@ -213,15 +210,15 @@ export default function Markets() {
 
                     <div className="mt-4 flex items-end justify-between">
                       <div>
-                        <span className="text-xs text-gray-400 font-medium block mb-1">
+                        <span className="text-xs text-gray-500 dark:text-gray-400 font-medium block mb-1">
                           {coin.name}
                         </span>
-                        <span className="text-lg font-bold text-white tracking-wide">
+                        <span className="text-lg font-bold text-slate-900 dark:text-white tracking-wide">
                           USD {priceFormatted}
                         </span>
                       </div>
 
-                      <span className="text-sm font-semibold text-gray-500 uppercase tracking-wider">
+                      <span className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                         {coin.symbol}
                       </span>
                     </div>
@@ -244,7 +241,7 @@ export default function Markets() {
             <p>Learn And Earn</p>
           </div>
 
-          <div className="text-text-color flex justify-center">
+          <div className="text-slate-500 dark:text-gray-400 flex justify-center">
             <div className="flex flex-col gap-1 items-center max-w-md">
               <p>Stacks is a production-ready library of stackable</p>
               <p>content blocks built in React Native.</p>
@@ -255,8 +252,8 @@ export default function Markets() {
           {/* Cards Grid Container */}
           <div className="flex flex-wrap justify-center gap-8">
             {/* Card 1 */}
-            <div className="w-full sm:w-80 md:w-96 flex flex-col justify-between p-4 bg-background rounded-2xl shadow-sm">
-              <div className="w-full aspect-video bg-hero2-dark rounded-2xl overflow-hidden">
+            <div className="w-full sm:w-80 md:w-96 flex flex-col justify-between p-4 bg-white dark:bg-[#151821] border border-gray-200 dark:border-transparent rounded-2xl shadow-sm">
+              <div className="w-full aspect-video bg-slate-200 dark:bg-hero2-dark rounded-2xl overflow-hidden">
                 <iframe
                   className="w-full h-full"
                   src="https://www.youtube.com/embed/6VEzWfADwJE"
@@ -267,7 +264,7 @@ export default function Markets() {
                 ></iframe>
               </div>
 
-              <div className="h-8 w-32 bg-blue-500 text-white text-xs uppercase font-semibold flex items-center justify-center rounded-sm mt-5">
+              <div className="h-8 w-32 bg-blue-600 text-white text-xs uppercase font-semibold flex items-center justify-center rounded-sm mt-5">
                 <p>learn & earn</p>
               </div>
 
@@ -282,14 +279,14 @@ export default function Markets() {
                 </div>
 
                 <div>
-                  <p className="text-gray-500">2025</p>
+                  <p className="text-gray-500 dark:text-gray-400">2025</p>
                 </div>
               </div>
             </div>
 
             {/* Card 2 */}
-            <div className="w-full sm:w-80 md:w-96 flex flex-col justify-between p-4 bg-background rounded-2xl shadow-sm">
-              <div className="w-full aspect-video bg-hero2-dark rounded-2xl overflow-hidden">
+            <div className="w-full sm:w-80 md:w-96 flex flex-col justify-between p-4 bg-white dark:bg-[#151821] border border-gray-200 dark:border-transparent rounded-2xl shadow-sm">
+              <div className="w-full aspect-video bg-slate-200 dark:bg-hero2-dark rounded-2xl overflow-hidden">
                 <iframe
                   className="w-full h-full"
                   src="https://www.youtube.com/embed/k9sR7UkXX-s"
@@ -300,7 +297,7 @@ export default function Markets() {
                 ></iframe>
               </div>
 
-              <div className="h-8 w-32 bg-blue-500 text-white text-xs uppercase font-semibold flex items-center justify-center rounded-sm mt-5">
+              <div className="h-8 w-32 bg-blue-600 text-white text-xs uppercase font-semibold flex items-center justify-center rounded-sm mt-5">
                 <p>learn & earn</p>
               </div>
 
@@ -315,14 +312,14 @@ export default function Markets() {
                 </div>
 
                 <div>
-                  <p className="text-gray-500">2025</p>
+                  <p className="text-gray-500 dark:text-gray-400">2025</p>
                 </div>
               </div>
             </div>
 
             {/* Card 3 */}
-            <div className="w-full sm:w-80 md:w-96 flex flex-col justify-between p-4 bg-background rounded-2xl shadow-sm">
-              <div className="w-full aspect-video bg-hero2-dark rounded-2xl overflow-hidden">
+            <div className="w-full sm:w-80 md:w-96 flex flex-col justify-between p-4 bg-white dark:bg-[#151821] border border-gray-200 dark:border-transparent rounded-2xl shadow-sm">
+              <div className="w-full aspect-video bg-slate-200 dark:bg-hero2-dark rounded-2xl overflow-hidden">
                 <iframe
                   className="w-full h-full"
                   src="https://www.youtube.com/embed/ekl4Tc5-qJ4"
@@ -333,7 +330,7 @@ export default function Markets() {
                 ></iframe>
               </div>
 
-              <div className="h-8 w-32 bg-blue-500 text-white text-xs uppercase font-semibold flex items-center justify-center rounded-sm mt-5">
+              <div className="h-8 w-32 bg-blue-600 text-white text-xs uppercase font-semibold flex items-center justify-center rounded-sm mt-5">
                 <p>learn & earn</p>
               </div>
 
@@ -348,7 +345,7 @@ export default function Markets() {
                 </div>
 
                 <div>
-                  <p className="text-gray-500">2026</p>
+                  <p className="text-gray-500 dark:text-gray-400">2026</p>
                 </div>
               </div>
             </div>

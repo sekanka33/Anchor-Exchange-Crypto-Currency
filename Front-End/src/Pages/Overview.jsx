@@ -1,95 +1,67 @@
-import React from "react";
 import { Link } from "react-router-dom";
 import CreateAnAccoutSection from "../Components/CreateAnAccoutSection";
+import PageHeader from "../Components/PageHeader";
+import MoneyFlowSidebar from "../Components/MoneyFlowSidebar";
 
 const Overview = () => {
   return (
     <div>
+      <PageHeader title="Crypto Overview" crumbs={[{ label: "Home", to: "/" }, { label: "Overview" }]} />
 
-      <div className="pr-20 pl-20 pt-10 h-27 w-full bg-mist-900">
-        <h1 className="text-2xl font-semibold">
-          Crypto Overview
-        </h1>
-      </div>
+      <div className="flex flex-col md:flex-row gap-6 md:gap-16 lg:gap-30 pt-6 md:pt-20 pb-10 md:pb-20 px-4 md:px-16 lg:px-30">
 
-      <div className="flex flex-row gap-30 pt-20 pb-20 pr-30 pl-30">
+        <MoneyFlowSidebar />
 
-        {/* SIDEBAR */}
-        <div className="flex flex-col justify-center gap-7 pb-50">
-
-          <Link
-            to="/overview"
-            className="w-50 h-10 flex items-center px-4 rounded-full bg-blue-500"
-          >
-            Overview
-          </Link>
-
-          <Link
-            to="/buy-crypto"
-            className="w-50 h-10 flex items-center px-4 rounded-full hover:bg-blue-500 transition-colors"
-          >
-            Buy Crypto
-          </Link>
-
-          <Link
-            to="/sell-crypto"
-            className="w-50 h-10 flex items-center px-4 rounded-full hover:bg-blue-500 transition-colors"
-          >
-            Sell Crypto
-          </Link>
-
-        </div>
-
-        <div className="h-140 w-0 border-r-2 border-hero-dark"></div>
+        <div className="hidden md:block h-140 w-0 border-r-2 border-gray-200 dark:border-hero-dark"></div>
 
         {/* CONTENT */}
-        <div className="text-white max-w-3xl">
+        <div className="text-slate-900 dark:text-white w-full max-w-3xl">
 
           <h2 className="text-3xl font-bold mb-4">
             Crypto Overview
           </h2>
 
-          <p className="text-gray-400 mb-8">
+          <p className="text-gray-500 dark:text-gray-400 mb-8">
             Track cryptocurrency prices, market movements
             and discover assets available on Anchor Exchange.
           </p>
 
           <div className="grid grid-cols-3 gap-4">
 
-            <div className="bg-[#16181e] p-6 rounded-2xl">
-              <p className="text-gray-400 text-sm">
+            <div className="bg-white dark:bg-[#16181e] p-6 rounded-2xl border border-gray-200 dark:border-transparent">
+              <p className="text-gray-500 dark:text-gray-400 text-sm">
                 Buy Crypto
               </p>
 
               <Link
                 to="/buy-crypto"
-                className="inline-block mt-4 bg-blue-500 px-5 py-2 rounded-full text-sm"
+                className="inline-block mt-4 bg-blue-600 px-5 py-2 rounded-full text-sm text-white"
               >
                 Buy
               </Link>
             </div>
 
-            <div className="bg-[#16181e] p-6 rounded-2xl">
-              <p className="text-gray-400 text-sm">
+            <div className="bg-white dark:bg-[#16181e] p-6 rounded-2xl border border-gray-200 dark:border-transparent">
+              <p className="text-gray-500 dark:text-gray-400 text-sm">
                 Sell Crypto
               </p>
 
               <Link
                 to="/sell-crypto"
-                className="inline-block mt-4 bg-blue-500 px-5 py-2 rounded-full text-sm"
+                className="inline-block mt-4 bg-blue-600 px-5 py-2 rounded-full text-sm text-white"
               >
                 Sell
               </Link>
             </div>
 
-            <div className="bg-[#16181e] p-6 rounded-2xl">
-              <p className="text-gray-400 text-sm">
+            <div className="bg-white dark:bg-[#16181e] p-6 rounded-2xl border border-gray-200 dark:border-transparent">
+              <p className="text-gray-500 dark:text-gray-400 text-sm">
                 Market
               </p>
 
               <Link
                 to="/"
-                className="inline-block mt-4 bg-blue-500 px-5 py-2 rounded-full text-sm"
+                className="inline-block mt-4 bg-blue-600 px-5 py-2 rounded-full text-sm text-white"
               >
                 View Market
               </Link>

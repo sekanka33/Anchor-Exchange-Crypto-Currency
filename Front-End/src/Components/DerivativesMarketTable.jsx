@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
+import { getCoinsMarkets } from "../api/coingecko";
 
-// Category mappings for CoinGecko API
+// Category mappings for the market data proxy
 const CATEGORIES = [
   { name: "Hot", id: "" }, // Top overall coins by market cap
   { name: "New", id: "recently-added" },
@@ -21,18 +22,14 @@ export default function DerivativesMarketTable() {
       setLoading(true);
       setError(null);
       try {
-        const categoryParam = selectedCategory.id
-          ? `&category=${selectedCategory.id}`
-          : "";
-        
         // Fetches top 15 coins per selected category
-        const url = `https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd${categoryParam}&order=market_cap_desc&per_page=15&page=1&sparkline=true&price_change_percentage=24h`;
-
-        const response = await fetch(url);
-        if (!response.ok) {
-          throw new Error("Failed to fetch market data from CoinGecko");
-        }
-        const data = await response.json();
+        const data = await getCoinsMarkets({
+          category: selectedCategory.id || "all",
+          perPage: 15,
+          page: 1,
+          sparkline: true,
+          priceChangePercentage: "24h",
+        });
         setCoins(data);
       } catch (err) {
         setError(err.message);
@@ -45,19 +42,19 @@ export default function DerivativesMarketTable() {
   }, [selectedCategory]);
 
   return (
-    <div className="w-full min-h-screen text-white  pl-20 pr-20 font-sans">
-      <div className="max-w-[1400px] mx-auto bg-line-color rounded-2xl border border-[#212634] p-6 shadow-2xl">
+    <div className="w-full min-h-screen text-slate-900 dark:text-white px-4 md:px-12 lg:px-20 font-sans">
+      <div className="max-w-[1400px] mx-auto bg-white dark:bg-line-color text-slate-900 dark:text-white rounded-2xl border border-gray-200 dark:border-[#212634] p-6 shadow-2xl">
         
         {/* Top Level Navigation Tabs (Favorites, Derivatives, Spot) */}
-        <div className="flex items-center gap-2 border-b border-[#232938] pb-4 mb-4">
+        <div className="flex items-center gap-2 overflow-x-auto pb-4 mb-4 border-b border-gray-200 dark:border-[#232938] [&>button]:flex-shrink-0">
           {["Favorites", "Derivatives", "Spot"].map((tab) => (
             <button
               key={tab}
               onClick={() => setMainTab(tab)}
               className={`px-6 py-2 rounded-lg text-sm font-semibold transition-all ${
                 mainTab === tab
-                  ? "bg-[#3b82f6] text-white shadow-md shadow-blue-500/20"
-                  : "text-gray-400 hover:text-white hover:bg-[#1f2432]"
+                  ? "bg-[#155dfc] text-white shadow-md shadow-blue-500/20"
+                  : "text-gray-500 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-[#1f2432]"
               }`}
             >
               {tab}
@@ -66,13 +63,13 @@ export default function DerivativesMarketTable() {
         </div>
 
         {/* Sub Navigation (All, Inverse Perpetual, USDT Perpetual, Inserve Futures) */}
-        <div className="flex items-center gap-8 border-b border-[#232938] pb-3 mb-5 text-sm font-medium">
+        <div className="flex items-center gap-8 overflow-x-auto border-b border-gray-200 dark:border-[#232938] pb-3 mb-5 text-sm font-medium [&>button]:flex-shrink-0">
           {["All", "Inverse Perpetual", "USDT Perpetual", "Inserve Futures"].map((sub) => (
             <button
               key={sub}
               onClick={() => setSubTab(sub)}
               className={`relative pb-3 transition-colors ${
-                subTab === sub ? "text-white font-semibold" : "text-gray-400 hover:text-gray-200"
+                subTab === sub ? "text-slate-900 dark:text-white font-semibold" : "text-gray-500 dark:text-gray-400 hover:text-slate-700 dark:hover:text-gray-200"
               }`}
             >
               {sub}
@@ -84,7 +81,7 @@ export default function DerivativesMarketTable() {
         </div>
 
         {/* Category Pill Filters (Hot, New, DeFi, NFT) - 15 per category */}
-        <div className="flex items-center gap-3 mb-6">
+        <div className="flex items-center gap-3 overflow-x-auto pb-1 mb-6 [&>button]:flex-shrink-0">
           {CATEGORIES.map((cat) => {
             const isActive = selectedCategory.name === cat.name;
             return (
@@ -93,8 +90,8 @@ export default function DerivativesMarketTable() {
                 onClick={() => setSelectedCategory(cat)}
                 className={`px-4 py-1.5 rounded-full text-xs font-semibold transition-all ${
                   isActive
-                    ? "bg-[#3b82f6] text-white shadow-md shadow-blue-500/20"
-                    : "text-gray-400 hover:text-white hover:bg-[#202534]"
+                    ? "bg-[#155dfc] text-white shadow-md shadow-blue-500/20"
+                    : "text-gray-500 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-[#202534]"
                 }`}
               >
                 {cat.name}
@@ -107,27 +104,27 @@ export default function DerivativesMarketTable() {
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm border-collapse">
             <thead>
-              <tr className="text-gray-400 text-xs font-medium border-b border-[#232938]">
+              <tr className="text-gray-500 dark:text-gray-400 text-xs font-medium border-b border-gray-200 dark:border-[#232938]">
                 <th className="py-3 px-2 w-10">#</th>
                 <th className="py-3 px-2">
-                  <div className="flex items-center gap-1 cursor-pointer hover:text-white">
+                  <div className="flex items-center gap-1 cursor-pointer hover:text-slate-900 dark:hover:text-white">
                     Trading Pairs <SortIcon />
                   </div>
                 </th>
                 <th className="py-3 px-2 text-right">
-                  <div className="flex items-center justify-end gap-1 cursor-pointer hover:text-white">
+                  <div className="flex items-center justify-end gap-1 cursor-pointer hover:text-slate-900 dark:hover:text-white">
                     Last Traded <SortIcon />
                   </div>
                 </th>
                 <th className="py-3 px-2 text-right">
-                  <div className="flex items-center justify-end gap-1 cursor-pointer hover:text-white">
+                  <div className="flex items-center justify-end gap-1 cursor-pointer hover:text-slate-900 dark:hover:text-white">
                     24H Change % <SortIcon />
                   </div>
                 </th>
                 <th className="py-3 px-2 text-right">24H High</th>
                 <th className="py-3 px-2 text-right">24H Low</th>
                 <th className="py-3 px-2 text-right">
-                  <div className="flex items-center justify-end gap-1 cursor-pointer hover:text-white">
+                  <div className="flex items-center justify-end gap-1 cursor-pointer hover:text-slate-900 dark:hover:text-white">
                     24H Turnover <SortIcon />
                   </div>
                 </th>
@@ -139,9 +136,9 @@ export default function DerivativesMarketTable() {
               {loading ? (
                 // Skeleton Loader Rows
                 [...Array(15)].map((_, i) => (
-                  <tr key={i} className="border-b border-[#1d222e]/50 animate-pulse">
+                  <tr key={i} className="border-b border-gray-200 dark:border-[#1d222e]/50 animate-pulse">
                     <td colSpan="9" className="py-4">
-                      <div className="h-6 bg-[#212635] rounded-lg w-full" />
+                      <div className="h-6 bg-gray-100 dark:bg-[#212635] rounded-lg w-full" />
                     </td>
                   </tr>
                 ))
@@ -158,12 +155,12 @@ export default function DerivativesMarketTable() {
                   return (
                     <tr
                       key={coin.id}
-                      className="border-b border-[#1e2330] hover:bg-[#1e2332] transition-colors"
+                      className="border-b border-gray-200 dark:border-[#1e2330] hover:bg-gray-50 dark:hover:bg-[#1e2332] transition-colors"
                     >
                       {/* Rank & Favorite Star */}
-                      <td className="py-3.5 px-2 text-gray-400 text-xs">
+                      <td className="py-3.5 px-2 text-gray-500 dark:text-gray-400 text-xs">
                         <div className="flex items-center gap-2">
-                          <span className="text-gray-500 hover:text-yellow-400 cursor-pointer">
+                          <span className="text-gray-400 dark:text-gray-500 hover:text-yellow-400 cursor-pointer">
                             ☆
                           </span>
                           <span>{index + 1}</span>
@@ -178,17 +175,17 @@ export default function DerivativesMarketTable() {
                             alt={coin.name}
                             className="w-6 h-6 rounded-full"
                           />
-                          <span className="font-semibold text-white">
+                          <span className="font-semibold text-slate-900 dark:text-white">
                             {coin.name}
                           </span>
-                          <span className="text-xs text-gray-500 uppercase font-medium">
+                          <span className="text-xs text-gray-500 dark:text-gray-400 uppercase font-medium">
                             | {coin.symbol}
                           </span>
                         </div>
                       </td>
 
                       {/* Last Traded Price */}
-                      <td className="py-3.5 px-2 text-right font-medium text-white">
+                      <td className="py-3.5 px-2 text-right font-medium text-slate-900 dark:text-white">
                         {coin.current_price?.toLocaleString("en-US", {
                           minimumFractionDigits: 2,
                           maximumFractionDigits: 4,
@@ -198,7 +195,7 @@ export default function DerivativesMarketTable() {
                       {/* 24h Change % */}
                       <td
                         className={`py-3.5 px-2 text-right font-semibold ${
-                          isPositive ? "text-[#22c55e]" : "text-[#ef4444]"
+                          isPositive ? "text-[#22c55e]" : "text-[#f87171]"
                         }`}
                       >
                         {isPositive ? "+" : ""}
@@ -206,21 +203,21 @@ export default function DerivativesMarketTable() {
                       </td>
 
                       {/* 24h High */}
-                      <td className="py-3.5 px-2 text-right text-gray-300 font-medium">
+                      <td className="py-3.5 px-2 text-right text-gray-600 dark:text-gray-300 font-medium">
                         {coin.high_24h?.toLocaleString("en-US", {
                           minimumFractionDigits: 2,
                         }) || "—"}
                       </td>
 
                       {/* 24h Low */}
-                      <td className="py-3.5 px-2 text-right text-gray-300 font-medium">
+                      <td className="py-3.5 px-2 text-right text-gray-600 dark:text-gray-300 font-medium">
                         {coin.low_24h?.toLocaleString("en-US", {
                           minimumFractionDigits: 2,
                         }) || "—"}
                       </td>
 
                       {/* 24h Turnover (Volume) formatted like 5.04B(USD) */}
-                      <td className="py-3.5 px-2 text-right text-gray-300 font-medium text-xs">
+                      <td className="py-3.5 px-2 text-right text-gray-600 dark:text-gray-300 font-medium text-xs">
                         {formatTurnover(coin.total_volume)}
                       </td>
 
@@ -239,8 +236,8 @@ export default function DerivativesMarketTable() {
                         <button
                           className={`px-4 py-1.5 rounded-full text-xs font-semibold border transition-all ${
                             index === 1
-                              ? " text-white shadow-md "
-                              : " text-gray-200 hover:border-white hover:bg-white/5"
+                              ? "bg-blue-600 border-blue-600 text-white shadow-md"
+                              : "border-slate-900 dark:border-gray-500 text-slate-900 dark:text-gray-200 hover:border-blue-600 hover:bg-blue-600 hover:text-white"
                           }`}
                         >
                           Trade
@@ -297,7 +294,7 @@ function MiniSparkline({ data, isPositive }) {
 // Sort Arrow Icon Helper
 function SortIcon() {
   return (
-    <span className="text-[10px] text-gray-500 hover:text-white flex flex-col leading-none">
+    <span className="text-[10px] text-gray-500 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white flex flex-col leading-none">
       ▲▼
     </span>
   );

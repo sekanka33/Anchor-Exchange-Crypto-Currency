@@ -1,9 +1,12 @@
-import React, { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { FaChevronDown, FaPlus, FaSearch, FaStar, FaRegStar } from 'react-icons/fa'
 import { FiMoon, FiSun, FiBell } from "react-icons/fi";
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useTheme } from '../hooks/useTheme';
-import { IoSearch, IoCheckmarkCircleOutline, IoCloseCircleOutline } from "react-icons/io5";
+import useNotificationSocket from '../hooks/useNotificationSocket';
+import { API_BASE_URL } from '../api/config';
+import { getBinanceTicker, getCoinsMarkets } from '../api/coingecko';
+import { IoCheckmarkCircleOutline, IoCloseCircleOutline } from "react-icons/io5";
 
 // 1. Top 15 Coins
 export const topCoins = [
@@ -38,6 +41,66 @@ const timeframes = [
 const Dashboard = () => {
 
   const { isDarkMode, toggleTheme } = useTheme();
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("userId");
+    localStorage.removeItem("role");
+    navigate("/signin");
+  };
+
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [walletSummary, setWalletSummary] = useState(null);
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (!token) return;
+
+    fetch(`${API_BASE_URL}/api/notifications?limit=1`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then((res) => res.json())
+      .then((data) => setUnreadCount(data.unreadCount || 0))
+      .catch(() => {});
+
+    fetch(`${API_BASE_URL}/api/wallet`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then((res) => res.json())
+      .then((data) => setWalletSummary(data))
+      .catch(() => {});
+  }, []);
+
+  // Real-time notification badge — bumps the moment the backend creates a
+  // notification (deposit cleared, withdrawal confirmed, order filled...)
+  // instead of only reflecting what was true when the page last loaded.
+  useNotificationSocket(() => setUnreadCount((c) => c + 1));
+
+  // Order History / Open Orders / Closed Orders widget — real data from
+  // Stage 6/7's orders table via Stage 12's filterable GET /api/orders.
+  const [ordersTab, setOrdersTab] = useState("HISTORY");
+  const [recentOrders, setRecentOrders] = useState([]);
+  const [ordersLoading, setOrdersLoading] = useState(true);
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (!token) return;
+
+    setOrdersLoading(true);
+
+    const params = new URLSearchParams({ limit: "5" });
+    if (ordersTab === "OPEN") params.set("status", "OPEN");
+    if (ordersTab === "CLOSED") params.set("status", "COMPLETED");
+
+    fetch(`${API_BASE_URL}/api/orders?${params.toString()}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then((res) => res.json())
+      .then((data) => setRecentOrders(data.orders || []))
+      .catch(() => setRecentOrders([]))
+      .finally(() => setOrdersLoading(false));
+  }, [ordersTab]);
 
   // 2. State
   const [selectedCoin, setSelectedCoin] = useState(topCoins[0]);
@@ -82,24 +145,20 @@ const Dashboard = () => {
     chartContainerRef.current.appendChild(script);
   }, [selectedCoin, timeframe, isDarkMode]);
 
-  // 8. Fetch Binance 24hr ticker
+  // 8. Fetch 24hr ticker via the backend market data proxy
   useEffect(() => {
-    fetch(`https://api.binance.com/api/v3/ticker/24hr?symbol=${selectedCoin.symbol}`)
-      .then((res) => res.json())
+    getBinanceTicker(selectedCoin.symbol)
       .then((data) => {
         setMarketData(data);
       })
-      .catch((err) => console.error("Error fetching Binance market data:", err));
+      .catch((err) => console.error("Error fetching ticker data:", err));
   }, [selectedCoin]);
 
-  // Fetch live market data from CoinGecko (Top 15 coins)
+  // Fetch live market data (Top 15 coins) via the backend market data proxy
   useEffect(() => {
     const fetchMarketData = async () => {
       try {
-        const response = await fetch(
-          "https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=15&page=1&sparkline=false"
-        );
-        const data = await response.json();
+        const data = await getCoinsMarkets({ perPage: 15, page: 1, sparkline: false });
 
         const formatted = data.map((coin) => ({
           id: coin.id,
@@ -107,7 +166,7 @@ const Dashboard = () => {
           lastPrice: coin.current_price > 1 
             ? (coin.current_price / 65000).toFixed(6) 
             : coin.current_price.toFixed(6),
-          change: coin.price_change_percentage_24h,
+          change: Number(coin.price_change_percentage_24h) || 0,
           isStarred: Math.random() > 0.5,
         }));
 
@@ -163,10 +222,11 @@ const Dashboard = () => {
   ];
 
   return (
-    <div className="flex min-h-screen">
+    <div className="flex flex-col md:flex-row min-h-screen">
+      <h1 className="sr-only">Dashboard</h1>
 
       {/* Side NavBar */}
-      <div className="w-70 h-screen border-2 border-dark-void pl-8 pt-5 sticky top-0 flex-shrink-0">
+      <div className="w-full md:w-70 md:h-screen bg-white dark:bg-dark-void border-r border-gray-200 dark:border-transparent px-4 md:pl-8 py-4 md:pt-5 md:sticky md:top-0 flex-shrink-0">
 
         {/* Logo */}
         <div>
@@ -180,71 +240,63 @@ const Dashboard = () => {
         {/* middle Section */}
         <div className="pt-15 flex flex-col gap-10">
           <div className="flex flex-col gap-5">
-            <div className="flex flex-row gap-5 items-center hover:bg-blue-500 hover:w-50 hover:h-10 rounded-full">
-              <img src="src/assets/home-icon.png" alt="Home" className="w-6 h-6" />
-              <Link className="text-lg font-medium">Home</Link>
+            <div className="flex flex-row gap-5 items-center hover:bg-blue-600 hover:text-white hover:w-50 hover:h-10 rounded-full">
+              <img src="src/assets/home-icon.png" alt="" className="w-6 h-6" />
+              <Link to="/" className="text-lg font-medium">Home</Link>
             </div>
-            <div className="flex flex-row gap-5 items-center hover:bg-blue-500 hover:w-50 hover:h-10 rounded-full">
-              <img src="src/assets/bitcoin-card-777.png" alt="Buy Crypto" className="w-6 h-6" />
-              <Link className="text-lg font-medium">Buy Crypto</Link>
+            <div className="flex flex-row gap-5 items-center hover:bg-blue-600 hover:text-white hover:w-50 hover:h-10 rounded-full">
+              <img src="src/assets/bitcoin-card-777.png" alt="" className="w-6 h-6" />
+              <Link to="/buy-crypto" className="text-lg font-medium">Buy Crypto</Link>
             </div>
-            <div className="flex flex-row gap-5 items-center hover:bg-blue-500 hover:w-50 hover:h-10 rounded-full">
-              <img src="src/assets/trade.png" alt="Market" className="w-6 h-6" />
-              <Link className="text-lg font-medium">Market</Link>
+            <div className="flex flex-row gap-5 items-center hover:bg-blue-600 hover:text-white hover:w-50 hover:h-10 rounded-full">
+              <img src="src/assets/trade.png" alt="" className="w-6 h-6" />
+              <Link to="/markets" className="text-lg font-medium">Market</Link>
             </div>
-            <div className="flex flex-row gap-5 items-center hover:bg-blue-500 hover:w-50 hover:h-10 rounded-full">
-              <img src="src/assets/trade.png" alt="Exchange" className="w-6 h-6" />
-              <Link className="text-lg font-medium">Exchange</Link>
+            <div className="flex flex-row gap-5 items-center hover:bg-blue-600 hover:text-white hover:w-50 hover:h-10 rounded-full">
+              <img src="src/assets/trade.png" alt="" className="w-6 h-6" />
+              <Link to="/exchange" className="text-lg font-medium">Exchange</Link>
             </div>
-            <div className="flex flex-row gap-5 items-center hover:bg-blue-500 hover:w-50 hover:h-10 rounded-full">
-              <img src="src/assets/trade.png" alt="Spot" className="w-6 h-6" />
-              <Link className="text-lg font-medium">Spot</Link>
-            </div>
-            <div className="flex flex-row gap-5 items-center hover:bg-blue-500 hover:w-50 hover:h-10 rounded-full">
-              <img src="src/assets/trade.png" alt="ByFi Center" className="w-6 h-6" />
-              <Link className="text-lg font-medium">ByFi Center</Link>
-            </div>
-            <div className="flex flex-row gap-5 items-center hover:bg-blue-500 hover:w-50 hover:h-10 rounded-full">
-              <img src="src/assets/trade.png" alt="More" className="w-6 h-6" />
-              <Link className="text-lg font-medium">More</Link>
+            <div className="flex flex-row gap-5 items-center hover:bg-blue-600 hover:text-white hover:w-50 hover:h-10 rounded-full">
+              <img src="src/assets/trade.png" alt="" className="w-6 h-6" />
+              <Link to="/spot" className="text-lg font-medium">Spot</Link>
             </div>
           </div>
 
           <hr className="mr-15 border-dark-void" />
 
           <div className="flex flex-col gap-5">
-            <div className="flex flex-row gap-5 items-center hover:bg-blue-500 hover:w-50 hover:h-10 rounded-full">
-              <img src="src/assets/trade.png" alt="Asset" className="w-6 h-6" />
-              <Link className="text-lg font-medium">Asset</Link>
+            <div className="flex flex-row gap-5 items-center hover:bg-blue-600 hover:text-white hover:w-50 hover:h-10 rounded-full">
+              <img src="src/assets/trade.png" alt="" className="w-6 h-6" />
+              <Link to="/wallet" className="text-lg font-medium">Asset</Link>
             </div>
-            <div className="flex flex-row gap-5 items-center hover:bg-blue-500 hover:w-50 hover:h-10 rounded-full">
-              <img src="src/assets/trade.png" alt="Orders" className="w-6 h-6" />
-              <Link className="text-lg font-medium">Order & Trades</Link>
+            <div className="flex flex-row gap-5 items-center hover:bg-blue-600 hover:text-white hover:w-50 hover:h-10 rounded-full">
+              <img src="src/assets/trade.png" alt="" className="w-6 h-6" />
+              <Link to="/orderstrades" className="text-lg font-medium">Order & Trades</Link>
             </div>
-            <div className="flex flex-row gap-5 items-center hover:bg-blue-500 hover:w-50 hover:h-10 rounded-full">
-              <img src="src/assets/trade.png" alt="Wallet" className="w-6 h-6" />
-              <Link className="text-lg font-medium">Wallet</Link>
+            <div className="flex flex-row gap-5 items-center hover:bg-blue-600 hover:text-white hover:w-50 hover:h-10 rounded-full">
+              <img src="src/assets/trade.png" alt="" className="w-6 h-6" />
+              <Link to="/wallet" className="text-lg font-medium">Wallet</Link>
             </div>
           </div>
         </div>
 
-        <div className='flex flex-row gap-5 items-center pt-35'>
+        <button onClick={handleLogout} className='flex flex-row gap-5 items-center pt-35'>
           <img src="src/assets/log out icon.png" alt="log-out" />
-          <p className='text-lg text-red-500 font-medium'>Log out</p>
-        </div>
+          <p className='text-lg text-red-600 dark:text-red-400 font-medium'>Log out</p>
+        </button>
       </div>
 
       {/* Right Side */}
       <div className="flex-1 flex flex-col min-w-0">
 
         {/* Top Navbar */}
-        <div className="h-20 bg-white dark:bg-[#0d0e12] border-b border-dark-void flex items-center justify-end px-8 sticky top-0 z-10">
-          <div className='flex flex-row gap-8 items-center'>
-            <div className="relative">
-              <input type="text" placeholder='Search anything' className='w-55 h-11 bg-hero-dark rounded-full pl-10'/>
+        <div className="h-20 bg-white dark:bg-[#0d0e12] border-b border-gray-200 dark:border-dark-void flex items-center justify-end px-4 md:px-8 sticky top-0 z-30">
+          <div className='flex flex-row gap-4 md:gap-8 items-center'>
+            <div className="relative hidden sm:block">
+              <input type="text" placeholder='Search anything' className='w-40 md:w-55 h-11 bg-slate-100 dark:bg-hero-dark text-slate-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 rounded-full pl-10'/>
               <FaSearch className='absolute left-3 top-1/2 -translate-y-1/2 text-gray-400'/>
             </div>
-            <Link>EN/USD</Link>
+            <span className="hidden sm:inline">EN/USD</span>
             <button 
               onClick={toggleTheme} 
               className="text-slate-600 dark:text-gray-300 hover:text-blue-500 text-xl p-1 rounded-full transition-colors"
@@ -252,12 +304,22 @@ const Dashboard = () => {
             >
               {isDarkMode ? <FiSun /> : <FiMoon />}
             </button>
-            <button className="text-slate-600 dark:text-gray-300 hover:text-blue-500 text-xl relative"><FiBell /></button>
+            <button
+              onClick={() => navigate("/notifications")}
+              className="text-slate-600 dark:text-gray-300 hover:text-blue-500 text-xl relative"
+            >
+              <FiBell />
+              {unreadCount > 0 && (
+                <span className="absolute -top-1 -right-1 w-4 h-4 text-[10px] flex items-center justify-center bg-red-500 text-white rounded-full">
+                  {unreadCount > 9 ? "9+" : unreadCount}
+                </span>
+              )}
+            </button>
           </div>
         </div>
 
         {/* Ticker Bar */}
-        <div className='bg-crypto-color h-35 rounded-2xl mt-7 mx-7 flex items-center px-10 flex-row gap-15'>
+        <div className='bg-white dark:bg-crypto-color text-slate-900 dark:text-white h-35 rounded-2xl mt-7 mx-4 md:mx-7 flex items-center px-4 md:px-10 flex-row gap-8 md:gap-15 overflow-x-auto border border-gray-200 dark:border-transparent'>
           
           {/* 4. Header & 5. Coin Dropdown */}
           <div className='flex flex-row gap-3 items-center shrink-0'>
@@ -267,7 +329,8 @@ const Dashboard = () => {
                 const coin = topCoins.find((c) => c.symbol === e.target.value);
                 setSelectedCoin(coin);
               }}
-              className="bg-transparent cursor-pointer text-xl outline-none"
+              aria-label="Select trading pair"
+              className="bg-transparent cursor-pointer text-xl outline-none focus:ring-2 focus:ring-blue-500"
             >
               {topCoins.map((coin) => (
                 <option key={coin.symbol} value={coin.symbol} className="bg-gray-800 text-white">
@@ -277,22 +340,22 @@ const Dashboard = () => {
             </select>
           </div>
 
-          <div className='w-0.5 h-10 bg-line-color shrink-0'></div>
+          <div className='w-0.5 h-10 bg-gray-200 dark:bg-line-color shrink-0'></div>
 
           {/* 9. Connect Header Data */}
           <div className='flex flex-col gap-2 shrink-0'>
-            <p className='text-gray-500'>Last Prices</p>
+            <p className='text-gray-500 dark:text-gray-400'>Last Prices</p>
             <div className='flex flex-row gap-3'>
-              <p className='text-lg'>{Number(marketData?.lastPrice).toFixed(2)}</p> 
+              <p className='text-lg'>{Number(marketData?.lastPrice).toFixed(2)}</p>
             </div>
           </div>
 
           <div className='flex flex-col gap-2 shrink-0'>
-            <p className='text-gray-500'>24h Change</p>
+            <p className='text-gray-500 dark:text-gray-400'>24h Change</p>
             <div className='flex flex-row gap-3'>
-              <p className='text-lg text-green-500'>{Number(marketData?.priceChange).toFixed(2)}</p> 
+              <p className='text-lg text-green-600 dark:text-green-500'>{Number(marketData?.priceChange).toFixed(2)}</p>
               <div>
-                <div className='w-18 h-7 bg-green-500 rounded-full flex items-center justify-center px-2'>
+                <div className='w-18 h-7 bg-green-700 rounded-full flex items-center justify-center px-2'>
                   <p className='text-base text-white'>{Number(marketData?.priceChangePercent).toFixed(2)}%</p>
                 </div>
               </div>
@@ -300,37 +363,37 @@ const Dashboard = () => {
           </div>
 
           <div className='shrink-0'>
-            <p className='text-gray-500'>24h High</p>
+            <p className='text-gray-500 dark:text-gray-400'>24h High</p>
             <div className='flex flex-row gap-3'>
-              <p className='text-lg'>{marketData?.highPrice}</p> 
+              <p className='text-lg'>{marketData?.highPrice}</p>
             </div>
           </div>
 
           <div className='shrink-0'>
-            <p className='text-gray-500'>24h Low</p>
+            <p className='text-gray-500 dark:text-gray-400'>24h Low</p>
             <div className='flex flex-row gap-3'>
-              <p className='text-lg'>{marketData?.lowPrice}</p> 
+              <p className='text-lg'>{marketData?.lowPrice}</p>
             </div>
           </div>
 
           <div className='shrink-0'>
-            <p className='text-gray-500'>24h Volume</p>
+            <p className='text-gray-500 dark:text-gray-400'>24h Volume</p>
             <div className='flex flex-row gap-3'>
-              <p className='text-lg'>{marketData?.volume}</p> 
+              <p className='text-lg'>{marketData?.volume}</p>
             </div>
           </div>
         </div>
 
         {/* Main Grid: Left & Right */}
-        <div className='flex flex-row justify-between px-7 pt-5 gap-6'>
+        <div className='flex flex-col lg:flex-row justify-between px-4 md:px-7 pt-5 gap-6'>
           {/* left Section */}
-          <div className='flex-1 max-w-[800px]'>
+          <div className='flex-1 min-w-0 lg:max-w-[800px]'>
             <div className='flex flex-row gap-10'>
-              <div className='flex justify-between w-full h-20 bg-crypto-color items-center px-8 rounded-t-2xl'>
+              <div className='flex justify-between w-full h-20 bg-white dark:bg-crypto-color text-slate-900 dark:text-white items-center px-8 rounded-t-2xl border border-b-0 border-gray-200 dark:border-transparent'>
                 <div>
                   <p className='text-lg font-bold'>Trading market</p>
                 </div>
-                
+
                 {/* 7. Timeframe Buttons */}
                 <div className="flex gap-3">
                   {timeframes.map((tf) => (
@@ -340,7 +403,7 @@ const Dashboard = () => {
                       className={`cursor-pointer ${
                         timeframe === tf.value
                           ? "text-blue-500 font-bold"
-                          : "text-gray-400 hover:text-blue-500"
+                          : "text-gray-500 dark:text-gray-400 hover:text-blue-500"
                       }`}
                     >
                       {tf.label}
@@ -349,110 +412,141 @@ const Dashboard = () => {
                 </div>
               </div>
             </div>
-            
+
             {/* TradingView Widget Container */}
-            <div className='w-full h-115 bg-crypto-color mt-1 rounded-b-2xl overflow-hidden relative'>
+            <div className='w-full h-115 bg-white dark:bg-crypto-color text-slate-900 dark:text-white mt-1 rounded-b-2xl overflow-hidden relative border border-t-0 border-gray-200 dark:border-transparent'>
               <div 
                 className="tradingview-widget-container w-full h-full" 
                 ref={chartContainerRef} 
               />
             </div>
 
-            <div className="w-full h-95 bg-hero-dark mt-5 rounded-2xl p-6 text-gray-200 font-sans shadow-xl">
-              <div className="flex items-center justify-between pb-4 border-b border-gray-800/40">
+            <div className="w-full h-95 bg-white dark:bg-hero-dark mt-5 rounded-2xl p-6 text-slate-700 dark:text-gray-200 font-sans shadow-xl border border-gray-200 dark:border-transparent">
+              <div className="flex items-center justify-between pb-4 border-b border-gray-200 dark:border-gray-800/40">
                 <div className="flex items-center space-x-8 text-sm font-semibold">
-                  <p className="cursor-pointer text-white pb-2 border-b-2 border-indigo-500 font-bold">
+                  <button type="button"
+                    aria-pressed={ordersTab === "HISTORY"}
+                    onClick={() => setOrdersTab("HISTORY")}
+                    className={`cursor-pointer pb-2 transition ${
+                      ordersTab === "HISTORY"
+                        ? "text-slate-900 dark:text-white border-b-2 border-indigo-500 font-bold"
+                        : "text-gray-500 dark:text-gray-400 hover:text-slate-900 dark:hover:text-gray-200"
+                    }`}
+                  >
                     Order History
-                  </p>
-                  <p className="cursor-pointer text-gray-400 hover:text-gray-200 transition">
+                  </button>
+                  <button type="button"
+                    aria-pressed={ordersTab === "OPEN"}
+                    onClick={() => setOrdersTab("OPEN")}
+                    className={`cursor-pointer pb-2 transition ${
+                      ordersTab === "OPEN"
+                        ? "text-slate-900 dark:text-white border-b-2 border-indigo-500 font-bold"
+                        : "text-gray-500 dark:text-gray-400 hover:text-slate-900 dark:hover:text-gray-200"
+                    }`}
+                  >
                     Open Orders
-                  </p>
-                  <p className="cursor-pointer text-gray-400 hover:text-gray-200 transition">
+                  </button>
+                  <button type="button"
+                    aria-pressed={ordersTab === "CLOSED"}
+                    onClick={() => setOrdersTab("CLOSED")}
+                    className={`cursor-pointer pb-2 transition ${
+                      ordersTab === "CLOSED"
+                        ? "text-slate-900 dark:text-white border-b-2 border-indigo-500 font-bold"
+                        : "text-gray-500 dark:text-gray-400 hover:text-slate-900 dark:hover:text-gray-200"
+                    }`}
+                  >
                     Closed Orders
-                  </p>
+                  </button>
                 </div>
 
-                <div className="relative">
-                  <IoSearch className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 text-sm" />
-                  <input
-                    type="text"
-                    placeholder="Search By Date"
-                    className="w-50 h-10 bg-crypto-color text-xs text-gray-200 placeholder-gray-400 pl-9 pr-4 rounded-full outline-none focus:ring-1 focus:ring-indigo-500"
-                  />
-                </div>
+                <Link
+                  to="/orderstrades"
+                  className="text-xs text-indigo-400 hover:text-indigo-300 font-semibold flex items-center gap-1"
+                >
+                  View all
+                </Link>
               </div>
 
               {/* 11. Order History */}
               <div className="overflow-x-auto mt-2">
-                <table className="w-full text-left text-xs font-semibold">
-                  <thead>
-                    <tr className="text-gray-300 font-bold border-b border-transparent">
-                      <th className="py-3 px-3 text-lg">Date</th>
-                      <th className="py-3 px-3 text-lg">Pair</th>
-                      <th className="py-3 px-3 text-lg">Buy/Sell</th>
-                      <th className="py-3 px-3 text-lg">Price</th>
-                      <th className="py-3 px-3 text-lg">Executed</th>
-                      <th className="py-3 px-3 text-right text-lg">Total</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr className="hover:bg-black/10 transition-colors">
-                      <td className="py-3 px-3 text-gray-300 text-base">24-04 14:40</td>
-                      <td className="py-3 px-3 text-gray-300 text-base">{selectedCoin.pair}</td>
-                      <td className="py-3 px-3 text-emerald-400 text-base">BUY</td>
-                      <td className="py-3 px-3 text-gray-300 text-base">$222</td>
-                      <td className="py-3 px-3 flex justify-center">
-                        <IoCheckmarkCircleOutline className="text-emerald-400 text-lg" />
-                      </td>
-                      <td className="py-3 px-3 text-right font-bold text-gray-200 text-base">
-                        0.4314 BTC
-                      </td>
-                    </tr>
-                    <tr className="hover:bg-black/10 transition-colors">
-                      <td className="py-3 px-3 text-gray-300 text-base">24-04 14:40</td>
-                      <td className="py-3 px-3 text-gray-300 text-base">{selectedCoin.pair}</td>
-                      <td className="py-3 px-3 text-rose-500 text-base">SELL</td>
-                      <td className="py-3 px-3 text-gray-300 text-base">$222</td>
-                      <td className="py-3 px-3 flex justify-center">
-                        <IoCheckmarkCircleOutline className="text-emerald-400 text-lg" />
-                      </td>
-                      <td className="py-3 px-3 text-right font-bold text-gray-200 text-base">
-                        0.4314 BTC
-                      </td>
-                    </tr>
-                    <tr className="hover:bg-black/10 transition-colors">
-                      <td className="py-3 px-3 text-gray-300 text-base">24-04 14:40</td>
-                      <td className="py-3 px-3 text-gray-300 text-base">{selectedCoin.pair}</td>
-                      <td className="py-3 px-3 text-emerald-400 text-base">BUY</td>
-                      <td className="py-3 px-3 text-gray-300 text-base">$222</td>
-                      <td className="py-3 px-3 flex justify-center">
-                        <IoCloseCircleOutline className="text-rose-500 text-lg" />
-                      </td>
-                      <td className="py-3 px-3 text-right font-bold text-gray-200 text-base">
-                        0.4314 BTC
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
+                {ordersLoading && (
+                  <p className="text-gray-500 dark:text-gray-400 text-sm py-6">Loading orders...</p>
+                )}
+
+                {!ordersLoading && recentOrders.length === 0 && (
+                  <p className="text-gray-500 dark:text-gray-400 text-sm py-6">
+                    {ordersTab === "OPEN"
+                      ? "No open orders — orders fill instantly on Anchor Exchange, so none stay open."
+                      : "No orders yet."}
+                  </p>
+                )}
+
+                {!ordersLoading && recentOrders.length > 0 && (
+                  <table className="w-full text-left text-xs font-semibold">
+                    <thead>
+                      <tr className="text-gray-500 dark:text-gray-300 font-bold border-b border-transparent">
+                        <th className="py-3 px-3 text-lg">Date</th>
+                        <th className="py-3 px-3 text-lg">Pair</th>
+                        <th className="py-3 px-3 text-lg">Buy/Sell</th>
+                        <th className="py-3 px-3 text-lg">Price</th>
+                        <th className="py-3 px-3 text-lg">Executed</th>
+                        <th className="py-3 px-3 text-right text-lg">Total</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {recentOrders.map((order) => (
+                        <tr key={order.id} className="hover:bg-gray-100 dark:hover:bg-black/10 transition-colors">
+                          <td className="py-3 px-3 text-gray-600 dark:text-gray-300 text-base whitespace-nowrap">
+                            {new Date(order.created_at).toLocaleString(undefined, {
+                              month: "2-digit",
+                              day: "2-digit",
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })}
+                          </td>
+                          <td className="py-3 px-3 text-gray-600 dark:text-gray-300 text-base">{order.pair}</td>
+                          <td className={`py-3 px-3 text-base ${order.side === "BUY" ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-500"}`}>
+                            {order.side}
+                          </td>
+                          <td className="py-3 px-3 text-gray-600 dark:text-gray-300 text-base">${Number(order.price).toFixed(2)}</td>
+                          <td className="py-3 px-3 flex justify-center">
+                            {order.status === "COMPLETED" && (
+                              <IoCheckmarkCircleOutline className="text-emerald-600 dark:text-emerald-400 text-lg" />
+                            )}
+                            {order.status === "CANCELLED" && (
+                              <IoCloseCircleOutline className="text-rose-600 dark:text-rose-500 text-lg" />
+                            )}
+                            {order.status === "OPEN" && (
+                              <span className="text-amber-600 dark:text-amber-400 text-xs">Open</span>
+                            )}
+                          </td>
+                          <td className="py-3 px-3 text-right font-bold text-slate-700 dark:text-gray-200 text-base">
+                            {Number(order.amount).toFixed(4)} {order.pair.split("/")[0]}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
               </div>
             </div>
           </div>
 
           {/* Right Section */}
-          <div className='w-91 flex flex-col gap-5 shrink-0'>
+          <div className='w-full lg:w-91 flex flex-col gap-5 lg:shrink-0'>
             {/* 10. Buy/Sell Panel */}
-            <div className='w-full h-117 bg-crypto-color rounded-2xl flex flex-col gap-5 pt-7'>
+            <div className='w-full h-117 bg-white dark:bg-crypto-color text-slate-900 dark:text-white rounded-2xl flex flex-col gap-5 pt-7 border border-gray-200 dark:border-transparent'>
               <div className='flex justify-center flex-row gap-27'>
                 <p className='text-2xl cursor-pointer'>Buy</p>
                 <p className='text-2xl cursor-pointer'>Sell</p>
               </div>
 
               <div>
-                <hr className='ml-10 mr-48'/>
-                <hr className='ml-48 mr-10'/>
+                <hr className='ml-10 mr-48 border-gray-200 dark:border-gray-700'/>
+                <hr className='ml-48 mr-10 border-gray-200 dark:border-gray-700'/>
               </div>
 
-              <div className='flex flex-row gap-5 justify-center pt-2 text-gray-500'>
+              <div className='flex flex-row gap-5 justify-center pt-2 text-gray-500 dark:text-gray-400'>
                 <p className='text-sm cursor-pointer'>Limit</p>
                 <p className='text-sm cursor-pointer'>Market</p>
                 <p className='text-sm cursor-pointer'>Stop limit</p>
@@ -460,7 +554,7 @@ const Dashboard = () => {
               </div>
 
               <div className='flex flex-col gap-5 pl-6'>
-                <div className='w-75 h-20 bg-input-field rounded-2xl'>
+                <div className='w-75 h-20 bg-slate-100 dark:bg-input-field text-slate-900 dark:text-white rounded-2xl'>
                   <p className='pt-2 pl-2'>Pay</p>
                   <div className='flex justify-between pt-2 pl-2 pr-2 items-center'>
                     <p className='text-lg font-medium'>3,000,000</p>
@@ -468,7 +562,7 @@ const Dashboard = () => {
                   </div>
                 </div>
 
-                <div className='w-75 h-20 bg-input-field rounded-2xl'>
+                <div className='w-75 h-20 bg-slate-100 dark:bg-input-field text-slate-900 dark:text-white rounded-2xl'>
                   <p className='pt-2 pl-2'>Receive</p>
                   <div className='flex justify-between items-center pt-2 pl-2 pr-2'>
                     <p className='text-lg font-medium'>0.00207026</p>
@@ -480,50 +574,68 @@ const Dashboard = () => {
                   <p className='text-sm pt-1'>
                     1 {selectedCoin.symbol.replace("USDT","")} ≈ {Number(marketData?.lastPrice).toFixed(2)} USD
                   </p>
-                  <div className='w-7 h-7 rounded-full bg-input-field flex items-center justify-center'>
-                    <img src="src/assets/repeat.png" alt="exchange" className='w-5 h-5'/>
+                  <div className='w-7 h-7 rounded-full bg-slate-100 dark:bg-input-field text-slate-900 dark:text-white flex items-center justify-center'>
+                    <img src="src/assets/repeat.png" alt="" className='w-5 h-5'/>
                   </div>
                 </div>
 
-                <button className='w-75 h-10 bg-blue-500 rounded-full text-white font-medium'>
+                <button className='w-75 h-10 bg-blue-600 rounded-full text-white font-medium'>
                   Buy {selectedCoin.pair.split("/")[0]}
                 </button>
               </div>
             </div>
 
-            <div className='w-full h-112 bg-crypto-color rounded-2xl'>
+            <div className='w-full h-112 bg-white dark:bg-crypto-color text-slate-900 dark:text-white rounded-2xl border border-gray-200 dark:border-transparent'>
               <div className='flex justify-center flex-col gap-2 pt-7 mt-7 px-10 items-center'>
-                <p className='text-gray-500'>Your Balance</p>
-                <p className='text-2xl font-medium'>$132,832.89</p>
+                <p className='text-gray-500 dark:text-gray-400'>Your Balance</p>
+                <p className='text-2xl font-medium'>
+                  {walletSummary
+                    ? walletSummary.portfolioValue.toLocaleString(undefined, { style: "currency", currency: "USD" })
+                    : "$0.00"}
+                </p>
               </div>
 
-              <div className='flex flex-row gap-3 items-center w-75 h-10 border-white border-2 rounded-full justify-center mx-auto mt-5 hover:bg-blue-500 hover:border-blue-500 transition-colors cursor-pointer'>
+              <Link to="/wallet" className='flex flex-row gap-3 items-center w-75 h-10 border-slate-900 dark:border-white border-2 rounded-full justify-center mx-auto mt-5 hover:bg-blue-600 hover:border-blue-500 hover:text-white transition-colors cursor-pointer'>
                 <FaPlus />
-                <button>Top up balance</button>
-              </div>
+                <span>Top up balance</span>
+              </Link>
 
               <div className='flex justify-between px-6 pt-7 items-center'>
                 <p>Your assets</p>
-                <div className='relative flex items-center'>
-                  <input type="text" className='w-35 h-8 bg-input-field rounded-2xl pl-8 text-sm'/>
-                  <FaSearch className='absolute left-2.5 text-gray-400 text-xs'/>
-                </div>
+                <Link to="/wallet" className='text-sm text-blue-600 dark:text-blue-400 hover:underline'>View all</Link>
+              </div>
+
+              <div className='px-6 pt-3 flex flex-col gap-2'>
+                {!walletSummary && <p className='text-sm text-gray-500 dark:text-gray-400'>Loading...</p>}
+                {walletSummary && walletSummary.balances.every((b) => b.totalBalance === 0) && (
+                  <p className='text-sm text-gray-500 dark:text-gray-400'>No assets yet.</p>
+                )}
+                {walletSummary &&
+                  walletSummary.balances
+                    .filter((b) => b.totalBalance > 0)
+                    .slice(0, 3)
+                    .map((b) => (
+                      <div key={b.assetSymbol} className='flex justify-between text-sm'>
+                        <span>{b.assetSymbol}</span>
+                        <span>{b.usdValue.toLocaleString(undefined, { style: "currency", currency: "USD" })}</span>
+                      </div>
+                    ))}
               </div>
             </div>
           </div>
         </div>
 
       
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 px-7 py-7 text-xs font-sans text-gray-300 mt-auto">
-        
-          <div className="bg-[#0f1117] rounded-2xl p-5 shadow-lg border border-gray-800/40 flex flex-col justify-between">
-            <div>
-              <h2 className="text-lg font-bold text-white mb-4">Order book</h2>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 px-7 py-7 text-xs font-sans text-gray-600 dark:text-gray-300 mt-auto">
 
-              <div className="grid grid-cols-3 text-gray-400 font-semibold mb-3 text-base">
+          <div className="bg-white dark:bg-[#0f1117] rounded-2xl p-5 shadow-lg border border-gray-200 dark:border-gray-800/40 flex flex-col justify-between">
+            <div>
+              <h2 className="text-lg font-bold text-slate-900 dark:text-white mb-4">Order book</h2>
+
+              <div className="grid grid-cols-3 text-gray-500 dark:text-gray-400 font-semibold mb-3 text-base">
                 <span>Price(BTC)</span>
                 <span className="text-center">Amount(ETH)</span>
-                <span className="text-right border-b border-blue-500 pb-0.5 w-max justify-self-end text-blue-400">
+                <span className="text-right border-b border-blue-500 pb-0.5 w-max justify-self-end text-blue-600 dark:text-blue-400">
                   Total(BTC)
                 </span>
               </div>
@@ -533,10 +645,10 @@ const Dashboard = () => {
                 {asks.map((item, idx) => (
                   <div key={idx} className="relative grid grid-cols-3 items-center text-sm">
                     <div
-                      className="absolute right-0 top-0 bottom-0 bg-red-950/40 rounded-sm pointer-events-none"
+                      className="absolute right-0 top-0 bottom-0 bg-red-100 dark:bg-red-950/40 rounded-sm pointer-events-none"
                       style={{ width: `${item.depth}%` }}
                     />
-                    <span className="text-red-500 font-semibold relative z-10">{item.price}</span>
+                    <span className="text-red-600 dark:text-red-500 font-semibold relative z-10">{item.price}</span>
                     <span className="text-center relative z-10">{item.amount}</span>
                     <span className="text-right relative z-10">{item.total}</span>
                   </div>
@@ -544,18 +656,18 @@ const Dashboard = () => {
               </div>
 
               {/* Price Banner */}
-              <div className="my-5 py-3 border-y border-gray-800/60 flex items-center justify-between">
+              <div className="my-5 py-3 border-y border-gray-200 dark:border-gray-800/60 flex items-center justify-between">
                 <div>
-                  <p className="text-base text-gray-500 uppercase">Last Price</p>
-                  <p className="text-lg font-bold text-white">0.020367</p>
+                  <p className="text-base text-gray-500 dark:text-gray-400 uppercase">Last Price</p>
+                  <p className="text-lg font-bold text-slate-900 dark:text-white">0.020367</p>
                 </div>
                 <div>
-                  <p className="text-base text-gray-500 uppercase">USD</p>
-                  <p className="text-lg font-semibold text-white">148.65</p>
+                  <p className="text-base text-gray-500 dark:text-gray-400 uppercase">USD</p>
+                  <p className="text-lg font-semibold text-slate-900 dark:text-white">148.65</p>
                 </div>
                 <div>
-                  <p className="text-base text-gray-500 uppercase">Change</p>
-                  <p className="text-lg font-semibold text-red-500">-0.52%</p>
+                  <p className="text-base text-gray-500 dark:text-gray-400 uppercase">Change</p>
+                  <p className="text-lg font-semibold text-red-600 dark:text-red-500">-0.52%</p>
                 </div>
               </div>
 
@@ -564,10 +676,10 @@ const Dashboard = () => {
                 {bids.map((item, idx) => (
                   <div key={idx} className="relative grid grid-cols-3 items-center text-sm">
                     <div
-                      className="absolute right-0 top-0 bottom-0 bg-emerald-950/40 rounded-sm pointer-events-none"
+                      className="absolute right-0 top-0 bottom-0 bg-emerald-100 dark:bg-emerald-950/40 rounded-sm pointer-events-none"
                       style={{ width: `${item.depth}%` }}
                     />
-                    <span className="text-emerald-400 font-semibold relative z-10">{item.price}</span>
+                    <span className="text-emerald-600 dark:text-emerald-400 font-semibold relative z-10">{item.price}</span>
                     <span className="text-center relative z-10">{item.amount}</span>
                     <span className="text-right relative z-10">{item.total}</span>
                   </div>
@@ -577,10 +689,10 @@ const Dashboard = () => {
           </div>
 
           {/* CARD 2: RECENT TRADES */}
-          <div className="bg-[#0f1117] rounded-2xl p-5 shadow-lg border border-gray-800/40">
-            <h2 className="text-lg font-bold text-white mb-4">Recent trades</h2>
+          <div className="bg-white dark:bg-[#0f1117] rounded-2xl p-5 shadow-lg border border-gray-200 dark:border-gray-800/40">
+            <h2 className="text-lg font-bold text-slate-900 dark:text-white mb-4">Recent trades</h2>
 
-            <div className="grid grid-cols-3 text-gray-400 font-semibold mb-3 text-base">
+            <div className="grid grid-cols-3 text-gray-500 dark:text-gray-400 font-semibold mb-3 text-base">
               <span>Time</span>
               <span className="text-center">Price(BTC)</span>
               <span className="text-right">Amount (ETH)</span>
@@ -589,10 +701,10 @@ const Dashboard = () => {
             <div className="space-y-2 overflow-hidden text-sm">
               {recentTrades.map((trade, idx) => (
                 <div key={idx} className="grid grid-cols-3 items-center">
-                  <span className="text-gray-400">{trade.time}</span>
+                  <span className="text-gray-500 dark:text-gray-400">{trade.time}</span>
                   <span
                     className={`text-center font-semibold ${
-                      trade.type === "sell" ? "text-red-500" : "text-emerald-400"
+                      trade.type === "sell" ? "text-red-600 dark:text-red-500" : "text-emerald-600 dark:text-emerald-400"
                     }`}
                   >
                     {trade.price}
@@ -604,18 +716,19 @@ const Dashboard = () => {
           </div>
 
           {/* CARD 3: MARKET PAIRS (COINGECKO DATA) */}
-          <div className="bg-[#0f1117] rounded-2xl p-5 shadow-lg border border-gray-800/40">
+          <div className="bg-white dark:bg-[#0f1117] rounded-2xl p-5 shadow-lg border border-gray-200 dark:border-gray-800/40">
             <div className="flex items-center justify-between mb-4 ">
               <div className="flex items-center space-x-4">
-                <FaRegStar className="text-gray-400 cursor-pointer hover:text-white" />
+                <FaRegStar className="text-gray-500 dark:text-gray-400 cursor-pointer hover:text-slate-900 dark:hover:text-white" />
                 {["BTC", "ETH", "USDT"].map((tab) => (
                   <button
                     key={tab}
+                    aria-pressed={activeTab === tab}
                     onClick={() => setActiveTab(tab)}
                     className={`px-3 py-1 rounded-full text-xs font-semibold transition-all ${
                       activeTab === tab
                         ? "bg-blue-600 text-white"
-                        : "text-gray-400 hover:text-white"
+                        : "text-gray-500 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white"
                     }`}
                   >
                     {tab}
@@ -624,7 +737,7 @@ const Dashboard = () => {
               </div>
             </div>
 
-            <div className="grid grid-cols-3 text-gray-400 font-semibold mb-3 text-base">
+            <div className="grid grid-cols-3 text-gray-500 dark:text-gray-400 font-semibold mb-3 text-base">
               <span>Pair</span>
               <span className="text-center">Last price</span>
               <span className="text-right">Change</span>
@@ -632,26 +745,30 @@ const Dashboard = () => {
 
             <div className="space-y-2.5 overflow-hidden text-sm">
               {loading ? (
-                <div className="text-center py-10 text-gray-500">Loading pairs...</div>
+                <div className="text-center py-10 text-gray-500 dark:text-gray-400">Loading pairs...</div>
               ) : (
                 marketPairs.map((item) => (
                   <div key={item.id} className="grid grid-cols-3 items-center">
                     <div className="flex items-center space-x-2">
-                      <button onClick={() => toggleStar(item.id)}>
+                      <button
+                        onClick={() => toggleStar(item.id)}
+                        aria-label={item.isStarred ? `Remove ${item.pair} from favorites` : `Add ${item.pair} to favorites`}
+                        aria-pressed={item.isStarred}
+                      >
                         {item.isStarred ? (
                           <FaStar className="text-amber-400 text-xs" />
                         ) : (
-                          <FaRegStar className="text-gray-600 hover:text-gray-400 text-xs" />
+                          <FaRegStar className="text-gray-400 dark:text-gray-600 hover:text-gray-600 dark:hover:text-gray-400 text-xs" />
                         )}
                       </button>
-                      <span className="font-semibold text-white">{item.pair}</span>
+                      <span className="font-semibold text-slate-900 dark:text-white">{item.pair}</span>
                     </div>
 
                     <span className="text-center font-medium">{item.lastPrice}</span>
 
                     <span
                       className={`text-right font-semibold ${
-                        item.change >= 0 ? "text-emerald-400" : "text-red-500"
+                        item.change >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-500"
                       }`}
                     >
                       {item.change >= 0 ? `+${item.change.toFixed(2)}%` : `${item.change.toFixed(2)}%`}

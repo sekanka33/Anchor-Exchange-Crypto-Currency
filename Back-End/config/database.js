@@ -9,8 +9,17 @@ const pool = new Pool({
     port: process.env.DB_PORT,
 });
 
+// An idle client can error (e.g. Postgres restarts). Without a listener that
+// 'error' event is unhandled and takes the whole process down.
+pool.on("error", (error) => {
+    console.error("Unexpected idle database client error:", error.message);
+});
+
 pool.connect()
-    .then(() => console.log("Database connected successfully"))
+    .then((client) => {
+        client.release();
+        console.log("Database connected successfully");
+    })
     .catch((error) => console.error("Database connection failed:", error));
 
 module.exports = pool;

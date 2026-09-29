@@ -1,5 +1,6 @@
 import React,{useEffect} from "react";
 import {Html5QrcodeScanner} from "html5-qrcode";
+import { API_BASE_URL } from "../api/config";
 
 
 const QRScanner=()=>{
@@ -60,7 +61,7 @@ const approveLogin = async(token)=>{
 
 
 await fetch(
-"http://localhost:5000/api/qr/verify",
+`${API_BASE_URL}/api/qr/verify`,
 {
 method:"POST",
 headers:{

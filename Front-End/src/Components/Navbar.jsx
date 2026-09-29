@@ -1,4 +1,3 @@
-import React from 'react'
 import { Link } from 'react-router-dom'
 import { FiMoon, FiSun, FiBell, FiMenu, FiX } from "react-icons/fi";
 import { useState } from 'react';
@@ -13,9 +12,10 @@ const Navbar = () => {
   const [profileOpen, setProfileOpen] = useState(false);
   
   const token = localStorage.getItem("token");
+  const role = localStorage.getItem("role");
 
   return (
-    <nav className="flex justify-between items-center bg-white dark:bg-[#0d0e12] w-full h-14 text-slate-900 dark:text-white px-6 text-sm font-medium border-b border-gray-200 dark:border-gray-800 transition-colors duration-300">
+    <nav className="sticky top-0 z-40 flex justify-between items-center bg-white dark:bg-[#0d0e12] w-full h-14 text-slate-900 dark:text-white px-6 text-sm font-medium border-b border-gray-200 dark:border-gray-800 transition-colors duration-300">
       {/* Left Section: Logo & Main Navigation */}
       <div className="flex items-center h-full space-x-1">
         
@@ -25,7 +25,7 @@ const Navbar = () => {
         </Link>
 
         {/* Navigation Links */}
-        <div className="hidden md:flex items-center h-full text-slate-600 dark:text-gray-300">
+        <div className="hidden xl:flex items-center h-full text-slate-600 dark:text-gray-300">
           <Link to="/" className="text-slate-900 dark:text-white px-4 h-full flex items-center space-x-1 hover:text-blue-500">
             <span>Home</span>
           </Link>
@@ -59,9 +59,9 @@ const Navbar = () => {
       </div>
 
       {/* Right Section: Actions & Profile */}
-      <div className="hidden md:flex items-center space-x-2 text-slate-600 dark:text-gray-300">
+      <div className="hidden xl:flex items-center space-x-2 text-slate-600 dark:text-gray-300">
         <Link to="/assets" className="text-slate-900 dark:text-white px-2 h-full flex items-center space-x-1 hover:text-blue-500">
-          <span>Assests</span>
+          <span>Assets</span>
           <span className="text-[10px]">▼</span>
         </Link>
         
@@ -83,8 +83,8 @@ const Navbar = () => {
           {isDarkMode ? <FiSun /> : <FiMoon />}
         </button>
         
-        <Link to="/notifications">
-          <button className="text-slate-600 dark:text-gray-300 hover:text-blue-500 text-xl relative">
+        <Link to="/notifications" aria-label="Notifications">
+          <button className="text-slate-600 dark:text-gray-300 hover:text-blue-500 text-xl relative" aria-label="Notifications" tabIndex={-1}>
             <FiBell />
           </button>
         </Link>
@@ -92,7 +92,7 @@ const Navbar = () => {
         {/* Wallet Button */}
         <Link 
           to="/wallet" 
-          className="border border-gray-300 dark:border-gray-600 rounded-full px-4 py-1 text-xs text-slate-900 dark:text-white hover:bg-blue-500 hover:text-white transition-colors"
+          className="border border-gray-300 dark:border-gray-600 rounded-full px-4 py-1 text-xs text-slate-900 dark:text-white hover:bg-blue-600 hover:text-white transition-colors"
         >
           Wallet
         </Link>
@@ -104,8 +104,10 @@ const Navbar = () => {
 
               <button
                 onClick={() => setProfileOpen(!profileOpen)}
+                aria-label="Account menu"
+                aria-expanded={profileOpen}
               >
-                <FaUserCircle 
+                <FaUserCircle
                   className="text-3xl cursor-pointer hover:text-blue-500"
                 />
               </button>
@@ -164,10 +166,10 @@ const Navbar = () => {
                     </Link>
 
 
-                    <Link 
+                    <Link
                       to="/transactions"
                       className="
-                      block 
+                      block
                       py-2
                       hover:text-blue-500
                       "
@@ -176,9 +178,26 @@ const Navbar = () => {
                     </Link>
 
 
+                    {role === "admin" && (
+                      <Link
+                        to="/admin"
+                        className="
+                        block
+                        py-2
+                        text-indigo-400
+                        hover:text-indigo-300
+                        "
+                      >
+                        4. Admin Panel
+                      </Link>
+                    )}
+
+
                     <button
                       onClick={()=>{
                         localStorage.removeItem("token");
+                        localStorage.removeItem("userId");
+                        localStorage.removeItem("role");
                         window.location.href="/signin";
                       }}
                       className="
@@ -188,7 +207,7 @@ const Navbar = () => {
                       hover:text-red-700
                       "
                     >
-                      4. Log out
+                      {role === "admin" ? "5." : "4."} Log out
                     </button>
 
 
@@ -203,7 +222,7 @@ const Navbar = () => {
 
           ) : (
 
-            <Link to="/signin" className="border border-gray-300 dark:border-gray-600 rounded-full px-4 py-1 text-xs text-slate-900 dark:text-white hover:bg-blue-500 hover:text-white transition-colors">
+            <Link to="/signin" className="border border-gray-300 dark:border-gray-600 rounded-full px-4 py-1 text-xs text-slate-900 dark:text-white hover:bg-blue-600 hover:text-white transition-colors">
               Sign In
             </Link>
 
@@ -211,8 +230,8 @@ const Navbar = () => {
         }
       </div>
 
-      <div className='md:hidden'>
-        <button onClick={() => setMenuOpen(!menuOpen)} className='md:hidden text-2xl text-slate-900 dark:text-white'
+      <div className='xl:hidden'>
+        <button onClick={() => setMenuOpen(!menuOpen)} className='xl:hidden text-2xl text-slate-900 dark:text-white'
           aria-label={menuOpen ? "Close navigation menu" : "Open navigation menu"}
           aria-expanded={menuOpen}
         >
@@ -251,7 +270,7 @@ const Navbar = () => {
             Pages ▼
           </Link>
           
-          <Link to="/signin" onClick={() => setMenuOpen(false)} className="text-center border border-gray-300 dark:border-gray-600 rounded-full px-4 py-2 text-xs hover:bg-blue-500 hover:text-white transition-colors mt-2 text-slate-900 dark:text-white">
+          <Link to="/signin" onClick={() => setMenuOpen(false)} className="text-center border border-gray-300 dark:border-gray-600 rounded-full px-4 py-2 text-xs hover:bg-blue-600 hover:text-white transition-colors mt-2 text-slate-900 dark:text-white">
             Sign-In
           </Link>
         </div>
