@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom'
+import { Link, NavLink } from 'react-router-dom'
 import { FiMoon, FiSun, FiBell, FiMenu, FiX } from "react-icons/fi";
 import { useState } from 'react';
 import { useTheme } from '../hooks/useTheme';
@@ -6,6 +6,10 @@ import { FaUserCircle } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 
 const Navbar = () => {
+  // Active page link is blue-500; `idle` is the colour used otherwise.
+  const navClass = (base, idle) => ({ isActive }) =>
+    `${base} ${isActive ? "text-blue-500" : idle}`;
+
   const [menuOpen, setMenuOpen] = useState(false);
   const { isDarkMode, toggleTheme } = useTheme();
 
@@ -15,7 +19,7 @@ const Navbar = () => {
   const role = localStorage.getItem("role");
 
   return (
-    <nav className="sticky top-0 z-40 flex justify-between items-center bg-white dark:bg-[#0d0e12] w-full h-14 text-slate-900 dark:text-white px-6 text-sm font-medium border-b border-gray-200 dark:border-gray-800 transition-colors duration-300">
+    <nav className="relative flex justify-between items-center bg-white dark:bg-[#0d0e12] w-full h-14 text-slate-900 dark:text-white px-6 text-sm font-medium border-b border-gray-200 dark:border-gray-800 transition-colors duration-300">
       {/* Left Section: Logo & Main Navigation */}
       <div className="flex items-center h-full space-x-1">
         
@@ -26,53 +30,53 @@ const Navbar = () => {
 
         {/* Navigation Links */}
         <div className="hidden xl:flex items-center h-full text-slate-600 dark:text-gray-300">
-          <Link to="/" className="text-slate-900 dark:text-white px-4 h-full flex items-center space-x-1 hover:text-blue-500">
+          <NavLink to="/" end className={navClass("px-4 h-full flex items-center space-x-1 hover:text-blue-500", "text-slate-900 dark:text-white")}>
             <span>Home</span>
-          </Link>
+          </NavLink>
           
-          <Link to="/buy-crypto" className="px-4 h-full flex items-center transition-colors hover:text-blue-500">
+          <NavLink to="/buy-crypto" className={navClass("px-4 h-full flex items-center transition-colors hover:text-blue-500", "")}>
             Buy Crypto
-          </Link>
+          </NavLink>
            
-          <Link to="/markets" className="px-4 h-full flex items-center transition-colors hover:text-blue-500">
+          <NavLink to="/markets" className={navClass("px-4 h-full flex items-center transition-colors hover:text-blue-500", "")}>
             Markets
-          </Link>
+          </NavLink>
           
-          <Link to="/exchange" className="px-4 h-full flex items-center transition-colors hover:text-blue-500">
+          <NavLink to="/exchange" className={navClass("px-4 h-full flex items-center transition-colors hover:text-blue-500", "")}>
             Exchange
-          </Link>
+          </NavLink>
           
-          <Link to="/spot" className="px-4 h-full flex items-center transition-colors hover:text-blue-500">
+          <NavLink to="/spot" className={navClass("px-4 h-full flex items-center transition-colors hover:text-blue-500", "")}>
             Spot
-          </Link>
+          </NavLink>
 
-          <Link to="/bitusdt" className="px-4 h-full flex items-center hover:text-blue-500 transition-colors space-x-1 text-xs">
+          <NavLink to="/bitusdt" className={navClass("px-4 h-full flex items-center hover:text-blue-500 transition-colors space-x-1 text-xs", "")}>
             <span>BITUSDT</span>
             <span className="text-blue-500 text-[8px]">💧</span>
-          </Link>
+          </NavLink>
 
-          <Link to="/pages" className="px-4 h-full flex items-center transition-colors space-x-1 hover:text-blue-500">
+          <NavLink to="/pages" className={navClass("px-4 h-full flex items-center transition-colors space-x-1 hover:text-blue-500", "")}>
             <span>Pages</span>
             <span className="text-[10px]">▼</span>
-          </Link>
+          </NavLink>
         </div>
       </div>
 
       {/* Right Section: Actions & Profile */}
       <div className="hidden xl:flex items-center space-x-2 text-slate-600 dark:text-gray-300">
-        <Link to="/assets" className="text-slate-900 dark:text-white px-2 h-full flex items-center space-x-1 hover:text-blue-500">
+        <NavLink to="/assets" className={navClass("px-2 h-full flex items-center space-x-1 hover:text-blue-500", "text-slate-900 dark:text-white")}>
           <span>Assets</span>
           <span className="text-[10px]">▼</span>
-        </Link>
+        </NavLink>
         
-        <Link to="/orderstrades" className="text-slate-900 dark:text-white px-2 h-full flex items-center space-x-1 hover:text-blue-500">
+        <NavLink to="/orderstrades" className={navClass("px-2 h-full flex items-center space-x-1 hover:text-blue-500", "text-slate-900 dark:text-white")}>
           <span>Orders & Trades</span>
-        </Link>
+        </NavLink>
         
-        <Link to="/enusd" className="text-slate-900 dark:text-white px-2 h-full flex items-center space-x-1 hover:text-blue-500">
+        <NavLink to="/enusd" className={navClass("px-2 h-full flex items-center space-x-1 hover:text-blue-500", "text-slate-900 dark:text-white")}>
           <span>EN/USD</span>
           <span className="text-[10px]">▼</span>
-        </Link>
+        </NavLink>
 
         {/* Theme/Notification Icons */}
         <button 
@@ -242,33 +246,33 @@ const Navbar = () => {
       {/* Mobile Dropdown Menu */}
       {menuOpen && (
         <div className="absolute top-14 left-0 w-full bg-white dark:bg-[#0d0e12] flex flex-col p-6 gap-4 border-b border-gray-200 dark:border-gray-800 z-50 text-slate-600 dark:text-gray-300">
-          <Link to="/" onClick={() => setMenuOpen(false)} className="hover:text-slate-900 dark:hover:text-white transition-colors py-1">
+          <NavLink to="/" end onClick={() => setMenuOpen(false)} className={navClass("transition-colors py-1", "hover:text-slate-900 dark:hover:text-white")}>
             Home
-          </Link>
+          </NavLink>
           
-          <Link to="/buy-crypto" onClick={() => setMenuOpen(false)} className="hover:text-slate-900 dark:hover:text-white transition-colors py-1">
+          <NavLink to="/buy-crypto" onClick={() => setMenuOpen(false)} className={navClass("transition-colors py-1", "hover:text-slate-900 dark:hover:text-white")}>
             Buy Crypto
-          </Link>
+          </NavLink>
           
-          <Link to="/markets" onClick={() => setMenuOpen(false)} className="hover:text-slate-900 dark:hover:text-white transition-colors py-1">
+          <NavLink to="/markets" onClick={() => setMenuOpen(false)} className={navClass("transition-colors py-1", "hover:text-slate-900 dark:hover:text-white")}>
             Markets
-          </Link>
+          </NavLink>
           
-          <Link to="/exchange" onClick={() => setMenuOpen(false)} className="hover:text-slate-900 dark:hover:text-white transition-colors py-1">
+          <NavLink to="/exchange" onClick={() => setMenuOpen(false)} className={navClass("transition-colors py-1", "hover:text-slate-900 dark:hover:text-white")}>
             Exchange
-          </Link>
+          </NavLink>
           
-          <Link to="/spot" onClick={() => setMenuOpen(false)} className="hover:text-slate-900 dark:hover:text-white transition-colors py-1">
+          <NavLink to="/spot" onClick={() => setMenuOpen(false)} className={navClass("transition-colors py-1", "hover:text-slate-900 dark:hover:text-white")}>
             Spot
-          </Link>
+          </NavLink>
 
-          <Link to="/bitusdt" onClick={() => setMenuOpen(false)} className="hover:text-slate-900 dark:hover:text-white transition-colors py-1">
+          <NavLink to="/bitusdt" onClick={() => setMenuOpen(false)} className={navClass("transition-colors py-1", "hover:text-slate-900 dark:hover:text-white")}>
             BITUSDT
-          </Link>
+          </NavLink>
 
-          <Link to="/pages" onClick={() => setMenuOpen(false)} className="hover:text-slate-900 dark:hover:text-white transition-colors py-1">
+          <NavLink to="/pages" onClick={() => setMenuOpen(false)} className={navClass("transition-colors py-1", "hover:text-slate-900 dark:hover:text-white")}>
             Pages ▼
-          </Link>
+          </NavLink>
           
           <Link to="/signin" onClick={() => setMenuOpen(false)} className="text-center border border-gray-300 dark:border-gray-600 rounded-full px-4 py-2 text-xs hover:bg-blue-600 hover:text-white transition-colors mt-2 text-slate-900 dark:text-white">
             Sign-In

@@ -95,7 +95,7 @@ const App = () => {
       </a>
       {
         !isDashboard && (
-          <header>
+          <header className="sticky top-0 z-40">
             <Navbar />
           </header>
         )

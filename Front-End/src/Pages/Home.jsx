@@ -79,126 +79,126 @@ const Home = () => {
 
         <div className='flex flex-col gap-7 px-4 md:pl-28 md:pr-28 relative md:bottom-17'>
 
-  <div className='flex justify-between items-center'>
-    <h2 className='text-3xl font-bold'>Market Update</h2>
-    <p className='cursor-pointer text-sm font-semibold text-blue-600 dark:text-blue-400 hover:underline'>See All Coins</p>
-  </div>
+          <div className='flex justify-between items-center'>
+            <h2 className='text-3xl font-bold'>Market Update</h2>
+            <p className='cursor-pointer text-sm font-semibold text-blue-600 dark:text-blue-400 hover:underline'>See All Coins</p>
+          </div>
 
-  <div className='flex flex-col md:flex-row md:justify-between md:items-center gap-4'>
-    <div className='flex flex-row gap-8 overflow-x-auto pb-1 [&>button]:flex-shrink-0'>
-      {MARKET_CATEGORIES.map((cat) => (
-        <button
-          key={cat.name}
-          type="button"
-          onClick={() => setCategory(cat.id)}
-          className={category === cat.id ? "text-blue-600 dark:text-blue-400 font-semibold" : "text-gray-600 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white"}
-        >
-          {cat.name}
-        </button>
-      ))}
-    </div>
+          <div className='flex flex-col md:flex-row md:justify-between md:items-center gap-4'>
+            <div className='flex flex-row gap-8 overflow-x-auto pb-1 [&>button]:flex-shrink-0'>
+              {MARKET_CATEGORIES.map((cat) => (
+                <button
+                  key={cat.name}
+                  type="button"
+                  onClick={() => setCategory(cat.id)}
+                  className={category === cat.id ? "text-blue-600 dark:text-blue-400 font-semibold" : "text-gray-600 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white"}
+                >
+                  {cat.name}
+                </button>
+              ))}
+            </div>
 
-    <div className='relative'>
-      <FaSearch className='absolute left-4 top-1/2 -translate-y-1/2 text-gray-600 dark:text-gray-400'/>
-      <input
-        aria-label="Search coin"
-        placeholder='Search Coin'
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
-        className='h-8 w-full md:w-65 bg-slate-100 dark:bg-gray-900 rounded-2xl pl-11 pb-1'
-      />
-    </div>
-  </div>
+            <div className='relative'>
+              <FaSearch className='absolute left-4 top-1/2 -translate-y-1/2 text-gray-600 dark:text-gray-400'/>
+              <input
+                aria-label="Search coin"
+                placeholder='Search Coin'
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className='h-8 w-full md:w-65 bg-slate-100 dark:bg-gray-900 rounded-2xl pl-11 pb-1'
+              />
+            </div>
+          </div>
 
-  {/* Table Container */}
-  <div className='overflow-x-auto'>
-    <table className='w-full min-w-[800px] text-left border-collapse'>
-      <thead>
-        <tr className='border-b border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 text-sm font-semibold'>
-          <th scope="col" className='py-4 px-2 w-10 text-center'></th>
-          <th scope="col" className='py-4 px-2 w-10 text-center'>#</th>
-          <th scope="col" className='py-4 px-4'>Name</th>
-          <th scope="col" className='py-4 px-4 text-right'>Last Price</th>
-          <th scope="col" className='py-4 px-4 text-right'>24h %</th>
-          <th scope="col" className='py-4 px-4 text-right'>Market Cap</th>
-          <th scope="col" className='py-4 px-4 text-center'>Last 7 Days</th>
-          <th scope="col" className='py-4 px-4 text-right w-28'></th>
-        </tr>
-      </thead>
-      
-      <tbody className='divide-y divide-gray-200 dark:divide-gray-800 text-sm'>
-        {coinsLoading && (
-          <tr>
-            <td colSpan={8} className='text-center text-gray-600 dark:text-gray-400 py-10'>
-              Loading market data…
-            </td>
-          </tr>
-        )}
+          {/* Table Container */}
+          <div className='overflow-x-auto'>
+            <table className='w-full min-w-[800px] text-left border-collapse'>
+              <thead>
+                <tr className='border-b border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 text-sm font-semibold'>
+                  <th scope="col" className='py-4 px-2 w-10 text-center'></th>
+                  <th scope="col" className='py-4 px-2 w-10 text-center'>#</th>
+                  <th scope="col" className='py-4 px-4'>Name</th>
+                  <th scope="col" className='py-4 px-4 text-right'>Last Price</th>
+                  <th scope="col" className='py-4 px-4 text-right'>24h %</th>
+                  <th scope="col" className='py-4 px-4 text-right'>Market Cap</th>
+                  <th scope="col" className='py-4 px-4 text-center'>Last 7 Days</th>
+                  <th scope="col" className='py-4 px-4 text-right w-28'></th>
+                </tr>
+              </thead>
+              
+              <tbody className='divide-y divide-gray-200 dark:divide-gray-800 text-sm'>
+                {coinsLoading && (
+                  <tr>
+                    <td colSpan={8} className='text-center text-gray-600 dark:text-gray-400 py-10'>
+                      Loading market data…
+                    </td>
+                  </tr>
+                )}
 
-        {!coinsLoading && visibleCoins.length === 0 && (
-          <tr>
-            <td colSpan={8} className='text-center text-gray-600 dark:text-gray-400 py-10'>
-              No coins match your search.
-            </td>
-          </tr>
-        )}
+                {!coinsLoading && visibleCoins.length === 0 && (
+                  <tr>
+                    <td colSpan={8} className='text-center text-gray-600 dark:text-gray-400 py-10'>
+                      No coins match your search.
+                    </td>
+                  </tr>
+                )}
 
-        {!coinsLoading && visibleCoins.map((coin, index) => (
-          <tr key={coin.id} className='hover:bg-slate-50 dark:hover:bg-gray-800/50 transition-colors'>
-            <td className='py-4 px-2 text-center align-middle'>
-              <button
-                type="button"
-                onClick={() => setStarred((s) => ({ ...s, [coin.id]: !s[coin.id] }))}
-                aria-label={starred[coin.id] ? `Remove ${coin.name} from favorites` : `Add ${coin.name} to favorites`}
-                aria-pressed={!!starred[coin.id]}
-                className='inline-flex items-center justify-center'
-              >
-                {starred[coin.id] ? <FaStar className='text-amber-400' /> : <FaRegStar className='text-gray-400 hover:text-gray-500' />}
-              </button>
-            </td>
+                {!coinsLoading && visibleCoins.map((coin, index) => (
+                  <tr key={coin.id} className='hover:bg-slate-50 dark:hover:bg-gray-800/50 transition-colors'>
+                    <td className='py-4 px-2 text-center align-middle'>
+                      <button
+                        type="button"
+                        onClick={() => setStarred((s) => ({ ...s, [coin.id]: !s[coin.id] }))}
+                        aria-label={starred[coin.id] ? `Remove ${coin.name} from favorites` : `Add ${coin.name} to favorites`}
+                        aria-pressed={!!starred[coin.id]}
+                        className='inline-flex items-center justify-center'
+                      >
+                        {starred[coin.id] ? <FaStar className='text-amber-400' /> : <FaRegStar className='text-gray-400 hover:text-gray-500' />}
+                      </button>
+                    </td>
 
-            <td className='py-4 px-2 text-center text-gray-500 align-middle'>
-              {index + 1}
-            </td>
+                    <td className='py-4 px-2 text-center text-gray-500 align-middle'>
+                      {index + 1}
+                    </td>
 
-            <td className='py-4 px-4 align-middle'>
-              <div className='flex items-center gap-2 font-medium'>
-                {coin.image && <img src={coin.image} alt="" className='w-5 h-5 rounded-full' />}
-                <span>{coin.name}</span>
-                <span className='text-gray-600 dark:text-gray-400 text-xs uppercase'>{coin.symbol}</span>
-              </div>
-            </td>
+                    <td className='py-4 px-4 align-middle'>
+                      <div className='flex items-center gap-2 font-medium'>
+                        {coin.image && <img src={coin.image} alt="" className='w-5 h-5 rounded-full' />}
+                        <span>{coin.name}</span>
+                        <span className='text-gray-600 dark:text-gray-400 text-xs uppercase'>{coin.symbol}</span>
+                      </div>
+                    </td>
 
-            <td className='py-4 px-4 text-right font-semibold align-middle'>
-              ${Number(coin.current_price).toLocaleString(undefined, { maximumFractionDigits: 2 })}
-            </td>
+                    <td className='py-4 px-4 text-right font-semibold align-middle'>
+                      ${Number(coin.current_price).toLocaleString(undefined, { maximumFractionDigits: 2 })}
+                    </td>
 
-            <td className={`py-4 px-4 text-right font-semibold align-middle ${Number(coin.price_change_percentage_24h) >= 0 ? "text-green-700 dark:text-green-500" : "text-red-600 dark:text-red-500"}`}>
-              {Number(coin.price_change_percentage_24h ?? 0) >= 0 ? "+" : ""}{Number(coin.price_change_percentage_24h ?? 0).toFixed(2)}%
-            </td>
+                    <td className={`py-4 px-4 text-right font-semibold align-middle ${Number(coin.price_change_percentage_24h) >= 0 ? "text-green-700 dark:text-green-500" : "text-red-600 dark:text-red-500"}`}>
+                      {Number(coin.price_change_percentage_24h ?? 0) >= 0 ? "+" : ""}{Number(coin.price_change_percentage_24h ?? 0).toFixed(2)}%
+                    </td>
 
-            <td className='py-4 px-4 text-right font-medium align-middle'>
-              ${Number(coin.market_cap).toLocaleString()}
-            </td>
+                    <td className='py-4 px-4 text-right font-medium align-middle'>
+                      ${Number(coin.market_cap).toLocaleString()}
+                    </td>
 
-            <td className='py-4 px-4 text-center text-gray-600 dark:text-gray-400 text-xs align-middle'>
-              —
-            </td>
+                    <td className='py-4 px-4 text-center text-gray-600 dark:text-gray-400 text-xs align-middle'>
+                      —
+                    </td>
 
-            <td className='py-4 px-4 text-right align-middle'>
-              <Link
-                to="/exchange"
-                className='inline-flex items-center justify-center w-20 h-8 border-2 rounded-full border-slate-900 dark:border-white hover:bg-blue-600 hover:border-blue-500 hover:text-white transition-colors text-xs font-semibold'
-              >
-                Trade
-              </Link>
-            </td>
-          </tr>
-        ))}
-      </tbody>
-    </table>
-  </div>
-</div>
+                    <td className='py-4 px-4 text-right align-middle'>
+                      <Link
+                        to="/exchange"
+                        className='inline-flex items-center justify-center w-20 h-8 border-2 rounded-full border-slate-900 dark:border-white hover:bg-blue-600 hover:border-blue-500 hover:text-white transition-colors text-xs font-semibold'
+                      >
+                        Trade
+                      </Link>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
         {/* The End */}
 
         <div className='w-full py-16 md:h-150 bg-slate-100 dark:bg-hero-dark text-slate-900 dark:text-white mt-40'>
