@@ -6,6 +6,7 @@ const router = express.Router();
 const authenticate = require("../middleware/authenticate");
 
 const {
+    getStats,
     getProfile,
     updateProfile,
     updatePreferences,
@@ -29,6 +30,13 @@ router.get(
     "/profile",
     authenticate,
     getProfile
+);
+
+
+router.get(
+    "/stats",
+    authenticate,
+    getStats
 );
 
 

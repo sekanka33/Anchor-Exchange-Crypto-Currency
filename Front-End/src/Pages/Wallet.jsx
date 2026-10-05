@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useCurrency } from "../hooks/useCurrency";
 import { FaEye, FaEyeSlash, FaSearch } from 'react-icons/fa'
 import { Link } from 'react-router-dom'
 import PageHeader from '../Components/PageHeader'
@@ -9,12 +10,10 @@ const authHeaders = () => ({
   Authorization: `Bearer ${localStorage.getItem("token")}`,
 });
 
-const formatCurrency = (value) =>
-  value.toLocaleString(undefined, { style: "currency", currency: "USD" });
-
 const formatAmount = (value) => value.toLocaleString(undefined, { maximumFractionDigits: 8 });
 
 const Wallet = () => {
+  const { currency, formatMoney } = useCurrency();
   const [wallet, setWallet] = useState(null);
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -79,7 +78,7 @@ const Wallet = () => {
                   <p className='text-gray-500 dark:text-text-color text-sm'>Total Portfolio Value</p>
                   <div className='flex flex-row gap-3 items-center'>
                     <p className='text-2xl'>
-                      {hideBalances ? "••••••" : formatCurrency(wallet.portfolioValue)}
+                      {hideBalances ? "••••••" : formatMoney(wallet.portfolioValue)}
                     </p>
                     <button onClick={() => setHideBalances((v) => !v)} className='text-gray-500 dark:text-text-color' aria-label={hideBalances ? "Show balances" : "Hide balances"}>
                       {hideBalances ? <FaEyeSlash /> : <FaEye />}
@@ -108,7 +107,7 @@ const Wallet = () => {
                   <p className='w-40'>Available</p>
                   <p className='w-30'>Locked</p>
                   <p className='w-30'>Total</p>
-                  <p className='w-30'>Value (USD)</p>
+                  <p className='w-30'>Value ({currency})</p>
                 </div>
 
                 <hr className='text-gray-200 dark:text-line-color w-200 h-0 mt-4' />
@@ -135,7 +134,7 @@ const Wallet = () => {
                       <p className='w-40'>{hideBalances ? "••••••" : formatAmount(b.availableBalance)}</p>
                       <p className='w-30'>{hideBalances ? "••••••" : formatAmount(b.lockedBalance)}</p>
                       <p className='w-30'>{hideBalances ? "••••••" : formatAmount(b.totalBalance)}</p>
-                      <p className='w-30'>{hideBalances ? "••••••" : formatCurrency(b.usdValue)}</p>
+                      <p className='w-30'>{hideBalances ? "••••••" : formatMoney(b.usdValue)}</p>
                     </div>
                   ))}
               </div>

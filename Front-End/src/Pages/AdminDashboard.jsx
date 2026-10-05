@@ -1,4 +1,8 @@
 import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
+import { LayoutDashboard, Users, ArrowLeftRight, ArrowDownToLine, ArrowUpFromLine, List } from "lucide-react";
+import AdminOverview from "../Components/AdminOverview";
+import { useCurrency } from "../hooks/useCurrency";
 import Modal from "../Components/Modal";
 import { Link, useNavigate } from "react-router-dom";
 import { API_BASE_URL } from "../api/config";
@@ -7,25 +11,40 @@ const authHeaders = () => ({
   Authorization: `Bearer ${localStorage.getItem("token")}`,
 });
 
-const formatUSD = (value) =>
-  new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(value || 0);
 
 const statusStyles = {
-  COMPLETED: "bg-green-500/10 text-green-400",
-  PENDING: "bg-amber-500/10 text-amber-400",
-  PENDING_CONFIRMATION: "bg-amber-500/10 text-amber-400",
-  FAILED: "bg-red-500/10 text-red-400",
+  COMPLETED: "bg-green-500/10 text-green-700 dark:text-green-400",
+  OPEN: "bg-amber-500/10 text-amber-700 dark:text-amber-400",
+  PENDING: "bg-amber-500/10 text-amber-700 dark:text-amber-400",
+  PENDING_CONFIRMATION: "bg-amber-500/10 text-amber-700 dark:text-amber-400",
+  FAILED: "bg-red-500/10 text-red-600 dark:text-red-400",
   CANCELLED: "bg-gray-500/10 text-gray-600 dark:text-gray-400",
   EXPIRED: "bg-gray-500/10 text-gray-600 dark:text-gray-400",
 };
 
-const TABS = ["Overview", "Users", "Transactions", "Deposits", "Withdrawals", "Orders"];
+const TABS = [
+  { label: "Overview", icon: LayoutDashboard },
+  { label: "Users", icon: Users },
+  { label: "Transactions", icon: ArrowLeftRight },
+  { label: "Deposits", icon: ArrowDownToLine },
+  { label: "Withdrawals", icon: ArrowUpFromLine },
+  { label: "Orders", icon: List },
+];
 
-const PaginationBar = ({ pagination, page, setPage }) => {
+// Placeholder row for a table with no matching records.
+const EmptyRow = ({ colSpan }) => (
+  <tr>
+    <td colSpan={colSpan} className="px-5 py-10 text-center text-sm text-gray-500 dark:text-text-color">
+      No data available yet.
+    </td>
+  </tr>
+);
+
+const PaginationBar = ({ pagination, setPage }) => {
   if (!pagination || pagination.totalPages <= 1) return null;
 
   return (
-    <div className="flex items-center justify-between px-5 py-4 border-t border-gray-200 dark:border-gray-800 text-sm text-gray-600 dark:text-gray-400">
+    <div className="flex items-center justify-between px-5 py-4 border-t border-gray-200 dark:border-line-color text-sm text-gray-600 dark:text-gray-400">
       <span>
         Page {pagination.page} of {pagination.totalPages} ({pagination.total} total)
       </span>
@@ -34,7 +53,7 @@ const PaginationBar = ({ pagination, page, setPage }) => {
           type="button"
           disabled={pagination.page <= 1}
           onClick={() => setPage((p) => Math.max(1, p - 1))}
-          className="px-4 py-1.5 rounded-full border border-gray-300 dark:border-gray-700 disabled:opacity-40 hover:bg-gray-100 dark:hover:bg-gray-800"
+          className="px-4 py-1.5 rounded-full border border-gray-300 dark:border-line-color disabled:opacity-40 hover:bg-gray-100 dark:hover:bg-input-field"
         >
           Previous
         </button>
@@ -42,7 +61,7 @@ const PaginationBar = ({ pagination, page, setPage }) => {
           type="button"
           disabled={pagination.page >= pagination.totalPages}
           onClick={() => setPage((p) => Math.min(pagination.totalPages, p + 1))}
-          className="px-4 py-1.5 rounded-full border border-gray-300 dark:border-gray-700 disabled:opacity-40 hover:bg-gray-100 dark:hover:bg-gray-800"
+          className="px-4 py-1.5 rounded-full border border-gray-300 dark:border-line-color disabled:opacity-40 hover:bg-gray-100 dark:hover:bg-input-field"
         >
           Next
         </button>
@@ -58,13 +77,20 @@ const StatusBadge = ({ status }) => (
 );
 
 const AdminDashboard = () => {
+  const { formatMoney } = useCurrency();
   const navigate = useNavigate();
 
   const [accessState, setAccessState] = useState("checking"); // checking | granted | denied
-  const [activeTab, setActiveTab] = useState("Overview");
+  // The active section lives in the URL (?tab=withdrawals) so the sidebar
+  // highlight follows navigation, refreshes and the browser back button.
+  const [searchParams, setSearchParams] = useSearchParams();
+  const activeTab =
+    TABS.find((t) => t.label.toLowerCase() === (searchParams.get("tab") || "").toLowerCase())?.label || "Overview";
+  const setActiveTab = (tab) => setSearchParams(tab === "Overview" ? {} : { tab: tab.toLowerCase() });
 
   // Overview
   const [stats, setStats] = useState(null);
+  const [statsError, setStatsError] = useState("");
 
   // Users
   const [users, setUsers] = useState([]);
@@ -117,7 +143,8 @@ const AdminDashboard = () => {
         }
 
         const data = await res.json();
-        setStats(data);
+        if (res.ok) setStats(data);
+        else setStatsError(data.message || "Unable to load statistics");
         setAccessState("granted");
       } catch {
         setAccessState("denied");
@@ -126,6 +153,26 @@ const AdminDashboard = () => {
 
     checkAccess();
   }, [navigate]);
+
+  const reloadStats = async () => {
+    setStatsError("");
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/admin/stats`, { headers: authHeaders() });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message);
+      setStats(data);
+    } catch (err) {
+      setStatsError(err.message || "Unable to load statistics");
+    }
+  };
+
+  // Jump from an Overview panel to a section, optionally pre-filtered by status.
+  const openTab = (tab, statusFilter = "") => {
+    if (tab === "Deposits") { setDepositStatusFilter(statusFilter); setDepositsPage(1); }
+    if (tab === "Withdrawals") { setWithdrawalStatusFilter(statusFilter); setWithdrawalsPage(1); }
+    setActiveTab(tab);
+    window.scrollTo({ top: 0 });
+  };
 
   useEffect(() => {
     if (accessState !== "granted" || activeTab !== "Users") return;
@@ -302,12 +349,12 @@ const AdminDashboard = () => {
   };
 
   if (accessState === "checking") {
-    return <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-[#0d0e12] text-slate-900 dark:text-white">Checking access...</div>;
+    return <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-hero-dark text-slate-900 dark:text-white">Checking access...</div>;
   }
 
   if (accessState === "denied") {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 dark:bg-[#0d0e12] text-slate-900 dark:text-white gap-4">
+      <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 dark:bg-hero-dark text-slate-900 dark:text-white gap-4">
         <h1 className="text-2xl font-bold">Access denied</h1>
         <p className="text-gray-600 dark:text-gray-400">This area is restricted to Anchor Exchange administrators.</p>
         <Link to="/dashboard" className="text-blue-400 hover:underline">Back to Dashboard</Link>
@@ -315,69 +362,59 @@ const AdminDashboard = () => {
     );
   }
 
-  return (
-    <div className="min-h-screen bg-slate-50 dark:bg-[#0d0e12] text-slate-900 dark:text-white font-sans pb-20">
-      <div className="px-4 md:px-8 pt-6 md:pt-10 pb-6 border-b border-gray-200 dark:border-gray-800/50">
-        <h1 className="text-2xl font-semibold">Admin Panel</h1>
-        <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">Manage users, transactions, deposits, withdrawals and orders.</p>
-      </div>
+  const navButton = (tab, compact = false) => {
+    const Icon = tab.icon;
+    const active = activeTab === tab.label;
+    return (
+      <button
+        key={tab.label}
+        type="button"
+        onClick={() => setActiveTab(tab.label)}
+        aria-current={active ? "page" : undefined}
+        className={`flex items-center gap-3 rounded-xl text-sm font-medium transition-colors border whitespace-nowrap ${compact ? "px-3 py-2" : "w-full px-3 py-2.5"} ${
+          active
+            ? "bg-blue-500/10 text-blue-500 border-blue-500/30"
+            : "border-transparent text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-input-field hover:text-slate-900 dark:hover:text-white"
+        }`}
+      >
+        <Icon size={18} aria-hidden="true" />
+        <span>{tab.label}</span>
+      </button>
+    );
+  };
 
-      {/* TABS */}
-      <div className="flex gap-2 px-4 md:px-8 pt-6 overflow-x-auto border-b border-gray-200 dark:border-gray-800/50 flex-wrap">
-        {TABS.map((tab) => (
-          <button
-            key={tab}
-            aria-pressed={activeTab === tab}
-                    onClick={() => setActiveTab(tab)}
-            className={`px-5 py-2.5 text-sm font-semibold rounded-t-lg transition-colors ${
-              activeTab === tab ? "bg-white dark:bg-[#16181e] text-slate-900 dark:text-white border-b-2 border-indigo-500" : "text-gray-600 dark:text-gray-400 hover:text-slate-900 dark:hover:text-gray-200"
-            }`}
-          >
-            {tab}
-          </button>
-        ))}
-      </div>
+  return (
+    <div className="min-h-screen bg-slate-50 dark:bg-hero-dark text-slate-900 dark:text-white font-sans flex">
+      {/* SIDEBAR (desktop) */}
+      <aside className="hidden lg:flex flex-col w-60 shrink-0 border-r border-gray-200 dark:border-line-color bg-white dark:bg-dark-void p-5 sticky top-14 h-[calc(100vh-3.5rem)] overflow-y-auto">
+        <p className="text-lg font-bold mb-1">Admin Panel</p>
+        <p className="text-xs text-gray-500 dark:text-text-color mb-6">Exchange operations</p>
+        <nav aria-label="Admin sections" className="space-y-1">
+          {TABS.map((tab) => navButton(tab))}
+        </nav>
+      </aside>
+
+      <div className="flex-1 min-w-0 pb-20">
+        {/* SECTION NAV (mobile / tablet) */}
+        <div className="lg:hidden border-b border-gray-200 dark:border-line-color bg-white dark:bg-dark-void px-4 pt-5 pb-3">
+          <p className="text-lg font-bold mb-3">Admin Panel</p>
+          <nav aria-label="Admin sections" className="flex gap-2 overflow-x-auto pb-1">
+            {TABS.map((tab) => navButton(tab, true))}
+          </nav>
+        </div>
 
       <div className="px-4 md:px-8 py-6">
+        <h1 className="sr-only">Admin Panel — {activeTab}</h1>
 
         {/* OVERVIEW */}
-        {activeTab === "Overview" && stats && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-
-            <div className="bg-white dark:bg-[#16181e] rounded-2xl border border-gray-200 dark:border-gray-800/50 p-5">
-              <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">Total Users</p>
-              <p className="text-2xl font-bold">{stats.users.total}</p>
-              <p className="text-xs text-gray-500 mt-2">{stats.users.verified} verified · {stats.users.newLast7Days} new (7d)</p>
-            </div>
-
-            <div className="bg-white dark:bg-[#16181e] rounded-2xl border border-gray-200 dark:border-gray-800/50 p-5">
-              <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">Fiat Deposits</p>
-              <p className="text-2xl font-bold">{formatUSD(stats.deposits.fiatCompletedTotalUsd)}</p>
-              <p className="text-xs text-gray-500 mt-2">
-                {stats.deposits.fiatCompletedCount} fiat · {stats.deposits.cryptoCompletedCount} crypto · {stats.deposits.pending} pending
-              </p>
-            </div>
-
-            <div className="bg-white dark:bg-[#16181e] rounded-2xl border border-gray-200 dark:border-gray-800/50 p-5">
-              <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">Fiat Withdrawals</p>
-              <p className="text-2xl font-bold">{formatUSD(stats.withdrawals.fiatCompletedTotalUsd)}</p>
-              <p className="text-xs text-gray-500 mt-2">
-                {stats.withdrawals.fiatCompletedCount} fiat · {stats.withdrawals.cryptoCompletedCount} crypto · {stats.withdrawals.pendingConfirmation} awaiting confirmation
-              </p>
-            </div>
-
-            <div className="bg-white dark:bg-[#16181e] rounded-2xl border border-gray-200 dark:border-gray-800/50 p-5">
-              <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">Orders</p>
-              <p className="text-2xl font-bold">{stats.orders.total}</p>
-              <p className="text-xs text-gray-500 mt-2">{stats.orders.buy} buy · {stats.orders.sell} sell</p>
-            </div>
-
-            <div className="bg-white dark:bg-[#16181e] rounded-2xl border border-gray-200 dark:border-gray-800/50 p-5">
-              <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">Total Transactions</p>
-              <p className="text-2xl font-bold">{stats.transactions.total}</p>
-            </div>
-
-          </div>
+        {activeTab === "Overview" && (
+          <AdminOverview
+            stats={stats}
+            statsError={statsError}
+            onReloadStats={reloadStats}
+            onOpenTab={openTab}
+            onViewUser={openUserDetail}
+          />
         )}
 
         {/* USERS */}
@@ -389,15 +426,15 @@ const AdminDashboard = () => {
                 value={userSearch}
                 onChange={(e) => { setUserSearch(e.target.value); setUsersPage(1); }}
                 placeholder="Search by email, name or username"
-                className="bg-slate-100 dark:bg-[#21242d] text-slate-900 dark:text-white border border-gray-300 dark:border-gray-700 rounded-lg px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-500 w-full max-w-80"
+                className="bg-slate-100 dark:bg-input-field text-slate-900 dark:text-white border border-gray-300 dark:border-line-color rounded-lg px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-500 w-full max-w-80"
               />
             </div>
 
-            <div className="bg-white dark:bg-[#16181e] rounded-2xl border border-gray-200 dark:border-gray-800/50 overflow-hidden">
+            <div className="bg-white dark:bg-crypto-color rounded-2xl border border-gray-200 dark:border-line-color overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="text-left text-gray-600 dark:text-gray-400 border-b border-gray-200 dark:border-gray-800">
+                    <tr className="text-left text-gray-600 dark:text-gray-400 border-b border-gray-200 dark:border-line-color">
                       <th className="px-5 py-3 font-medium">Email</th>
                       <th className="px-5 py-3 font-medium">Name</th>
                       <th className="px-5 py-3 font-medium">Role</th>
@@ -407,11 +444,12 @@ const AdminDashboard = () => {
                     </tr>
                   </thead>
                   <tbody>
+                    {users.length === 0 && <EmptyRow colSpan={6} />}
                     {users.map((u) => (
                       <tr
                         key={u.id}
                         onClick={() => openUserDetail(u)}
-                        className="border-b border-gray-200 dark:border-gray-800/50 hover:bg-gray-50 dark:hover:bg-[#1c1f27] cursor-pointer transition-colors"
+                        className="border-b border-gray-200 dark:border-line-color hover:bg-gray-50 dark:hover:bg-input-field cursor-pointer transition-colors"
                       >
                         <td className="px-5 py-3">{u.email}</td>
                         <td className="px-5 py-3 text-gray-600 dark:text-gray-400">{u.fullname || "—"}</td>
@@ -422,7 +460,7 @@ const AdminDashboard = () => {
                         </td>
                         <td className="px-5 py-3">{u.is_verified ? "Yes" : "No"}</td>
                         <td className="px-5 py-3">
-                          {u.is_suspended ? <span className="text-red-400 font-semibold">Suspended</span> : <span className="text-green-400">Active</span>}
+                          {u.is_suspended ? <span className="text-red-600 dark:text-red-400 font-semibold">Suspended</span> : <span className="text-green-700 dark:text-green-400">Active</span>}
                         </td>
                         <td className="px-5 py-3 text-gray-600 dark:text-gray-400 whitespace-nowrap">{new Date(u.created_at).toLocaleDateString()}</td>
                       </tr>
@@ -442,7 +480,7 @@ const AdminDashboard = () => {
               <select
                 value={txTypeFilter}
                 onChange={(e) => { setTxTypeFilter(e.target.value); setTxPage(1); }}
-                className="bg-slate-100 dark:bg-[#21242d] text-slate-900 dark:text-white border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500"
+                className="bg-slate-100 dark:bg-input-field text-slate-900 dark:text-white border border-gray-300 dark:border-line-color rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="">All types</option>
                 <option value="BUY">Buy</option>
@@ -452,11 +490,11 @@ const AdminDashboard = () => {
               </select>
             </div>
 
-            <div className="bg-white dark:bg-[#16181e] rounded-2xl border border-gray-200 dark:border-gray-800/50 overflow-hidden">
+            <div className="bg-white dark:bg-crypto-color rounded-2xl border border-gray-200 dark:border-line-color overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="text-left text-gray-600 dark:text-gray-400 border-b border-gray-200 dark:border-gray-800">
+                    <tr className="text-left text-gray-600 dark:text-gray-400 border-b border-gray-200 dark:border-line-color">
                       <th className="px-5 py-3 font-medium">Date</th>
                       <th className="px-5 py-3 font-medium">User</th>
                       <th className="px-5 py-3 font-medium">Type</th>
@@ -466,8 +504,9 @@ const AdminDashboard = () => {
                     </tr>
                   </thead>
                   <tbody>
+                    {transactions.length === 0 && <EmptyRow colSpan={6} />}
                     {transactions.map((t) => (
-                      <tr key={t.id} className="border-b border-gray-200 dark:border-gray-800/50">
+                      <tr key={t.id} className="border-b border-gray-200 dark:border-line-color">
                         <td className="px-5 py-3 text-gray-600 dark:text-gray-400 whitespace-nowrap">{new Date(t.created_at).toLocaleString()}</td>
                         <td className="px-5 py-3">{t.user_email}</td>
                         <td className="px-5 py-3 font-semibold">{t.type}</td>
@@ -491,7 +530,7 @@ const AdminDashboard = () => {
               <select
                 value={depositStatusFilter}
                 onChange={(e) => { setDepositStatusFilter(e.target.value); setDepositsPage(1); }}
-                className="bg-slate-100 dark:bg-[#21242d] text-slate-900 dark:text-white border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500"
+                className="bg-slate-100 dark:bg-input-field text-slate-900 dark:text-white border border-gray-300 dark:border-line-color rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="">All statuses</option>
                 <option value="PENDING">Pending</option>
@@ -500,11 +539,11 @@ const AdminDashboard = () => {
               </select>
             </div>
 
-            <div className="bg-white dark:bg-[#16181e] rounded-2xl border border-gray-200 dark:border-gray-800/50 overflow-hidden">
+            <div className="bg-white dark:bg-crypto-color rounded-2xl border border-gray-200 dark:border-line-color overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="text-left text-gray-600 dark:text-gray-400 border-b border-gray-200 dark:border-gray-800">
+                    <tr className="text-left text-gray-600 dark:text-gray-400 border-b border-gray-200 dark:border-line-color">
                       <th className="px-5 py-3 font-medium">Date</th>
                       <th className="px-5 py-3 font-medium">User</th>
                       <th className="px-5 py-3 font-medium">Type</th>
@@ -514,8 +553,9 @@ const AdminDashboard = () => {
                     </tr>
                   </thead>
                   <tbody>
+                    {deposits.length === 0 && <EmptyRow colSpan={6} />}
                     {deposits.map((d) => (
-                      <tr key={d.id} className="border-b border-gray-200 dark:border-gray-800/50">
+                      <tr key={d.id} className="border-b border-gray-200 dark:border-line-color">
                         <td className="px-5 py-3 text-gray-600 dark:text-gray-400 whitespace-nowrap">{new Date(d.created_at).toLocaleString()}</td>
                         <td className="px-5 py-3">{d.user_email}</td>
                         <td className="px-5 py-3">{d.type}</td>
@@ -539,7 +579,7 @@ const AdminDashboard = () => {
               <select
                 value={withdrawalStatusFilter}
                 onChange={(e) => { setWithdrawalStatusFilter(e.target.value); setWithdrawalsPage(1); }}
-                className="bg-slate-100 dark:bg-[#21242d] text-slate-900 dark:text-white border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500"
+                className="bg-slate-100 dark:bg-input-field text-slate-900 dark:text-white border border-gray-300 dark:border-line-color rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="">All statuses</option>
                 <option value="PENDING_CONFIRMATION">Pending confirmation</option>
@@ -549,11 +589,11 @@ const AdminDashboard = () => {
               </select>
             </div>
 
-            <div className="bg-white dark:bg-[#16181e] rounded-2xl border border-gray-200 dark:border-gray-800/50 overflow-hidden">
+            <div className="bg-white dark:bg-crypto-color rounded-2xl border border-gray-200 dark:border-line-color overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="text-left text-gray-600 dark:text-gray-400 border-b border-gray-200 dark:border-gray-800">
+                    <tr className="text-left text-gray-600 dark:text-gray-400 border-b border-gray-200 dark:border-line-color">
                       <th className="px-5 py-3 font-medium">Date</th>
                       <th className="px-5 py-3 font-medium">User</th>
                       <th className="px-5 py-3 font-medium">Type</th>
@@ -564,8 +604,9 @@ const AdminDashboard = () => {
                     </tr>
                   </thead>
                   <tbody>
+                    {withdrawals.length === 0 && <EmptyRow colSpan={7} />}
                     {withdrawals.map((w) => (
-                      <tr key={w.id} className="border-b border-gray-200 dark:border-gray-800/50">
+                      <tr key={w.id} className="border-b border-gray-200 dark:border-line-color">
                         <td className="px-5 py-3 text-gray-600 dark:text-gray-400 whitespace-nowrap">{new Date(w.created_at).toLocaleString()}</td>
                         <td className="px-5 py-3">{w.user_email}</td>
                         <td className="px-5 py-3">{w.type}</td>
@@ -601,7 +642,7 @@ const AdminDashboard = () => {
               <select
                 value={orderSideFilter}
                 onChange={(e) => { setOrderSideFilter(e.target.value); setOrdersPage(1); }}
-                className="bg-slate-100 dark:bg-[#21242d] text-slate-900 dark:text-white border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500"
+                className="bg-slate-100 dark:bg-input-field text-slate-900 dark:text-white border border-gray-300 dark:border-line-color rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="">All sides</option>
                 <option value="BUY">Buy</option>
@@ -609,11 +650,11 @@ const AdminDashboard = () => {
               </select>
             </div>
 
-            <div className="bg-white dark:bg-[#16181e] rounded-2xl border border-gray-200 dark:border-gray-800/50 overflow-hidden">
+            <div className="bg-white dark:bg-crypto-color rounded-2xl border border-gray-200 dark:border-line-color overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="text-left text-gray-600 dark:text-gray-400 border-b border-gray-200 dark:border-gray-800">
+                    <tr className="text-left text-gray-600 dark:text-gray-400 border-b border-gray-200 dark:border-line-color">
                       <th className="px-5 py-3 font-medium">Date</th>
                       <th className="px-5 py-3 font-medium">User</th>
                       <th className="px-5 py-3 font-medium">Pair</th>
@@ -623,13 +664,14 @@ const AdminDashboard = () => {
                     </tr>
                   </thead>
                   <tbody>
+                    {orders.length === 0 && <EmptyRow colSpan={6} />}
                     {orders.map((o) => (
-                      <tr key={o.id} className="border-b border-gray-200 dark:border-gray-800/50">
+                      <tr key={o.id} className="border-b border-gray-200 dark:border-line-color">
                         <td className="px-5 py-3 text-gray-600 dark:text-gray-400 whitespace-nowrap">{new Date(o.created_at).toLocaleString()}</td>
                         <td className="px-5 py-3">{o.user_email}</td>
                         <td className="px-5 py-3">{o.pair}</td>
-                        <td className={`px-5 py-3 font-semibold ${o.side === "BUY" ? "text-emerald-400" : "text-rose-500"}`}>{o.side}</td>
-                        <td className="px-5 py-3">${Number(o.total).toLocaleString()}</td>
+                        <td className={`px-5 py-3 font-semibold ${o.side === "BUY" ? "text-green-700 dark:text-green-400" : "text-red-600 dark:text-red-400"}`}>{o.side}</td>
+                        <td className="px-5 py-3">{formatMoney(o.total)}</td>
                         <td className="px-5 py-3"><StatusBadge status={o.status} /></td>
                       </tr>
                     ))}
@@ -642,13 +684,14 @@ const AdminDashboard = () => {
         )}
 
       </div>
+      </div>
 
       {/* USER DETAIL PANEL */}
       {selectedUser && (
-        <Modal onClose={() => setSelectedUser(null)} titleId="user-detail-title" className="bg-white dark:bg-[#16181e] border border-gray-200 dark:border-gray-800 rounded-2xl p-6 max-w-lg w-full text-slate-900 dark:text-white max-h-[85vh] overflow-y-auto">
+        <Modal onClose={() => setSelectedUser(null)} titleId="user-detail-title" className="bg-white dark:bg-crypto-color border border-gray-200 dark:border-line-color rounded-2xl p-6 max-w-lg w-full text-slate-900 dark:text-white max-h-[85vh] overflow-y-auto">
             <div className="flex justify-between items-start mb-4">
               <h3 id="user-detail-title" className="text-lg font-bold">{selectedUser.email}</h3>
-              <button onClick={() => setSelectedUser(null)} aria-label="Close dialog" className="text-gray-600 dark:text-gray-400 hover:text-white">✕</button>
+              <button onClick={() => setSelectedUser(null)} aria-label="Close dialog" className="text-gray-600 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white">✕</button>
             </div>
 
             {!userDetail && <p className="text-sm text-gray-600 dark:text-gray-400">Loading...</p>}
@@ -665,7 +708,7 @@ const AdminDashboard = () => {
                   <div><span className="text-gray-600 dark:text-gray-400">Role</span><p className="capitalize">{userDetail.user.role}</p></div>
                 </div>
 
-                <div className="flex justify-between bg-slate-100 dark:bg-[#21242d] rounded-xl p-4">
+                <div className="flex justify-between bg-slate-100 dark:bg-input-field rounded-xl p-4">
                   <div className="text-center">
                     <p className="text-lg font-bold">{userDetail.counts.orders}</p>
                     <p className="text-xs text-gray-600 dark:text-gray-400">Orders</p>
@@ -685,7 +728,7 @@ const AdminDashboard = () => {
                     <p className="text-gray-600 dark:text-gray-400 mb-2">Wallet balances</p>
                     <div className="grid grid-cols-2 gap-2">
                       {userDetail.balances.filter((b) => Number(b.available_balance) > 0 || Number(b.locked_balance) > 0).map((b) => (
-                        <div key={b.asset_symbol} className="flex justify-between bg-slate-100 dark:bg-[#21242d] rounded-lg px-3 py-2">
+                        <div key={b.asset_symbol} className="flex justify-between bg-slate-100 dark:bg-input-field rounded-lg px-3 py-2">
                           <span>{b.asset_symbol}</span>
                           <span>{Number(b.available_balance).toLocaleString()}</span>
                         </div>
@@ -698,7 +741,7 @@ const AdminDashboard = () => {
                   <div role="alert" className="p-3 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-xs">{userActionError}</div>
                 )}
 
-                <div className="flex flex-wrap gap-2 pt-2 border-t border-gray-200 dark:border-gray-800">
+                <div className="flex flex-wrap gap-2 pt-2 border-t border-gray-200 dark:border-line-color">
                   {userDetail.user.role === "user" ? (
                     <button
                       onClick={() => handleRoleChange(userDetail.user.id, "admin")}

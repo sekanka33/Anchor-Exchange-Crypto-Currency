@@ -39,6 +39,45 @@ describe("profile", () => {
     });
 });
 
+describe("account stats", () => {
+    test("a new user gets zeroed totals and a 30-day daily series", async () => {
+        const user = await h.createUser();
+        const res = await h.api("GET", "/api/users/stats", { token: user.token });
+
+        assert.equal(res.status, 200);
+        assert.equal(res.body.orders.total, 0);
+        assert.equal(res.body.orders.volumeUsd, 0);
+        assert.equal(res.body.deposits.fiatTotalUsd, 0);
+        assert.equal(res.body.withdrawals.fiatTotalUsd, 0);
+        assert.equal(res.body.daily.length, 30);
+        assert.ok(res.body.daily.every((d) => d.volumeUsd === 0));
+    });
+
+    test("counts only the caller's own completed orders, bucketed into today", async () => {
+        const user = await h.createUser();
+        const other = await h.createUser();
+        await h.fund(user.id, "USD", 1000);
+        await h.fund(other.id, "USD", 1000);
+
+        const buy = await h.api("POST", "/api/orders/buy", { token: user.token, body: { asset: "BTC", amountUsd: 100, paymentMethod: "card" } });
+        assert.equal(buy.status, 201);
+        await h.api("POST", "/api/orders/buy", { token: other.token, body: { asset: "BTC", amountUsd: 300, paymentMethod: "card" } });
+
+        const res = await h.api("GET", "/api/users/stats", { token: user.token });
+        assert.equal(res.status, 200);
+        assert.equal(res.body.orders.total, 1);
+        assert.equal(res.body.orders.buy, 1);
+        assert.ok(res.body.orders.volumeUsd > 0 && res.body.orders.volumeUsd <= 100);
+
+        const today = res.body.daily[res.body.daily.length - 1];
+        assert.equal(today.volumeUsd, res.body.orders.volumeUsd);
+    });
+
+    test("requires authentication", async () => {
+        assert.equal((await h.api("GET", "/api/users/stats")).status, 401);
+    });
+});
+
 describe("preferences", () => {
     test("accepts valid values and merges with existing preferences", async () => {
         const user = await h.createUser();
@@ -137,6 +176,19 @@ describe("market data proxy", () => {
         assert.equal(price.status, 200);
         const ticker = await h.api("GET", "/api/markets/ticker/BTCUSDT");
         assert.equal(ticker.status, 200);
+    });
+
+    test("proxies Binance order book and recent trades, rejecting malformed symbols", async () => {
+        const book = await h.api("GET", "/api/markets/orderbook/BTCUSDT?limit=5");
+        assert.equal(book.status, 200);
+        assert.ok(Array.isArray(book.body.bids) && Array.isArray(book.body.asks));
+
+        const trades = await h.api("GET", "/api/markets/trades/btcusdt?limit=5");
+        assert.equal(trades.status, 200);
+        assert.ok(Array.isArray(trades.body));
+
+        assert.equal((await h.api("GET", "/api/markets/orderbook/BTC-USDT")).status, 400);
+        assert.equal((await h.api("GET", "/api/markets/trades/x")).status, 400);
     });
 
     test("responses are cached (repeat call does not hit the upstream)", async () => {

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useCurrency } from "../hooks/useCurrency";
 import { Link } from "react-router-dom";
 import CreateAnAccoutSection from "../Components/CreateAnAccoutSection";
 import PageHeader from "../Components/PageHeader";
@@ -129,6 +130,11 @@ const SellCrypto = () => {
     }).format(value);
   };
 
+  const { currency: displayCurrency, formatMoney } = useCurrency();
+  // Transactions settle in USD; show the display-currency equivalent alongside.
+  const fmt = (usd) =>
+    displayCurrency === "USD" ? formatUSD(usd) : `${formatUSD(usd)} (≈ ${formatMoney(usd)})`;
+
   /*
    * Submit the sale to the backend — the backend recalculates price, fee,
    * and validates the available balance from scratch.
@@ -199,7 +205,7 @@ const SellCrypto = () => {
                 {loading ? (
                   "Loading current price..."
                 ) : price ? (
-                  `Reference Price: ${formatUSD(price)} / ${selectedCoin.symbol}`
+                  `Reference Price: ${formatMoney(price)} / ${selectedCoin.symbol}`
                 ) : (
                   "Price unavailable"
                 )}
@@ -325,7 +331,7 @@ const SellCrypto = () => {
                     </span>
 
                     <span>
-                      {formatUSD(grossUSD)}
+                      {fmt(grossUSD)}
                     </span>
                   </div>
 
@@ -335,7 +341,7 @@ const SellCrypto = () => {
                     </span>
 
                     <span>
-                      -{formatUSD(fee)}
+                      -{fmt(fee)}
                     </span>
                   </div>
 
@@ -345,7 +351,7 @@ const SellCrypto = () => {
                     </span>
 
                     <span>
-                      {formatUSD(receiveUSD)}
+                      {fmt(receiveUSD)}
                     </span>
                   </div>
 
@@ -398,7 +404,7 @@ const SellCrypto = () => {
                   </span>
 
                   <span>
-                    {formatUSD(grossUSD)}
+                    {fmt(grossUSD)}
                   </span>
                 </div>
 
@@ -408,7 +414,7 @@ const SellCrypto = () => {
                   </span>
 
                   <span>
-                    -{formatUSD(fee)}
+                    -{fmt(fee)}
                   </span>
                 </div>
 
@@ -418,7 +424,7 @@ const SellCrypto = () => {
                   </span>
 
                   <span>
-                    {formatUSD(receiveUSD)}
+                    {fmt(receiveUSD)}
                   </span>
                 </div>
 
@@ -465,7 +471,7 @@ const SellCrypto = () => {
                 </p>
 
                 <p className="text-2xl font-bold mt-2">
-                  {formatUSD(receiveUSD)}
+                  {fmt(receiveUSD)}
                 </p>
 
               </div>
@@ -518,15 +524,15 @@ const SellCrypto = () => {
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-600 dark:text-gray-400">Price</span>
-                  <span>{formatUSD(orderResult.order.price)}</span>
+                  <span>{fmt(orderResult.order.price)}</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-600 dark:text-gray-400">Fee</span>
-                  <span>-{formatUSD(orderResult.order.fee)}</span>
+                  <span>-{fmt(orderResult.order.fee)}</span>
                 </div>
                 <div className="border-t border-gray-200 dark:border-gray-700 pt-3 flex justify-between font-semibold text-sm">
                   <span>You received</span>
-                  <span>{formatUSD(orderResult.transaction.total)}</span>
+                  <span>{fmt(orderResult.transaction.total)}</span>
                 </div>
                 <div className="flex justify-between text-xs text-gray-500">
                   <span>Reference</span>

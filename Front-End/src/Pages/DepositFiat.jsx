@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useCurrency } from "../hooks/useCurrency";
 import { Link } from "react-router-dom";
 import CreateAnAccoutSection from "../Components/CreateAnAccoutSection";
 import PageHeader from "../Components/PageHeader";
@@ -30,6 +31,10 @@ const formatUSD = (value) =>
   }).format(value || 0);
 
 const DepositFiat = () => {
+  const { currency: displayCurrency, formatMoney } = useCurrency();
+  // Transactions settle in USD; show the display-currency equivalent alongside.
+  const fmt = (usd) =>
+    displayCurrency === "USD" ? formatUSD(usd) : `${formatUSD(usd)} (≈ ${formatMoney(usd)})`;
   const [currency, setCurrency] = useState("USD");
   const [showCurrencyDropdown, setShowCurrencyDropdown] = useState(false);
   const [amount, setAmount] = useState("100");
@@ -237,11 +242,11 @@ const DepositFiat = () => {
                 <div className="bg-slate-100 dark:bg-[#21242d] text-slate-900 dark:text-white rounded-xl p-4 mb-6 space-y-3">
                   <div className="flex justify-between text-sm">
                     <span className="text-gray-600 dark:text-gray-400">Estimated fee</span>
-                    <span>{formatUSD(fee)}</span>
+                    <span>{fmt(fee)}</span>
                   </div>
                   <div className="border-t border-gray-200 dark:border-gray-700 pt-3 flex justify-between font-semibold">
                     <span>You'll receive</span>
-                    <span>{formatUSD(netAmount)}</span>
+                    <span>{fmt(netAmount)}</span>
                   </div>
                 </div>
 
@@ -341,15 +346,15 @@ const DepositFiat = () => {
               <div className="bg-slate-100 dark:bg-[#21242d] text-slate-900 dark:text-white rounded-xl p-5 mt-6">
                 <div className="flex justify-between mb-3">
                   <span className="text-gray-600 dark:text-gray-400">Amount</span>
-                  <span>{formatUSD(numericAmount)}</span>
+                  <span>{fmt(numericAmount)}</span>
                 </div>
                 <div className="flex justify-between mb-3">
                   <span className="text-gray-600 dark:text-gray-400">Fee</span>
-                  <span>-{formatUSD(fee)}</span>
+                  <span>-{fmt(fee)}</span>
                 </div>
                 <div className="flex justify-between font-bold">
                   <span>You'll receive</span>
-                  <span>{formatUSD(netAmount)}</span>
+                  <span>{fmt(netAmount)}</span>
                 </div>
               </div>
 
@@ -374,7 +379,7 @@ const DepositFiat = () => {
                   disabled={submitting}
                   className="bg-blue-600 hover:bg-blue-700 px-8 py-2.5 rounded-full text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed text-white"
                 >
-                  {submitting ? "Processing..." : `Deposit ${formatUSD(numericAmount)}`}
+                  {submitting ? "Processing..." : `Deposit ${fmt(numericAmount)}`}
                 </button>
               </div>
 
@@ -421,15 +426,15 @@ const DepositFiat = () => {
               <div className="bg-slate-100 dark:bg-[#21242d] text-slate-900 dark:text-white rounded-xl p-5 mt-4 text-left space-y-3">
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-600 dark:text-gray-400">Amount</span>
-                  <span className="font-semibold">{formatUSD(deposit.amount)}</span>
+                  <span className="font-semibold">{fmt(deposit.amount)}</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-600 dark:text-gray-400">Fee</span>
-                  <span>{formatUSD(deposit.fee)}</span>
+                  <span>{fmt(deposit.fee)}</span>
                 </div>
                 <div className="border-t border-gray-200 dark:border-gray-700 pt-3 flex justify-between font-semibold text-sm">
                   <span>Net deposit</span>
-                  <span>{formatUSD(deposit.net_amount)}</span>
+                  <span>{fmt(deposit.net_amount)}</span>
                 </div>
                 <div className="flex justify-between text-xs text-gray-500">
                   <span>Reference</span>

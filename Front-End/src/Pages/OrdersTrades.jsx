@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useCurrency } from "../hooks/useCurrency";
 import Modal from "../Components/Modal";
 import PageHeader from "../Components/PageHeader";
 import MoneyFlowSidebar from "../Components/MoneyFlowSidebar";
@@ -31,6 +32,7 @@ const formatAmount = (value) => {
 };
 
 const OrdersTrades = () => {
+  const { formatMoney } = useCurrency();
   const [orders, setOrders] = useState([]);
   const [pagination, setPagination] = useState({ page: 1, limit: 20, total: 0, totalPages: 1 });
   const [loading, setLoading] = useState(true);
@@ -191,9 +193,9 @@ const OrdersTrades = () => {
                         </td>
                         <td className="px-5 py-3 font-semibold">{order.pair}</td>
                         <td className={`px-5 py-3 font-semibold ${sideStyles[order.side] || ""}`}>{order.side}</td>
-                        <td className="px-5 py-3">${formatAmount(order.price)}</td>
+                        <td className="px-5 py-3">{formatMoney(order.price)}</td>
                         <td className="px-5 py-3">{formatAmount(order.amount)}</td>
-                        <td className="px-5 py-3">${formatAmount(order.total)}</td>
+                        <td className="px-5 py-3">{formatMoney(order.total)}</td>
                         <td className="px-5 py-3">
                           <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${statusStyles[order.status] || "bg-gray-500/10 text-gray-600 dark:text-gray-400"}`}>
                             {order.status}
@@ -265,7 +267,7 @@ const OrdersTrades = () => {
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-600 dark:text-gray-400">Price</span>
-                <span>${formatAmount(selectedOrder.price)}</span>
+                <span>{formatMoney(selectedOrder.price)}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-600 dark:text-gray-400">Amount</span>
@@ -277,11 +279,11 @@ const OrdersTrades = () => {
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-600 dark:text-gray-400">Fee</span>
-                <span>${formatAmount(selectedOrder.fee)}</span>
+                <span>{formatMoney(selectedOrder.fee)}</span>
               </div>
               <div className="border-t border-gray-200 dark:border-gray-700 pt-3 flex justify-between font-semibold">
                 <span>Total</span>
-                <span>${formatAmount(selectedOrder.total)}</span>
+                <span>{formatMoney(selectedOrder.total)}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-600 dark:text-gray-400">Date</span>

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useCurrency } from "../hooks/useCurrency";
 import { Link } from "react-router-dom";
 import CreateAnAccoutSection from "../Components/CreateAnAccoutSection";
 import PageHeader from "../Components/PageHeader";
@@ -16,6 +17,10 @@ const formatUSD = (value) =>
 const feeRate = 0.01;
 
 const FiatWithdraw = () => {
+  const { currency: displayCurrency, formatMoney } = useCurrency();
+  // Transactions settle in USD; show the display-currency equivalent alongside.
+  const fmt = (usd) =>
+    displayCurrency === "USD" ? formatUSD(usd) : `${formatUSD(usd)} (≈ ${formatMoney(usd)})`;
   const [amount, setAmount] = useState("100");
   const [accountHolderName, setAccountHolderName] = useState("");
   const [accountNumber, setAccountNumber] = useState("");
@@ -244,11 +249,11 @@ const FiatWithdraw = () => {
                 <div className="bg-slate-100 dark:bg-[#21242d] text-slate-900 dark:text-white rounded-xl p-4 space-y-3">
                   <div className="flex justify-between text-sm">
                     <span className="text-gray-600 dark:text-gray-400">Withdrawal fee (1%)</span>
-                    <span>{formatUSD(fee)}</span>
+                    <span>{fmt(fee)}</span>
                   </div>
                   <div className="border-t border-gray-200 dark:border-gray-700 pt-3 flex justify-between font-semibold">
                     <span>You'll receive</span>
-                    <span>{formatUSD(receiveAmount)}</span>
+                    <span>{fmt(receiveAmount)}</span>
                   </div>
                 </div>
 
@@ -271,11 +276,11 @@ const FiatWithdraw = () => {
               <div className="space-y-4">
                 <div className="flex justify-between">
                   <span className="text-gray-600 dark:text-gray-400">Amount</span>
-                  <span className="font-semibold">{formatUSD(numericAmount)}</span>
+                  <span className="font-semibold">{fmt(numericAmount)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600 dark:text-gray-400">Fee</span>
-                  <span>{formatUSD(fee)}</span>
+                  <span>{fmt(fee)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600 dark:text-gray-400">Bank</span>
@@ -287,7 +292,7 @@ const FiatWithdraw = () => {
                 </div>
                 <div className="border-t border-gray-200 dark:border-gray-700 pt-4 flex justify-between font-bold">
                   <span>You'll receive</span>
-                  <span>{formatUSD(receiveAmount)}</span>
+                  <span>{fmt(receiveAmount)}</span>
                 </div>
               </div>
 
@@ -346,15 +351,15 @@ const FiatWithdraw = () => {
               <div className="bg-slate-100 dark:bg-[#21242d] text-slate-900 dark:text-white rounded-xl p-5 mt-4 text-left space-y-3">
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-600 dark:text-gray-400">Amount</span>
-                  <span className="font-semibold">{formatUSD(withdrawal.amount)}</span>
+                  <span className="font-semibold">{fmt(withdrawal.amount)}</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-600 dark:text-gray-400">Fee</span>
-                  <span>{formatUSD(withdrawal.fee)}</span>
+                  <span>{fmt(withdrawal.fee)}</span>
                 </div>
                 <div className="border-t border-gray-200 dark:border-gray-700 pt-3 flex justify-between font-semibold text-sm">
                   <span>You'll receive</span>
-                  <span>{formatUSD(withdrawal.receive_amount)}</span>
+                  <span>{fmt(withdrawal.receive_amount)}</span>
                 </div>
               </div>
 

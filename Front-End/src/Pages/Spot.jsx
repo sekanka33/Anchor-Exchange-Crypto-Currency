@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
+import { useCurrency } from "../hooks/useCurrency";
 import { FaSearch, FaStar } from 'react-icons/fa';
 import { getCoinDetail } from '../api/coingecko';
 
 const Spot = () => {
+  const { currency, formatMoney } = useCurrency();
   const [marketData, setMarketData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [side, setSide] = useState("BUY");
@@ -51,7 +53,7 @@ const Spot = () => {
 
           <div className='flex flex-col gap-1'>
             <p className='text-sm text-gray-500 dark:text-text-color'>Current Price</p>
-            <p>{loading ? "…" : `$${marketData?.current_price?.usd?.toLocaleString() ?? "61,075.53"}`}</p>
+            <p>{loading ? "…" : (marketData?.current_price?.usd ? formatMoney(marketData.current_price.usd) : formatMoney(61075.53))}</p>
           </div>
 
           <div className='flex flex-col gap-1'>
@@ -63,12 +65,12 @@ const Spot = () => {
 
           <div className='flex flex-col gap-1'>
             <p className='text-sm text-gray-500 dark:text-text-color'>24H High</p>
-            <p>{loading ? "…" : `$${marketData?.high_24h?.usd?.toLocaleString() ?? "62,378.38"}`}</p>
+            <p>{loading ? "…" : (marketData?.high_24h?.usd ? formatMoney(marketData.high_24h.usd) : formatMoney(62378.38))}</p>
           </div>
 
           <div className='flex flex-col gap-1'>
             <p className='text-sm text-gray-500 dark:text-text-color'>24H Low</p>
-            <p>{loading ? "…" : `$${marketData?.low_24h?.usd?.toLocaleString() ?? "59,378.38"}`}</p>
+            <p>{loading ? "…" : (marketData?.low_24h?.usd ? formatMoney(marketData.low_24h.usd) : formatMoney(59378.38))}</p>
           </div>
 
           <div className='flex flex-col gap-1'>
@@ -160,7 +162,7 @@ const Spot = () => {
                     placeholder='Order Price'
                     className='w-full h-10 bg-slate-100 dark:bg-input-field text-slate-900 dark:text-white pl-3 pr-14 rounded'
                   />
-                  <span className='absolute right-3 top-1/2 -translate-y-1/2 text-sm text-gray-500 dark:text-text-color'>USD</span>
+                  <span className='absolute right-3 top-1/2 -translate-y-1/2 text-sm text-gray-500 dark:text-text-color'>{currency}</span>
                 </div>
               )}
 

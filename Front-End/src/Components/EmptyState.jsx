@@ -1,7 +1,7 @@
 /**
  * Themed "not available yet" panel — used for features that have no backend
  * support (API keys, login history, 2FA, referrals) and for leftover stub
- * routes with no dedicated Figma design (Assets, Pages, Bitusdt, Enusd).
+ * routes with no dedicated Figma design (Assets, Pages, Bitusdt).
  * Deliberately honest rather than showing fabricated data.
  */
 const EmptyState = ({ icon, title, description }) => {

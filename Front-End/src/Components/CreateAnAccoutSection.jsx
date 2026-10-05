@@ -1,6 +1,9 @@
 import { Link } from "react-router-dom";
 
 const CreateAnAccoutSection = () => {
+  // Signed-in users already have an account — only show the sign-up prompt to guests.
+  if (localStorage.getItem("token")) return null;
+
   return (
     <div className='w-full h-auto md:h-35 bg-hero-dark text-white px-4 md:pl-25 md:pr-25 flex flex-col md:flex-row md:justify-between gap-4 py-8 md:pt-12 md:py-0'>
         <div>

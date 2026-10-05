@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useCurrency } from "../hooks/useCurrency";
 import CryptoMarketBar from "../Components/DerivativesMarketTable";
 import { getCoinsMarkets, getGlobalMarketData } from "../api/coingecko";
 
@@ -50,6 +51,7 @@ function Sparkline({ data, isPositive }) {
 }
 
 export default function Markets() {
+  const { formatMoney } = useCurrency();
   const [selectedCategory, setSelectedCategory] = useState(CATEGORIES[0]);
   const [coins, setCoins] = useState([]);
   const [globalMarketCap, setGlobalMarketCap] = useState(null);
@@ -64,12 +66,7 @@ export default function Markets() {
         const totalCapUSD = json.data?.total_market_cap?.usd;
 
         if (totalCapUSD) {
-          // Format into Trillions ($1.86T) or Billions ($860B)
-          const formattedCap =
-            totalCapUSD >= 1e12
-              ? `$${(totalCapUSD / 1e12).toFixed(2)}T`
-              : `$${(totalCapUSD / 1e9).toFixed(2)}B`;
-          setGlobalMarketCap(formattedCap);
+          setGlobalMarketCap(totalCapUSD);
         }
       } catch (err) {
         console.error("Global market cap fetch error:", err);
@@ -118,7 +115,10 @@ export default function Markets() {
         <p className="text-gray-600 dark:text-gray-400 pt-4 text-xl md:text-2xl">
           The global crypto market cap is{" "}
           <span className="text-slate-900 dark:text-white font-semibold">
-            {globalMarketCap || "loading..."}
+            {globalMarketCap
+              // Compact form, e.g. $1.86T or R33.90T
+              ? formatMoney(globalMarketCap, { notation: "compact" })
+              : "loading..."}
           </span>
         </p>
       </div>
@@ -164,13 +164,7 @@ export default function Markets() {
             <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-gray-800 scrollbar-track-transparent" tabIndex={0} role="region" aria-label="Coin cards, scroll horizontally">
               {coins.map((coin) => {
                 const isPositive = coin.price_change_percentage_24h >= 0;
-                const priceFormatted = coin.current_price?.toLocaleString(
-                  "en-US",
-                  {
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 6,
-                  }
-                );
+                const priceFormatted = formatMoney(coin.current_price, { maximumFractionDigits: 6 });
 
                 return (
                   <div
@@ -214,7 +208,7 @@ export default function Markets() {
                           {coin.name}
                         </span>
                         <span className="text-lg font-bold text-slate-900 dark:text-white tracking-wide">
-                          USD {priceFormatted}
+                          {priceFormatted}
                         </span>
                       </div>
 

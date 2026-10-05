@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { useCurrency } from "../hooks/useCurrency";
 import { useState, useEffect } from "react";
 import { getCoinsByCategory } from "../api/coingecko";
 import graphic from "../assets/Graphic.png";
@@ -17,6 +18,7 @@ const MARKET_CATEGORIES = [
 ];
 
 const Home = () => {
+  const { formatMoney } = useCurrency();
 
   const [coins, setCoins] = useState([]);
   const [category, setCategory] = useState("layer-1");
@@ -170,7 +172,7 @@ const Home = () => {
                     </td>
 
                     <td className='py-4 px-4 text-right font-semibold align-middle'>
-                      ${Number(coin.current_price).toLocaleString(undefined, { maximumFractionDigits: 2 })}
+                      {formatMoney(coin.current_price, { minimumFractionDigits: 0 })}
                     </td>
 
                     <td className={`py-4 px-4 text-right font-semibold align-middle ${Number(coin.price_change_percentage_24h) >= 0 ? "text-green-700 dark:text-green-500" : "text-red-600 dark:text-red-500"}`}>
@@ -178,7 +180,7 @@ const Home = () => {
                     </td>
 
                     <td className='py-4 px-4 text-right font-medium align-middle'>
-                      ${Number(coin.market_cap).toLocaleString()}
+                      {formatMoney(coin.market_cap, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                     </td>
 
                     <td className='py-4 px-4 text-center text-gray-600 dark:text-gray-400 text-xs align-middle'>
