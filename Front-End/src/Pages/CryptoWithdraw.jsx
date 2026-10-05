@@ -196,13 +196,13 @@ const CryptoWithdraw = () => {
 
         <div className="hidden md:block h-140 w-0 border-r-2 border-gray-200 dark:border-hero-dark"></div>
 
-        <div className="text-slate-900 dark:text-white font-sans w-full max-w-2xl">
+        <div className="text-slate-900 dark:text-white font-sans w-full">
 
           <StepIndicator steps={["Details", "Review", "Confirmation"]} currentStep={step} />
 
           {/* STEP 1 */}
           {step === 1 && (
-            <div className="bg-white dark:bg-[#16181e] p-8 rounded-2xl border border-gray-200 dark:border-gray-800/50 shadow-xl">
+            <div className="bg-white dark:bg-[#16181e] p-8 rounded-2xl max-w-2xl border border-gray-200 dark:border-gray-800/50 shadow-xl">
               <h2 className="text-2xl font-bold mb-1">Withdraw Crypto</h2>
               <p className="text-xs text-gray-600 dark:text-gray-400 mb-6">Send crypto from your Anchor Exchange wallet to an external address.</p>
 
@@ -322,7 +322,7 @@ const CryptoWithdraw = () => {
 
           {/* STEP 2 */}
           {step === 2 && (
-            <div className="bg-white dark:bg-[#16181e] p-8 rounded-2xl border border-gray-200 dark:border-gray-800/50 shadow-xl">
+            <div className="bg-white dark:bg-[#16181e] p-8 rounded-2xl max-w-2xl border border-gray-200 dark:border-gray-800/50 shadow-xl">
               <h2 className="text-2xl font-bold mb-2">Review Withdrawal</h2>
               <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">Double-check the destination address — crypto sent to the wrong address cannot be recovered.</p>
 
@@ -370,7 +370,7 @@ const CryptoWithdraw = () => {
 
           {/* STEP 3 — STATUS */}
           {step === 3 && withdrawal && (
-            <div className="bg-white dark:bg-[#16181e] p-8 rounded-2xl border border-gray-200 dark:border-gray-800/50 shadow-xl text-center">
+            <div className="bg-white dark:bg-[#16181e] p-8 rounded-2xl max-w-2xl border border-gray-200 dark:border-gray-800/50 shadow-xl text-center">
 
               {withdrawal.status === "PENDING_CONFIRMATION" && (
                 <>
