@@ -22,7 +22,6 @@ export default function DerivativesMarketTable() {
       setLoading(true);
       setError(null);
       try {
-        // Fetches top 15 coins per selected category
         const data = await getCoinsMarkets({
           category: selectedCategory.id || "all",
           perPage: 15,
@@ -42,19 +41,20 @@ export default function DerivativesMarketTable() {
   }, [selectedCategory]);
 
   return (
-    <div className="w-full min-h-screen text-slate-900 dark:text-white px-4 md:px-12 lg:px-20 font-sans">
-      <div className="max-w-[1400px] mx-auto bg-white dark:bg-line-color text-slate-900 dark:text-white rounded-2xl border border-gray-200 dark:border-[#212634] p-6 shadow-2xl">
+    <div className="flex flex-col gap-7 px-4 md:pl-28 md:pr-28 relative md:bottom-17 pt-15">
+      <div className="w-full bg-white dark:bg-gray-900 text-slate-900 dark:text-white rounded-2xl border border-gray-200 dark:border-gray-800 p-6 shadow-2xl">
         
         {/* Top Level Navigation Tabs (Favorites, Derivatives, Spot) */}
-        <div className="flex items-center gap-2 overflow-x-auto pb-4 mb-4 border-b border-gray-200 dark:border-[#232938] [&>button]:flex-shrink-0">
+        <div className="flex items-center gap-2 overflow-x-auto pb-4 mb-4 border-b border-gray-200 dark:border-gray-800 [&>button]:flex-shrink-0">
           {["Favorites", "Derivatives", "Spot"].map((tab) => (
             <button
               key={tab}
+              type="button"
               onClick={() => setMainTab(tab)}
-              className={`px-6 py-2 rounded-lg text-sm font-semibold transition-all ${
+              className={`px-5 py-2 rounded-full text-sm font-semibold transition-all ${
                 mainTab === tab
-                  ? "bg-[#155dfc] text-white shadow-md shadow-blue-500/20"
-                  : "text-gray-600 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-[#1f2432]"
+                  ? "bg-blue-600 text-white shadow-md shadow-blue-500/20"
+                  : "text-gray-600 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-gray-800"
               }`}
             >
               {tab}
@@ -62,36 +62,40 @@ export default function DerivativesMarketTable() {
           ))}
         </div>
 
-        {/* Sub Navigation (All, Inverse Perpetual, USDT Perpetual, Inserve Futures) */}
-        <div className="flex items-center gap-8 overflow-x-auto border-b border-gray-200 dark:border-[#232938] pb-3 mb-5 text-sm font-medium [&>button]:flex-shrink-0">
+        {/* Sub Navigation Tabs */}
+        <div className="flex items-center gap-8 overflow-x-auto border-b border-gray-200 dark:border-gray-800 pb-3 mb-5 text-sm font-medium [&>button]:flex-shrink-0">
           {["All", "Inverse Perpetual", "USDT Perpetual", "Inserve Futures"].map((sub) => (
             <button
               key={sub}
+              type="button"
               onClick={() => setSubTab(sub)}
               className={`relative pb-3 transition-colors ${
-                subTab === sub ? "text-slate-900 dark:text-white font-semibold" : "text-gray-600 dark:text-gray-400 hover:text-slate-700 dark:hover:text-gray-200"
+                subTab === sub
+                  ? "text-slate-900 dark:text-white font-semibold"
+                  : "text-gray-600 dark:text-gray-400 hover:text-slate-900 dark:hover:text-gray-200"
               }`}
             >
               {sub}
               {subTab === sub && (
-                <span className="absolute bottom-0 left-0 w-full h-[2px] bg-[#3b82f6]" />
+                <span className="absolute bottom-0 left-0 w-full h-[2px] bg-blue-600 dark:bg-blue-400" />
               )}
             </button>
           ))}
         </div>
 
-        {/* Category Pill Filters (Hot, New, DeFi, NFT) - 15 per category */}
+        {/* Category Pill Filters (Hot, New, DeFi, NFT) */}
         <div className="flex items-center gap-3 overflow-x-auto pb-1 mb-6 [&>button]:flex-shrink-0">
           {CATEGORIES.map((cat) => {
             const isActive = selectedCategory.name === cat.name;
             return (
               <button
                 key={cat.name}
+                type="button"
                 onClick={() => setSelectedCategory(cat)}
                 className={`px-4 py-1.5 rounded-full text-xs font-semibold transition-all ${
                   isActive
-                    ? "bg-[#155dfc] text-white shadow-md shadow-blue-500/20"
-                    : "text-gray-600 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-[#202534]"
+                    ? "bg-blue-600 text-white shadow-md shadow-blue-500/20"
+                    : "text-gray-600 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-gray-800"
                 }`}
               >
                 {cat.name}
@@ -102,49 +106,49 @@ export default function DerivativesMarketTable() {
 
         {/* Market Data Table */}
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm border-collapse">
+          <table className="w-full min-w-[850px] text-left text-sm border-collapse">
             <thead>
-              <tr className="text-gray-600 dark:text-gray-400 text-xs font-medium border-b border-gray-200 dark:border-[#232938]">
-                <th className="py-3 px-2 w-10">#</th>
-                <th className="py-3 px-2">
+              <tr className="text-gray-600 dark:text-gray-400 text-xs font-semibold border-b border-gray-200 dark:border-gray-800">
+                <th scope="col" className="py-3 px-3 w-12 text-center">#</th>
+                <th scope="col" className="py-3 px-3">
                   <div className="flex items-center gap-1 cursor-pointer hover:text-slate-900 dark:hover:text-white">
                     Trading Pairs <SortIcon />
                   </div>
                 </th>
-                <th className="py-3 px-2 text-right">
+                <th scope="col" className="py-3 px-3 text-right">
                   <div className="flex items-center justify-end gap-1 cursor-pointer hover:text-slate-900 dark:hover:text-white">
                     Last Traded <SortIcon />
                   </div>
                 </th>
-                <th className="py-3 px-2 text-right">
+                <th scope="col" className="py-3 px-3 text-right">
                   <div className="flex items-center justify-end gap-1 cursor-pointer hover:text-slate-900 dark:hover:text-white">
                     24H Change % <SortIcon />
                   </div>
                 </th>
-                <th className="py-3 px-2 text-right">24H High</th>
-                <th className="py-3 px-2 text-right">24H Low</th>
-                <th className="py-3 px-2 text-right">
+                <th scope="col" className="py-3 px-3 text-right">24H High</th>
+                <th scope="col" className="py-3 px-3 text-right">24H Low</th>
+                <th scope="col" className="py-3 px-3 text-right">
                   <div className="flex items-center justify-end gap-1 cursor-pointer hover:text-slate-900 dark:hover:text-white">
                     24H Turnover <SortIcon />
                   </div>
                 </th>
-                <th className="py-3 px-2 text-center">Chart</th>
-                <th className="py-3 px-2 text-right">Action</th>
+                <th scope="col" className="py-3 px-3 text-center">Chart</th>
+                <th scope="col" className="py-3 px-3 text-right w-24">Action</th>
               </tr>
             </thead>
-            <tbody>
+            
+            <tbody className="divide-y divide-gray-200 dark:divide-gray-800">
               {loading ? (
-                // Skeleton Loader Rows
                 [...Array(15)].map((_, i) => (
-                  <tr key={i} className="border-b border-gray-200 dark:border-[#1d222e]/50 animate-pulse">
-                    <td colSpan="9" className="py-4">
-                      <div className="h-6 bg-gray-100 dark:bg-[#212635] rounded-lg w-full" />
+                  <tr key={i} className="animate-pulse">
+                    <td colSpan={9} className="py-3.5 px-3">
+                      <div className="h-6 bg-slate-100 dark:bg-gray-800/60 rounded-lg w-full" />
                     </td>
                   </tr>
                 ))
               ) : error ? (
                 <tr>
-                  <td colSpan="9" className="text-center py-10 text-red-400">
+                  <td colSpan={9} className="text-center py-10 text-red-600 dark:text-red-500 font-medium">
                     {error}
                   </td>
                 </tr>
@@ -155,38 +159,38 @@ export default function DerivativesMarketTable() {
                   return (
                     <tr
                       key={coin.id}
-                      className="border-b border-gray-200 dark:border-[#1e2330] hover:bg-gray-50 dark:hover:bg-[#1e2332] transition-colors"
+                      className="hover:bg-slate-50 dark:hover:bg-gray-800/50 transition-colors"
                     >
                       {/* Rank & Favorite Star */}
-                      <td className="py-3.5 px-2 text-gray-600 dark:text-gray-400 text-xs">
-                        <div className="flex items-center gap-2">
-                          <span className="text-gray-400 dark:text-gray-500 hover:text-yellow-400 cursor-pointer">
-                            ☆
+                      <td className="py-3.5 px-3 text-gray-500 dark:text-gray-400 text-xs text-center align-middle">
+                        <div className="flex items-center justify-center gap-1.5">
+                          <span className="text-gray-400 dark:text-gray-500 hover:text-amber-400 cursor-pointer">
+                            ★
                           </span>
                           <span>{index + 1}</span>
                         </div>
                       </td>
 
                       {/* Coin Logo & Name */}
-                      <td className="py-3.5 px-2">
-                        <div className="flex items-center gap-2.5">
+                      <td className="py-3.5 px-3 align-middle">
+                        <div className="flex items-center gap-2.5 font-medium">
                           <img
                             src={coin.image}
                             alt={coin.name}
-                            className="w-6 h-6 rounded-full"
+                            className="w-5 h-5 rounded-full"
                           />
                           <span className="font-semibold text-slate-900 dark:text-white">
                             {coin.name}
                           </span>
-                          <span className="text-xs text-gray-600 dark:text-gray-400 uppercase font-medium">
-                            | {coin.symbol}
+                          <span className="text-xs text-gray-600 dark:text-gray-400 uppercase">
+                            {coin.symbol}
                           </span>
                         </div>
                       </td>
 
                       {/* Last Traded Price */}
-                      <td className="py-3.5 px-2 text-right font-medium text-slate-900 dark:text-white">
-                        {coin.current_price?.toLocaleString("en-US", {
+                      <td className="py-3.5 px-3 text-right font-semibold text-slate-900 dark:text-white align-middle">
+                        ${coin.current_price?.toLocaleString("en-US", {
                           minimumFractionDigits: 2,
                           maximumFractionDigits: 4,
                         })}
@@ -194,8 +198,10 @@ export default function DerivativesMarketTable() {
 
                       {/* 24h Change % */}
                       <td
-                        className={`py-3.5 px-2 text-right font-semibold ${
-                          isPositive ? "text-green-700 dark:text-[#22c55e]" : "text-red-600 dark:text-[#f87171]"
+                        className={`py-3.5 px-3 text-right font-semibold align-middle ${
+                          isPositive
+                            ? "text-green-700 dark:text-green-500"
+                            : "text-red-600 dark:text-red-500"
                         }`}
                       >
                         {isPositive ? "+" : ""}
@@ -203,26 +209,26 @@ export default function DerivativesMarketTable() {
                       </td>
 
                       {/* 24h High */}
-                      <td className="py-3.5 px-2 text-right text-gray-600 dark:text-gray-300 font-medium">
-                        {coin.high_24h?.toLocaleString("en-US", {
+                      <td className="py-3.5 px-3 text-right text-gray-600 dark:text-gray-300 font-medium align-middle">
+                        ${coin.high_24h?.toLocaleString("en-US", {
                           minimumFractionDigits: 2,
                         }) || "—"}
                       </td>
 
                       {/* 24h Low */}
-                      <td className="py-3.5 px-2 text-right text-gray-600 dark:text-gray-300 font-medium">
-                        {coin.low_24h?.toLocaleString("en-US", {
+                      <td className="py-3.5 px-3 text-right text-gray-600 dark:text-gray-300 font-medium align-middle">
+                        ${coin.low_24h?.toLocaleString("en-US", {
                           minimumFractionDigits: 2,
                         }) || "—"}
                       </td>
 
-                      {/* 24h Turnover (Volume) formatted like 5.04B(USD) */}
-                      <td className="py-3.5 px-2 text-right text-gray-600 dark:text-gray-300 font-medium text-xs">
+                      {/* 24h Turnover */}
+                      <td className="py-3.5 px-3 text-right text-gray-600 dark:text-gray-300 font-medium text-xs align-middle">
                         {formatTurnover(coin.total_volume)}
                       </td>
 
                       {/* Sparkline Mini Graph */}
-                      <td className="py-3.5 px-2 text-center">
+                      <td className="py-3.5 px-3 text-center align-middle">
                         <div className="flex justify-center">
                           <MiniSparkline
                             data={coin.sparkline_in_7d?.price || []}
@@ -232,13 +238,10 @@ export default function DerivativesMarketTable() {
                       </td>
 
                       {/* Trade Button */}
-                      <td className="py-3.5 px-2 text-right">
+                      <td className="py-3.5 px-3 text-right align-middle">
                         <button
-                          className={`px-4 py-1.5 rounded-full text-xs font-semibold border transition-all ${
-                            index === 1
-                              ? "bg-blue-600 border-blue-600 text-white shadow-md"
-                              : "border-slate-900 dark:border-gray-500 text-slate-900 dark:text-gray-200 hover:border-blue-600 hover:bg-blue-600 hover:text-white"
-                          }`}
+                          type="button"
+                          className="inline-flex items-center justify-center w-20 h-8 border-2 rounded-full border-slate-900 dark:border-white hover:bg-blue-600 hover:border-blue-500 hover:text-white transition-colors text-xs font-semibold"
                         >
                           Trade
                         </button>
@@ -300,7 +303,7 @@ function SortIcon() {
   );
 }
 
-// Formats raw volume numbers into B(USD) or M(USD) like the image
+// Formats raw volume numbers into B(USD) or M(USD)
 function formatTurnover(num) {
   if (!num) return "—";
   if (num >= 1e9) return `${(num / 1e9).toFixed(2)}B(USD)`;
