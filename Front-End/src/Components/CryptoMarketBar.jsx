@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useCurrency } from "../hooks/useCurrency";
 import { getCoinsMarkets } from "../api/coingecko";
 
 const CATEGORIES = [
@@ -49,6 +50,7 @@ function Sparkline({ data, isPositive }) {
 }
 
 export default function CryptoMarketBar() {
+  const { formatMoney } = useCurrency();
   const [selectedCategory, setSelectedCategory] = useState(CATEGORIES[0]);
   const [coins, setCoins] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -118,13 +120,7 @@ export default function CryptoMarketBar() {
           <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-gray-800 scrollbar-track-transparent" tabIndex={0} role="region" aria-label="Coin cards, scroll horizontally">
             {coins.map((coin) => {
               const isPositive = coin.price_change_percentage_24h >= 0;
-              const priceFormatted = coin.current_price?.toLocaleString(
-                "en-US",
-                {
-                  minimumFractionDigits: 2,
-                  maximumFractionDigits: 6,
-                }
-              );
+              const priceFormatted = formatMoney(coin.current_price, { maximumFractionDigits: 6 });
 
               return (
                 <div
@@ -168,7 +164,7 @@ export default function CryptoMarketBar() {
                         {coin.name}
                       </span>
                       <span className="text-lg font-bold text-slate-900 dark:text-white tracking-wide">
-                        USD {priceFormatted}
+                        {priceFormatted}
                       </span>
                     </div>
 

@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useCurrency } from "../hooks/useCurrency";
 import { getCoinsMarkets } from "../api/coingecko";
 
 // Category mappings for the market data proxy
@@ -10,6 +11,7 @@ const CATEGORIES = [
 ];
 
 export default function DerivativesMarketTable() {
+  const { currency, convert, formatMoney } = useCurrency();
   const [mainTab, setMainTab] = useState("Derivatives");
   const [subTab, setSubTab] = useState("All");
   const [selectedCategory, setSelectedCategory] = useState(CATEGORIES[0]);
@@ -190,10 +192,7 @@ export default function DerivativesMarketTable() {
 
                       {/* Last Traded Price */}
                       <td className="py-3.5 px-3 text-right font-semibold text-slate-900 dark:text-white align-middle">
-                        ${coin.current_price?.toLocaleString("en-US", {
-                          minimumFractionDigits: 2,
-                          maximumFractionDigits: 4,
-                        })}
+                        {formatMoney(coin.current_price, { maximumFractionDigits: 4 })}
                       </td>
 
                       {/* 24h Change % */}
@@ -210,21 +209,17 @@ export default function DerivativesMarketTable() {
 
                       {/* 24h High */}
                       <td className="py-3.5 px-3 text-right text-gray-600 dark:text-gray-300 font-medium align-middle">
-                        ${coin.high_24h?.toLocaleString("en-US", {
-                          minimumFractionDigits: 2,
-                        }) || "—"}
+                        {formatMoney(coin.high_24h)}
                       </td>
 
                       {/* 24h Low */}
                       <td className="py-3.5 px-3 text-right text-gray-600 dark:text-gray-300 font-medium align-middle">
-                        ${coin.low_24h?.toLocaleString("en-US", {
-                          minimumFractionDigits: 2,
-                        }) || "—"}
+                        {formatMoney(coin.low_24h)}
                       </td>
 
                       {/* 24h Turnover */}
                       <td className="py-3.5 px-3 text-right text-gray-600 dark:text-gray-300 font-medium text-xs align-middle">
-                        {formatTurnover(coin.total_volume)}
+                        {formatTurnover(coin.total_volume, convert, currency)}
                       </td>
 
                       {/* Sparkline Mini Graph */}
@@ -303,10 +298,11 @@ function SortIcon() {
   );
 }
 
-// Formats raw volume numbers into B(USD) or M(USD)
-function formatTurnover(num) {
-  if (!num) return "—";
-  if (num >= 1e9) return `${(num / 1e9).toFixed(2)}B(USD)`;
-  if (num >= 1e6) return `${(num / 1e6).toFixed(2)}M(USD)`;
-  return `${num.toLocaleString()}(USD)`;
+// Formats a USD volume into B(ZAR) / M(ZAR) etc. in the display currency
+function formatTurnover(usdNum, convert, currency) {
+  if (!usdNum) return "—";
+  const num = convert(usdNum);
+  if (num >= 1e9) return `${(num / 1e9).toFixed(2)}B(${currency})`;
+  if (num >= 1e6) return `${(num / 1e6).toFixed(2)}M(${currency})`;
+  return `${Math.round(num).toLocaleString()}(${currency})`;
 }

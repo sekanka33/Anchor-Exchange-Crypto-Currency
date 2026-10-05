@@ -56,6 +56,14 @@ global.fetch = async (url, options) => {
             return jsonResponse({ data: { active_cryptocurrencies: 1 } });
         }
 
+        if (parsed.pathname.endsWith("/depth")) {
+            return jsonResponse({ lastUpdateId: 1, bids: [["49999", "1"]], asks: [["50001", "2"]] });
+        }
+
+        if (parsed.pathname.endsWith("/trades")) {
+            return jsonResponse([{ id: 1, price: "50000", qty: "0.1", time: Date.now(), isBuyerMaker: false }]);
+        }
+
         if (parsed.pathname.endsWith("/ticker/24hr")) {
             return jsonResponse({ symbol: parsed.searchParams.get("symbol"), lastPrice: "50000" });
         }

@@ -8,6 +8,7 @@ const authenticate = require("../middleware/authenticate");
 const authorizeAdmin = require("../middleware/authorizeAdmin");
 const {
     getStats,
+    getStatsHistory,
     getUsers,
     getUserById,
     updateUserRole,
@@ -35,6 +36,8 @@ const adminWriteLimiter = rateLimit({
 });
 
 router.get("/stats", getStats);
+
+router.get("/stats/history", getStatsHistory);
 
 router.get("/users", getUsers);
 router.get("/users/:id", getUserById);

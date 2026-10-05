@@ -5,7 +5,7 @@ const h = require("../helpers/harness");
 before(h.start);
 after(h.stop);
 
-const ADMIN_GETS = ["/api/admin/stats", "/api/admin/users", "/api/admin/transactions", "/api/admin/deposits", "/api/admin/withdrawals", "/api/admin/orders"];
+const ADMIN_GETS = ["/api/admin/stats", "/api/admin/stats/history", "/api/admin/users", "/api/admin/transactions", "/api/admin/deposits", "/api/admin/withdrawals", "/api/admin/orders"];
 
 describe("admin authorization", () => {
     test("unauthenticated requests are 401 on every admin route", async () => {
@@ -148,6 +148,59 @@ describe("admin capabilities", () => {
         await h.api("GET", `/api/withdrawals/confirm?token=${confirmation_token}`);
         assert.equal((await h.api("POST", `/api/admin/withdrawals/${done.body.withdrawal.id}/reject`, { token: admin.token })).status, 404);
         assert.deepEqual(await h.balance(user.id, "BTC"), { available: 0.04, locked: 0 });
+    });
+});
+
+describe("admin analytics", () => {
+    test("stats reflect a new trade: volume, order status counts and active users", async () => {
+        const admin = await h.createUser({ role: "admin" });
+        const before = (await h.api("GET", "/api/admin/stats", { token: admin.token })).body;
+
+        const trader = await h.createUser();
+        await h.fund(trader.id, "USD", 1000);
+        const buy = await h.api("POST", "/api/orders/buy", { token: trader.token, body: { asset: "BTC", amountUsd: 100, paymentMethod: "card" } });
+        assert.equal(buy.status, 201);
+        const total = Number(buy.body.order.total);
+
+        const after = (await h.api("GET", "/api/admin/stats", { token: admin.token })).body;
+        assert.equal(after.orders.total, before.orders.total + 1);
+        assert.equal(after.orders.statusCounts.COMPLETED, before.orders.statusCounts.COMPLETED + 1);
+        assert.ok(Math.abs(after.orders.volumeUsd - before.orders.volumeUsd - total) < 1e-6);
+        assert.ok(Math.abs(after.orders.volumeLast30DaysUsd - before.orders.volumeLast30DaysUsd - total) < 1e-6);
+        assert.equal(after.users.activeLast30Days, before.users.activeLast30Days + 1);
+        assert.ok("FAILED" in after.deposits.statusCounts && "EXPIRED" in after.withdrawals.statusCounts);
+    });
+
+    test("history buckets each range and attributes today's trade to the last bucket", async () => {
+        const admin = await h.createUser({ role: "admin" });
+        const expected = { "7d": 7, "30d": 30, "90d": 13, "180d": 26, "1y": 12 };
+
+        for (const [range, buckets] of Object.entries(expected)) {
+            const res = await h.api("GET", `/api/admin/stats/history?range=${range}`, { token: admin.token });
+            assert.equal(res.status, 200, range);
+            assert.equal(res.body.range, range);
+            assert.equal(res.body.series.length, buckets, range);
+        }
+
+        const before = (await h.api("GET", "/api/admin/stats/history?range=7d", { token: admin.token })).body;
+        const trader = await h.createUser();
+        await h.fund(trader.id, "USD", 1000);
+        const buy = await h.api("POST", "/api/orders/buy", { token: trader.token, body: { asset: "ETH", amountUsd: 50, paymentMethod: "card" } });
+        assert.equal(buy.status, 201);
+
+        const after = (await h.api("GET", "/api/admin/stats/history?range=7d", { token: admin.token })).body;
+        const last = (r) => r.series[r.series.length - 1];
+        assert.ok(Math.abs(last(after).buyVolumeUsd - last(before).buyVolumeUsd - Number(buy.body.order.total)) < 1e-6);
+        assert.equal(last(after).newUsers, last(before).newUsers + 1);
+        assert.ok(after.topAssets.some((a) => a.asset === "ETH" && a.trades >= 1));
+    });
+
+    test("an unknown range falls back to 30 days instead of erroring", async () => {
+        const admin = await h.createUser({ role: "admin" });
+        const res = await h.api("GET", "/api/admin/stats/history?range=DROP%20TABLE", { token: admin.token });
+        assert.equal(res.status, 200);
+        assert.equal(res.body.range, "30d");
+        assert.equal(res.body.series.length, 30);
     });
 });
 

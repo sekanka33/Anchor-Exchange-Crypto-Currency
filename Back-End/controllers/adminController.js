@@ -9,59 +9,113 @@ const getStats = async (req, res) => {
 
     try {
 
-        const [
-            totalUsers,
-            verifiedUsers,
-            newUsers7d,
-            fiatDeposits,
-            cryptoDeposits,
-            pendingDeposits,
-            fiatWithdrawals,
-            cryptoWithdrawals,
-            pendingWithdrawals,
-            buyOrders,
-            sellOrders,
-            totalTransactions
-        ] = await Promise.all([
-            pool.query("SELECT COUNT(*)::int AS count FROM users"),
-            pool.query("SELECT COUNT(*)::int AS count FROM users WHERE is_verified = true"),
-            pool.query("SELECT COUNT(*)::int AS count FROM users WHERE created_at >= NOW() - INTERVAL '7 days'"),
-            pool.query("SELECT COUNT(*)::int AS count, COALESCE(SUM(net_amount), 0) AS total FROM deposits WHERE type = 'FIAT' AND status = 'COMPLETED'"),
-            pool.query("SELECT COUNT(*)::int AS count FROM deposits WHERE type = 'CRYPTO' AND status = 'COMPLETED'"),
-            pool.query("SELECT COUNT(*)::int AS count FROM deposits WHERE status = 'PENDING'"),
-            pool.query("SELECT COUNT(*)::int AS count, COALESCE(SUM(amount), 0) AS total FROM withdrawals WHERE type = 'FIAT' AND status = 'COMPLETED'"),
-            pool.query("SELECT COUNT(*)::int AS count FROM withdrawals WHERE type = 'CRYPTO' AND status = 'COMPLETED'"),
-            pool.query("SELECT COUNT(*)::int AS count FROM withdrawals WHERE status = 'PENDING_CONFIRMATION'"),
-            pool.query("SELECT COUNT(*)::int AS count FROM orders WHERE side = 'BUY'"),
-            pool.query("SELECT COUNT(*)::int AS count FROM orders WHERE side = 'SELL'"),
-            pool.query("SELECT COUNT(*)::int AS count FROM transactions")
+        const [users, deposits, withdrawals, orders, transactions] = await Promise.all([
+            pool.query(`
+                SELECT
+                    COUNT(*)::int AS total,
+                    COUNT(*) FILTER (WHERE is_verified = true)::int AS verified,
+                    COUNT(*) FILTER (WHERE created_at >= NOW() - INTERVAL '7 days')::int AS new_7d,
+                    COUNT(*) FILTER (WHERE created_at >= NOW() - INTERVAL '30 days')::int AS new_30d,
+                    COUNT(*) FILTER (WHERE created_at >= NOW() - INTERVAL '60 days'
+                                       AND created_at < NOW() - INTERVAL '30 days')::int AS new_prev_30d,
+                    -- No login tracking exists, so "active" means the user moved money
+                    -- or traded (order, deposit or withdrawal) in the last 30 days.
+                    (SELECT COUNT(DISTINCT user_id)::int FROM (
+                        SELECT user_id FROM orders WHERE created_at >= NOW() - INTERVAL '30 days'
+                        UNION SELECT user_id FROM deposits WHERE created_at >= NOW() - INTERVAL '30 days'
+                        UNION SELECT user_id FROM withdrawals WHERE created_at >= NOW() - INTERVAL '30 days'
+                    ) active) AS active_30d
+                FROM users
+            `),
+            pool.query(`
+                SELECT
+                    COUNT(*) FILTER (WHERE type = 'FIAT' AND status = 'COMPLETED')::int AS fiat_completed,
+                    COALESCE(SUM(net_amount) FILTER (WHERE type = 'FIAT' AND status = 'COMPLETED'), 0) AS fiat_total,
+                    COUNT(*) FILTER (WHERE type = 'CRYPTO' AND status = 'COMPLETED')::int AS crypto_completed,
+                    COUNT(*) FILTER (WHERE status = 'COMPLETED')::int AS completed,
+                    COUNT(*) FILTER (WHERE status = 'PENDING')::int AS pending,
+                    COUNT(*) FILTER (WHERE status = 'FAILED')::int AS failed
+                FROM deposits
+            `),
+            pool.query(`
+                SELECT
+                    COUNT(*) FILTER (WHERE type = 'FIAT' AND status = 'COMPLETED')::int AS fiat_completed,
+                    COALESCE(SUM(amount) FILTER (WHERE type = 'FIAT' AND status = 'COMPLETED'), 0) AS fiat_total,
+                    COUNT(*) FILTER (WHERE type = 'CRYPTO' AND status = 'COMPLETED')::int AS crypto_completed,
+                    COUNT(*) FILTER (WHERE status = 'COMPLETED')::int AS completed,
+                    COUNT(*) FILTER (WHERE status = 'PENDING_CONFIRMATION')::int AS pending,
+                    COUNT(*) FILTER (WHERE status = 'CANCELLED')::int AS cancelled,
+                    COUNT(*) FILTER (WHERE status = 'EXPIRED')::int AS expired
+                FROM withdrawals
+            `),
+            pool.query(`
+                SELECT
+                    COUNT(*)::int AS total,
+                    COUNT(*) FILTER (WHERE side = 'BUY')::int AS buy,
+                    COUNT(*) FILTER (WHERE side = 'SELL')::int AS sell,
+                    COUNT(*) FILTER (WHERE status = 'OPEN')::int AS open,
+                    COUNT(*) FILTER (WHERE status = 'COMPLETED')::int AS completed,
+                    COUNT(*) FILTER (WHERE status = 'CANCELLED')::int AS cancelled,
+                    COALESCE(SUM(total) FILTER (WHERE status = 'COMPLETED'), 0) AS volume,
+                    COALESCE(SUM(total) FILTER (WHERE status = 'COMPLETED'
+                        AND created_at >= NOW() - INTERVAL '30 days'), 0) AS volume_30d,
+                    COALESCE(SUM(total) FILTER (WHERE status = 'COMPLETED'
+                        AND created_at >= NOW() - INTERVAL '60 days'
+                        AND created_at < NOW() - INTERVAL '30 days'), 0) AS volume_prev_30d,
+                    COUNT(*) FILTER (WHERE created_at >= NOW() - INTERVAL '30 days')::int AS count_30d,
+                    COUNT(*) FILTER (WHERE created_at >= NOW() - INTERVAL '60 days'
+                        AND created_at < NOW() - INTERVAL '30 days')::int AS count_prev_30d
+                FROM orders
+            `),
+            pool.query("SELECT COUNT(*)::int AS total FROM transactions")
         ]);
+
+        const u = users.rows[0];
+        const d = deposits.rows[0];
+        const w = withdrawals.rows[0];
+        const o = orders.rows[0];
 
         res.json({
             users: {
-                total: totalUsers.rows[0].count,
-                verified: verifiedUsers.rows[0].count,
-                newLast7Days: newUsers7d.rows[0].count
+                total: u.total,
+                verified: u.verified,
+                newLast7Days: u.new_7d,
+                newLast30Days: u.new_30d,
+                newPrevious30Days: u.new_prev_30d,
+                activeLast30Days: u.active_30d
             },
             deposits: {
-                fiatCompletedCount: fiatDeposits.rows[0].count,
-                fiatCompletedTotalUsd: Number(fiatDeposits.rows[0].total),
-                cryptoCompletedCount: cryptoDeposits.rows[0].count,
-                pending: pendingDeposits.rows[0].count
+                fiatCompletedCount: d.fiat_completed,
+                fiatCompletedTotalUsd: Number(d.fiat_total),
+                cryptoCompletedCount: d.crypto_completed,
+                pending: d.pending,
+                statusCounts: { COMPLETED: d.completed, PENDING: d.pending, FAILED: d.failed }
             },
             withdrawals: {
-                fiatCompletedCount: fiatWithdrawals.rows[0].count,
-                fiatCompletedTotalUsd: Number(fiatWithdrawals.rows[0].total),
-                cryptoCompletedCount: cryptoWithdrawals.rows[0].count,
-                pendingConfirmation: pendingWithdrawals.rows[0].count
+                fiatCompletedCount: w.fiat_completed,
+                fiatCompletedTotalUsd: Number(w.fiat_total),
+                cryptoCompletedCount: w.crypto_completed,
+                pendingConfirmation: w.pending,
+                statusCounts: {
+                    COMPLETED: w.completed,
+                    PENDING_CONFIRMATION: w.pending,
+                    CANCELLED: w.cancelled,
+                    EXPIRED: w.expired
+                }
             },
             orders: {
-                buy: buyOrders.rows[0].count,
-                sell: sellOrders.rows[0].count,
-                total: buyOrders.rows[0].count + sellOrders.rows[0].count
+                buy: o.buy,
+                sell: o.sell,
+                total: o.total,
+                statusCounts: { OPEN: o.open, COMPLETED: o.completed, CANCELLED: o.cancelled },
+                volumeUsd: Number(o.volume),
+                volumeLast30DaysUsd: Number(o.volume_30d),
+                volumePrevious30DaysUsd: Number(o.volume_prev_30d),
+                countLast30Days: o.count_30d,
+                countPrevious30Days: o.count_prev_30d
             },
             transactions: {
-                total: totalTransactions.rows[0].count
+                total: transactions.rows[0].total
             }
         });
 
@@ -70,6 +124,126 @@ const getStats = async (req, res) => {
         console.error("ADMIN GET STATS ERROR:", error);
 
         res.status(500).json({ message: "Unable to load system statistics" });
+
+    }
+
+};
+
+// Time-bucketed platform activity for the admin charts. Short ranges are
+// bucketed by day, longer ones by week/month so every chart has a readable
+// number of bars. `unit` is only ever taken from this whitelist, never from
+// the request, so it is safe to pass to date_trunc.
+const HISTORY_RANGES = {
+    "7d": { unit: "day", buckets: 7 },
+    "30d": { unit: "day", buckets: 30 },
+    "90d": { unit: "week", buckets: 13 },
+    "180d": { unit: "week", buckets: 26 },
+    "1y": { unit: "month", buckets: 12 }
+};
+
+const getStatsHistory = async (req, res) => {
+
+    const range = HISTORY_RANGES[req.query.range] ? req.query.range : "30d";
+    const { unit, buckets } = HISTORY_RANGES[range];
+
+    try {
+
+        const [series, topAssets] = await Promise.all([
+            pool.query(
+                `
+                WITH buckets AS (
+                    SELECT generate_series(
+                        date_trunc($1, NOW()) - ($2::int - 1) * ('1 ' || $1)::interval,
+                        date_trunc($1, NOW()),
+                        ('1 ' || $1)::interval
+                    ) AS start
+                ),
+                since AS (SELECT MIN(start) AS start FROM buckets),
+                o AS (
+                    SELECT date_trunc($1, created_at) AS b,
+                           COALESCE(SUM(total) FILTER (WHERE side = 'BUY'), 0) AS buy_usd,
+                           COALESCE(SUM(total) FILTER (WHERE side = 'SELL'), 0) AS sell_usd,
+                           COUNT(*)::int AS orders
+                    FROM orders
+                    WHERE status = 'COMPLETED' AND created_at >= (SELECT start FROM since)
+                    GROUP BY 1
+                ),
+                d AS (
+                    SELECT date_trunc($1, created_at) AS b, SUM(net_amount) AS usd
+                    FROM deposits
+                    WHERE type = 'FIAT' AND status = 'COMPLETED' AND created_at >= (SELECT start FROM since)
+                    GROUP BY 1
+                ),
+                w AS (
+                    SELECT date_trunc($1, created_at) AS b, SUM(amount) AS usd
+                    FROM withdrawals
+                    WHERE type = 'FIAT' AND status = 'COMPLETED' AND created_at >= (SELECT start FROM since)
+                    GROUP BY 1
+                ),
+                u AS (
+                    SELECT date_trunc($1, created_at) AS b, COUNT(*)::int AS n
+                    FROM users
+                    WHERE created_at >= (SELECT start FROM since)
+                    GROUP BY 1
+                )
+                SELECT
+                    to_char(buckets.start, 'YYYY-MM-DD') AS start,
+                    COALESCE(o.buy_usd, 0) AS buy_usd,
+                    COALESCE(o.sell_usd, 0) AS sell_usd,
+                    COALESCE(o.orders, 0) AS orders,
+                    COALESCE(d.usd, 0) AS deposits_usd,
+                    COALESCE(w.usd, 0) AS withdrawals_usd,
+                    COALESCE(u.n, 0) AS new_users
+                FROM buckets
+                LEFT JOIN o ON o.b = buckets.start
+                LEFT JOIN d ON d.b = buckets.start
+                LEFT JOIN w ON w.b = buckets.start
+                LEFT JOIN u ON u.b = buckets.start
+                ORDER BY buckets.start
+                `,
+                [unit, buckets]
+            ),
+            pool.query(
+                `
+                SELECT split_part(pair, '/', 1) AS asset,
+                       COALESCE(SUM(total), 0) AS volume_usd,
+                       COUNT(*)::int AS trades
+                FROM orders
+                WHERE status = 'COMPLETED'
+                  AND created_at >= date_trunc($1, NOW()) - ($2::int - 1) * ('1 ' || $1)::interval
+                GROUP BY 1
+                ORDER BY volume_usd DESC
+                LIMIT 5
+                `,
+                [unit, buckets]
+            )
+        ]);
+
+        res.json({
+            range,
+            unit,
+            series: series.rows.map((row) => ({
+                start: row.start,
+                buyVolumeUsd: Number(row.buy_usd),
+                sellVolumeUsd: Number(row.sell_usd),
+                volumeUsd: Number(row.buy_usd) + Number(row.sell_usd),
+                orders: row.orders,
+                depositsUsd: Number(row.deposits_usd),
+                withdrawalsUsd: Number(row.withdrawals_usd),
+                newUsers: row.new_users
+            })),
+            topAssets: topAssets.rows.map((row) => ({
+                asset: row.asset,
+                volumeUsd: Number(row.volume_usd),
+                trades: row.trades
+            }))
+        });
+
+    } catch (error) {
+
+        console.error("ADMIN GET STATS HISTORY ERROR:", error);
+
+        res.status(500).json({ message: "Unable to load activity history" });
 
     }
 
@@ -601,6 +775,7 @@ const getAllOrders = async (req, res) => {
 
 module.exports = {
     getStats,
+    getStatsHistory,
     getUsers,
     getUserById,
     updateUserRole,

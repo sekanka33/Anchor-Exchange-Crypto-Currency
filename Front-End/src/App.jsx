@@ -15,9 +15,9 @@ import { Route, Routes, useLocation } from 'react-router-dom'
 const Bitusdt = lazy(() => import('./Pages/Bitusdt'))
 const Pages = lazy(() => import('./Pages/Pages'))
 const Signin = lazy(() => import('./Pages/Signin'))
-const Enusd = lazy(() => import('./Pages/Enusd'))
 const Notifications = lazy(() => import('./Pages/Notifications'))
 import { ThemeProvider } from './Components/ThemeProvider'
+import { CurrencyProvider } from './Components/CurrencyProvider'
 const Signup = lazy(() => import('./Pages/Signup'))
 const Dashboard = lazy(() => import('./Pages/Dashboard'))
 const QRAuth = lazy(() => import('./Pages/QRAuth'))
@@ -87,6 +87,7 @@ const App = () => {
 
   return (
     <ThemeProvider>
+    <CurrencyProvider>
       <a
         href="#main-content"
         className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[100] focus:rounded focus:bg-blue-700 focus:px-4 focus:py-2 focus:text-white"
@@ -112,7 +113,6 @@ const App = () => {
           <Route path="/bitusdt" element={<Bitusdt />} />
           <Route path="/pages" element={<Pages />} />
           <Route path="/assets" element={<Assets />} />
-          <Route path="/enusd" element={<Enusd />} />
           <Route path="/overview" element={<Overview />} />
           <Route path="/buy-crypto" element={<BuyCrypto />} />
           <Route path="/contact" element={<Contact />} />
@@ -251,6 +251,7 @@ const App = () => {
       {
         !isDashboard && <Footer />
       }
+    </CurrencyProvider>
     </ThemeProvider>
   )
 }

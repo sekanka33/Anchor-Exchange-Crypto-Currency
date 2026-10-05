@@ -2,6 +2,7 @@ import { Link, NavLink } from 'react-router-dom'
 import { FiMoon, FiSun, FiBell, FiMenu, FiX } from "react-icons/fi";
 import { useState } from 'react';
 import { useTheme } from '../hooks/useTheme';
+import CurrencySelect from "./CurrencySelect";
 import { FaUserCircle } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 
@@ -73,10 +74,7 @@ const Navbar = () => {
           <span>Orders & Trades</span>
         </NavLink>
         
-        <NavLink to="/enusd" className={navClass("px-2 h-full flex items-center space-x-1 hover:text-blue-500", "text-slate-900 dark:text-white")}>
-          <span>EN/USD</span>
-          <span className="text-[10px]">▼</span>
-        </NavLink>
+        <CurrencySelect className="px-1 h-8" />
 
         {/* Theme/Notification Icons */}
         <button 
@@ -274,6 +272,11 @@ const Navbar = () => {
             Pages ▼
           </NavLink>
           
+          <label className="flex items-center justify-between py-1">
+            <span>Currency</span>
+            <CurrencySelect />
+          </label>
+
           <Link to="/signin" onClick={() => setMenuOpen(false)} className="text-center border border-gray-300 dark:border-gray-600 rounded-full px-4 py-2 text-xs hover:bg-blue-600 hover:text-white transition-colors mt-2 text-slate-900 dark:text-white">
             Sign-In
           </Link>

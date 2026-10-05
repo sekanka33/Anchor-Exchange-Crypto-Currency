@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useCurrency } from "../hooks/useCurrency";
 import CreateAnAccoutSection from "../Components/CreateAnAccoutSection";
 import PageHeader from "../Components/PageHeader";
 import MoneyFlowSidebar from "../Components/MoneyFlowSidebar";
@@ -176,6 +177,11 @@ const BuyCrypto = () => {
     }).format(value);
   };
 
+  const { currency: displayCurrency, formatMoney } = useCurrency();
+  // Transactions settle in USD; show the display-currency equivalent alongside.
+  const fmt = (usd) =>
+    displayCurrency === "USD" ? formatUSD(usd) : `${formatUSD(usd)} (≈ ${formatMoney(usd)})`;
+
   /*
    * Format crypto
    */
@@ -264,7 +270,7 @@ const BuyCrypto = () => {
                   </span>
                 ) : price ? (
                   <span className="text-slate-900 dark:text-white font-semibold">
-                    {formatUSD(price)} /{" "}
+                    {formatMoney(price)} /{" "}
                     {selectedCoin.symbol}
                   </span>
                 ) : (
@@ -428,7 +434,7 @@ const BuyCrypto = () => {
 
                     <span>
                       {price
-                        ? formatUSD(price)
+                        ? formatMoney(price)
                         : "--"}
                     </span>
                   </div>
@@ -439,7 +445,7 @@ const BuyCrypto = () => {
                     </span>
 
                     <span>
-                      {formatUSD(fee)}
+                      {fmt(fee)}
                     </span>
                   </div>
 
@@ -449,7 +455,7 @@ const BuyCrypto = () => {
                     </span>
 
                     <span>
-                      {formatUSD(total)}
+                      {fmt(total)}
                     </span>
                   </div>
 
@@ -503,7 +509,7 @@ const BuyCrypto = () => {
                   </span>
 
                   <span className="font-semibold">
-                    {formatUSD(numericAmount)}
+                    {fmt(numericAmount)}
                   </span>
                 </div>
 
@@ -524,7 +530,7 @@ const BuyCrypto = () => {
                   </span>
 
                   <span>
-                    {formatUSD(fee)}
+                    {fmt(fee)}
                   </span>
                 </div>
 
@@ -534,7 +540,7 @@ const BuyCrypto = () => {
                   </span>
 
                   <span className="font-bold">
-                    {formatUSD(total)}
+                    {fmt(total)}
                   </span>
                 </div>
 
@@ -667,7 +673,7 @@ const BuyCrypto = () => {
                   </span>
 
                   <span>
-                    {formatUSD(total)}
+                    {fmt(total)}
                   </span>
                 </div>
 
@@ -696,7 +702,7 @@ const BuyCrypto = () => {
                   disabled={submitting}
                   className="bg-blue-600 hover:bg-blue-700 px-8 py-2.5 rounded-full text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed text-white"
                 >
-                  {submitting ? "Processing..." : `Pay ${formatUSD(total)}`}
+                  {submitting ? "Processing..." : `Pay ${fmt(total)}`}
                 </button>
 
               </div>
@@ -732,15 +738,15 @@ const BuyCrypto = () => {
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-600 dark:text-gray-400">Price</span>
-                  <span>{formatUSD(orderResult.order.price)}</span>
+                  <span>{fmt(orderResult.order.price)}</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-600 dark:text-gray-400">Fee</span>
-                  <span>{formatUSD(orderResult.order.fee)}</span>
+                  <span>{fmt(orderResult.order.fee)}</span>
                 </div>
                 <div className="border-t border-gray-200 dark:border-gray-700 pt-3 flex justify-between font-semibold text-sm">
                   <span>Total charged</span>
-                  <span>{formatUSD(orderResult.transaction.total)}</span>
+                  <span>{fmt(orderResult.transaction.total)}</span>
                 </div>
                 <div className="flex justify-between text-xs text-gray-500">
                   <span>Reference</span>

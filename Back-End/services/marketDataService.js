@@ -9,7 +9,9 @@ const TTL = {
     global: 60_000,
     coinDetail: 30_000,
     simplePrice: 15_000,
-    ticker: 10_000
+    ticker: 10_000,
+    orderBook: 3_000,
+    trades: 3_000
 };
 
 const cachedFetch = async (key, ttlMs, fetchFn) => {
@@ -97,19 +99,41 @@ const getSimplePrice = (ids, vsCurrencies = "usd") => {
 
 };
 
+const binanceFetch = async (path) => {
+
+    const response = await fetch(`${BINANCE_BASE_URL}${path}`);
+
+    if (!response.ok) {
+        throw new Error(`Binance request failed with status ${response.status}`);
+    }
+
+    return response.json();
+
+};
+
 const getBinanceTicker = (symbol) => {
 
-    return cachedFetch(`ticker:${symbol}`, TTL.ticker, async () => {
+    return cachedFetch(`ticker:${symbol}`, TTL.ticker, () => binanceFetch(
+        `/ticker/24hr?symbol=${encodeURIComponent(symbol)}`
+    ));
 
-        const response = await fetch(`${BINANCE_BASE_URL}/ticker/24hr?symbol=${encodeURIComponent(symbol)}`);
+};
 
-        if (!response.ok) {
-            throw new Error(`Binance request failed with status ${response.status}`);
-        }
+// Top-of-book bids/asks, e.g. { bids: [["63445.00", "1.45"], ...], asks: [...] }
+const getBinanceOrderBook = (symbol, limit = 10) => {
 
-        return response.json();
+    return cachedFetch(`orderBook:${symbol}:${limit}`, TTL.orderBook, () => binanceFetch(
+        `/depth?symbol=${encodeURIComponent(symbol)}&limit=${limit}`
+    ));
 
-    });
+};
+
+// Most recent public trades, newest last (Binance order).
+const getBinanceTrades = (symbol, limit = 20) => {
+
+    return cachedFetch(`trades:${symbol}:${limit}`, TTL.trades, () => binanceFetch(
+        `/trades?symbol=${encodeURIComponent(symbol)}&limit=${limit}`
+    ));
 
 };
 
@@ -118,5 +142,7 @@ module.exports = {
     getGlobalMarketData,
     getCoinDetail,
     getSimplePrice,
-    getBinanceTicker
+    getBinanceTicker,
+    getBinanceOrderBook,
+    getBinanceTrades
 };

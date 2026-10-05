@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useCurrency } from "../hooks/useCurrency";
 import { FaCamera, FaEye, FaEyeSlash } from 'react-icons/fa'
 import { API_BASE_URL } from '../api/config'
 import { useTheme } from '../hooks/useTheme'
@@ -118,7 +119,8 @@ const ProfileForm = ({ profile, onUpdated }) => {
 
 const PreferencesForm = ({ profile, onUpdated }) => {
   const { isDarkMode, toggleTheme } = useTheme();
-  const [currency, setCurrency] = useState(profile.preferences?.currency || "USD");
+  const { currency: displayCurrency, setCurrency: setDisplayCurrency } = useCurrency();
+  const [currency, setCurrency] = useState(displayCurrency);
   const [language, setLanguage] = useState(profile.preferences?.language || "en");
   const [emailNotifications, setEmailNotifications] = useState(
     profile.preferences?.emailNotifications ?? true
@@ -150,6 +152,8 @@ const PreferencesForm = ({ profile, onUpdated }) => {
       }
 
       setMessage(data.message);
+      // Apply the saved currency app-wide (already saved, so no second request).
+      setDisplayCurrency(currency, { sync: false });
       onUpdated({ ...profile, preferences: data.preferences });
     } catch {
       setError("Unable to connect to Anchor Exchange server.");
