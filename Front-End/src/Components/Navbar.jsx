@@ -3,8 +3,8 @@ import { FiMoon, FiSun, FiBell, FiMenu, FiX } from "react-icons/fi";
 import { useState } from 'react';
 import { useTheme } from '../hooks/useTheme';
 import CurrencySelect from "./CurrencySelect";
+import { PagesMenu, PagesMenuList } from "./PagesMenu";
 import { FaUserCircle } from "react-icons/fa";
-import { useNavigate } from "react-router-dom";
 
 const Navbar = () => {
   // Active page link is blue-500; `idle` is the colour used otherwise.
@@ -56,10 +56,7 @@ const Navbar = () => {
             <span className="text-blue-500 text-[8px]">💧</span>
           </NavLink>
 
-          <NavLink to="/pages" className={navClass("px-4 h-full flex items-center transition-colors space-x-1 hover:text-blue-500", "")}>
-            <span>Pages</span>
-            <span className="text-[10px]">▼</span>
-          </NavLink>
+          <PagesMenu loggedIn={Boolean(token)} />
         </div>
       </div>
 
@@ -268,9 +265,7 @@ const Navbar = () => {
             BITUSDT
           </NavLink>
 
-          <NavLink to="/pages" onClick={() => setMenuOpen(false)} className={navClass("transition-colors py-1", "hover:text-slate-900 dark:hover:text-white")}>
-            Pages ▼
-          </NavLink>
+          <PagesMenuList loggedIn={Boolean(token)} onNavigate={() => setMenuOpen(false)} />
           
           <label className="flex items-center justify-between py-1">
             <span>Currency</span>

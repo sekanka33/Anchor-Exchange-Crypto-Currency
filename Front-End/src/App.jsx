@@ -13,7 +13,6 @@ const Spot = lazy(() => import('./Pages/Spot'))
 const Wallet = lazy(() => import('./Pages/Wallet'))
 import { Route, Routes, useLocation } from 'react-router-dom'
 const Bitusdt = lazy(() => import('./Pages/Bitusdt'))
-const Pages = lazy(() => import('./Pages/Pages'))
 const Signin = lazy(() => import('./Pages/Signin'))
 const Notifications = lazy(() => import('./Pages/Notifications'))
 import { ThemeProvider } from './Components/ThemeProvider'
@@ -111,7 +110,6 @@ const App = () => {
           <Route path="/exchange" element={<Exchange />} />
           <Route path="/spot" element={<Spot />} />
           <Route path="/bitusdt" element={<Bitusdt />} />
-          <Route path="/pages" element={<Pages />} />
           <Route path="/assets" element={<Assets />} />
           <Route path="/overview" element={<Overview />} />
           <Route path="/buy-crypto" element={<BuyCrypto />} />
