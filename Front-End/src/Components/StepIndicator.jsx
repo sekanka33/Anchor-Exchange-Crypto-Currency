@@ -6,7 +6,7 @@
  */
 const StepIndicator = ({ steps, currentStep }) => {
   return (
-    <ol className="flex items-center gap-2 sm:gap-4 text-xs sm:text-sm font-semibold mb-8 justify-center flex-wrap">
+    <ol className="flex items-center pr-130 gap-2 sm:gap-4 text-xs sm:text-sm font-semibold mb-8 justify-center flex-wrap">
       {steps.map((label, index) => {
         const stepNumber = index + 1;
         const isDone = stepNumber < currentStep;
