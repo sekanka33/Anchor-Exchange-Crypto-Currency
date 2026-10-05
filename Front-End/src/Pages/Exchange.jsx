@@ -505,7 +505,7 @@ const Exchange = () => {
                       <span className="text-right">Quantity ({selectedPair.asset})</span>
                       <span className="text-right">Time</span>
                     </div>
-                    <div className="space-y-1 h-40 overflow-y-auto font-mono text-xs tabular-nums">
+                    <div className="space-y-1 h-55 overflow-y-auto font-mono text-xs tabular-nums">
                       {trades.data?.map((t) => (
                         <div key={t.id} className="grid grid-cols-3 items-center px-1">
                           {/* isBuyerMaker = the taker sold */}
