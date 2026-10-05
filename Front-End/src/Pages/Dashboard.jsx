@@ -67,8 +67,8 @@ const Dashboard = () => {
     fetch(`${API_BASE_URL}/api/wallet`, {
       headers: { Authorization: `Bearer ${token}` },
     })
-      .then((res) => res.json())
-      .then((data) => setWalletSummary(data))
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => data && setWalletSummary(data))
       .catch(() => {});
   }, []);
 
