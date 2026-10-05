@@ -1,690 +1,738 @@
-import React, { useState, useEffect } from 'react';
-import { useCurrency } from "../hooks/useCurrency";
-import { 
-  FaCalculator, 
-  FaSearch, 
-  FaStar, 
-  FaChevronDown, 
-  FaRegStar, 
-  FaCompress, 
-  FaExpand, 
-  FaExternalLinkAlt 
-} from 'react-icons/fa';
-import { FiMoon, FiSun } from "react-icons/fi";
-import { BsDiamond, BsDiamondFill } from 'react-icons/bs';
-import { getCoinDetail } from '../api/coingecko';
+import { useState, useMemo } from 'react';
+import { Link } from 'react-router-dom';
+import { FaSearch, FaStar, FaRegStar, FaChevronDown, FaExternalLinkAlt } from 'react-icons/fa';
+import { useCurrency } from '../hooks/useCurrency';
+import { useApi } from '../hooks/useApi';
+import { authFetch } from '../api/authFetch';
+import { getBinanceTicker, getBinanceOrderBook, getBinanceTrades, getCoinDetail } from '../api/coingecko';
+import { PAIRS, FEE_RATE, MIN_TRADE_USD, MAX_TRADE_USD } from '../api/tradingPairs';
+import TradingViewChart from '../Components/TradingViewChart';
+
+const TIMEFRAMES = [
+  { label: '1m', value: '1' },
+  { label: '5m', value: '5' },
+  { label: '15m', value: '15' },
+  { label: '1h', value: '60' },
+  { label: '4h', value: '240' },
+  { label: 'D', value: 'D' },
+  { label: 'W', value: 'W' },
+  { label: 'M', value: 'M' },
+];
+
+const BOTTOM_TABS = ['OPEN ORDERS', 'ORDER HISTORY', 'TRADE HISTORY', 'FUNDS'];
+const FAVORITES_KEY = 'exchangeFavorites';
+
+const readFavorites = () => {
+  try {
+    const saved = JSON.parse(localStorage.getItem(FAVORITES_KEY));
+    return Array.isArray(saved) ? saved : ['BTCUSDT', 'ETHUSDT'];
+  } catch {
+    return ['BTCUSDT', 'ETHUSDT'];
+  }
+};
+
+const formatAmount = (value, digits = 6) =>
+  Number(value || 0).toLocaleString('en-US', { maximumFractionDigits: digits });
+
+const formatDate = (iso) =>
+  new Date(iso).toLocaleString(undefined, { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
+const up = 'text-green-700 dark:text-green-400';
+const down = 'text-red-600 dark:text-red-400';
+const muted = 'text-gray-500 dark:text-text-color';
+
+const Panel = ({ className = '', children }) => (
+  <div className={`bg-white dark:bg-crypto-color border border-gray-200 dark:border-line-color rounded-lg p-3 ${className}`}>{children}</div>
+);
+
+// Loading / error / empty line used inside each panel.
+const Status = ({ state, empty, children }) => {
+  if (state.loading) return <p role="status" className={`py-6 text-center ${muted}`}>Loading…</p>;
+  if (state.error && !state.data) {
+    return (
+      <p role="alert" className={`py-6 text-center ${down}`}>
+        Unable to load this data.{' '}
+        <button type="button" onClick={state.reload} className="text-blue-500 hover:underline font-semibold">Try again</button>
+      </p>
+    );
+  }
+  if (empty) return <p role="status" className={`py-6 text-center ${muted}`}>{empty}</p>;
+  return children;
+};
 
 const Exchange = () => {
-  const { currency, convert, formatMoney } = useCurrency();
+  const { currency, formatMoney } = useCurrency();
+  const loggedIn = Boolean(localStorage.getItem('token'));
 
-  const [marketData, setMarketData] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-  const [activeChartTab, setActiveChartTab] = useState("15m");
-  const [activeQuoteTab, setActiveQuoteTab] = useState("GENERAL");
-  const [activeOrderTab, setActiveOrderTab] = useState("Limit");
-  const [activeBottomTab, setActiveBottomTab] = useState("OPEN ORDER");
+  const [selectedPair, setSelectedPair] = useState(PAIRS[0]);
+  const [pairMenuOpen, setPairMenuOpen] = useState(false);
+  const [timeframe, setTimeframe] = useState('15');
+  const [bookView, setBookView] = useState('GENERAL');
+  const [bottomTab, setBottomTab] = useState('OPEN ORDERS');
+  const [pairSearch, setPairSearch] = useState('');
+  const [pairTab, setPairTab] = useState('ALL');
+  const [favorites, setFavorites] = useState(readFavorites);
 
-  // Fetch real-time Bitcoin data
-  useEffect(() => {
-    const fetchMarketData = async () => {
-      try {
-        const data = await getCoinDetail("bitcoin");
-        setMarketData(data.market_data);
-        setError("");
-      } catch (err) {
-        console.error("Error fetching market data:", err);
-        setError("Unable to load live market data right now.");
-      } finally {
-        setLoading(false);
-      }
+  // Order form
+  const [side, setSide] = useState('buy');
+  const [amount, setAmount] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [message, setMessage] = useState(null);
+
+  /* ---------------- Live market data ---------------- */
+
+  const tickers = useApi(async () => {
+    const results = await Promise.allSettled(PAIRS.map((p) => getBinanceTicker(p.symbol)));
+    const map = {};
+    results.forEach((r, i) => {
+      if (r.status === 'fulfilled') map[PAIRS[i].symbol] = r.value;
+    });
+    if (Object.keys(map).length === 0) throw new Error('Market data unavailable');
+    return map;
+  }, [], { pollMs: 15000 });
+
+  const coin = useApi(() => getCoinDetail(selectedPair.coingeckoId), [selectedPair.coingeckoId], { pollMs: 60000 });
+  const orderBook = useApi(() => getBinanceOrderBook(selectedPair.symbol, 20), [selectedPair.symbol], { pollMs: 5000 });
+  const trades = useApi(
+    () => getBinanceTrades(selectedPair.symbol, 20).then((list) => [...list].reverse()),
+    [selectedPair.symbol],
+    { pollMs: 5000 }
+  );
+
+  /* ---------------- Account data (signed-in only) ---------------- */
+
+  const wallet = useApi(() => authFetch('/api/wallet'), [], { enabled: loggedIn });
+  const bottom = useApi(() => {
+    if (bottomTab === 'OPEN ORDERS') return authFetch('/api/orders?status=OPEN&limit=10').then((d) => d.orders);
+    if (bottomTab === 'ORDER HISTORY') return authFetch('/api/orders?limit=10').then((d) => d.orders);
+    if (bottomTab === 'TRADE HISTORY') return authFetch('/api/transactions?type=BUY,SELL&limit=10').then((d) => d.transactions);
+    return Promise.resolve(null); // FUNDS reads the wallet
+  }, [bottomTab], { enabled: loggedIn });
+
+  const ticker = tickers.data?.[selectedPair.symbol];
+  const lastPrice = ticker ? Number(ticker.lastPrice) : null;
+  const changePct = ticker ? Number(ticker.priceChangePercent) : null;
+  const md = coin.data?.market_data;
+
+  /* ---------------- Order book ---------------- */
+
+  const book = useMemo(() => {
+    if (!orderBook.data) return null;
+    const asks = orderBook.data.asks.slice(0, 9).map(([p, q]) => ({ price: Number(p), qty: Number(q) }));
+    const bids = orderBook.data.bids.slice(0, 9).map(([p, q]) => ({ price: Number(p), qty: Number(q) }));
+    // Cumulative view: running totals outward from the spread.
+    let run = 0;
+    asks.forEach((r) => { run += r.qty; r.cum = run; });
+    run = 0;
+    bids.forEach((r) => { run += r.qty; r.cum = run; });
+    const sizeKey = bookView === 'CUMULATIVE' ? 'cum' : 'qty';
+    const max = Math.max(...asks.map((r) => r[sizeKey]), ...bids.map((r) => r[sizeKey]), 0);
+    const askTotal = asks.reduce((s, r) => s + r.qty, 0);
+    const bidTotal = bids.reduce((s, r) => s + r.qty, 0);
+    return {
+      asks: [...asks].reverse(),
+      bids,
+      sizeKey,
+      max,
+      askTotal,
+      bidTotal,
+      spread: asks[0] && bids[0] ? asks[0].price - bids[0].price : null,
     };
+  }, [orderBook.data, bookView]);
 
-    fetchMarketData();
-    const interval = setInterval(fetchMarketData, 30000);
-    return () => clearInterval(interval);
-  }, []);
+  const bookRow = (r, isAsk) => (
+    <div key={`${isAsk ? 'a' : 'b'}-${r.price}`} className="relative grid grid-cols-3 items-center h-5 font-mono tabular-nums">
+      <span
+        className={`absolute right-0 inset-y-0 ${isAsk ? 'bg-red-500/10' : 'bg-green-500/10'}`}
+        style={{ width: `${book.max ? (r[book.sizeKey] / book.max) * 100 : 0}%` }}
+        aria-hidden="true"
+      />
+      <span className={`relative font-semibold ${isAsk ? down : up}`}>{formatMoney(r.price)}</span>
+      <span className="relative text-right">{formatAmount(r[book.sizeKey], 5)}</span>
+      <span className={`relative text-right ${muted}`}>{formatMoney(r.price * r[book.sizeKey], { notation: 'compact' })}</span>
+    </div>
+  );
 
-  // Mock data matching UI screenshot
-  const greenAsks = [
-    { amount: "0.001", depth: 20, price: "71,728,000", change: "+1.81 %" },
-    { amount: "0.138", depth: 60, price: "71,727,000", change: "+1.81 %" },
-    { amount: "0.001", depth: 15, price: "71,726,000", change: "+1.81 %" },
-    { amount: "0.001", depth: 30, price: "71,726,000", change: "+1.81 %" },
-    { amount: "0.001", depth: 25, price: "71,726,000", change: "+1.81 %" },
-    { amount: "0.001", depth: 10, price: "71,726,000", change: "+1.81 %" },
-    { amount: "0.001", depth: 45, price: "71,726,000", change: "+1.81 %" },
-    { amount: "0.001", depth: 35, price: "71,726,000", change: "+1.81 %" },
-    { amount: "0.001", depth: 15, price: "71,726,000", change: "+1.81 %" },
-  ];
+  /* ---------------- Pairs list ---------------- */
 
-  const redBids = [
-    { amount: "0.001", depth: 10, price: "71,728,000", change: "-1.81 %" },
-    { amount: "1.481", depth: 75, price: "71,727,000", change: "-1.81 %" },
-    { amount: "0.601", depth: 35, price: "71,726,000", change: "-1.81 %" },
-    { amount: "0.001", depth: 15, price: "71,726,000", change: "-1.81 %" },
-    { amount: "0.501", depth: 50, price: "71,726,000", change: "-1.81 %" },
-    { amount: "0.401", depth: 40, price: "71,726,000", change: "-1.81 %" },
-    { amount: "0.001", depth: 85, price: "71,726,000", change: "-1.81 %" },
-    { amount: "0.021", depth: 65, price: "71,726,000", change: "-1.81 %" },
-  ];
+  const toggleFavorite = (symbol) => {
+    setFavorites((prev) => {
+      const next = prev.includes(symbol) ? prev.filter((s) => s !== symbol) : [...prev, symbol];
+      try { localStorage.setItem(FAVORITES_KEY, JSON.stringify(next)); } catch { /* storage unavailable */ }
+      return next;
+    });
+  };
 
-  const bidsLeft = [
-    { bidder: "71,726,000", amount: "0.003", isGreen: true },
-    { bidder: "71,726,000", amount: "0.003", isGreen: true },
-    { bidder: "71,726,000", amount: "0.003", isGreen: true },
-    { bidder: "71,726,000", amount: "0.003", isGreen: true },
-    { bidder: "71,726,000", amount: "0.033", isGreen: true },
-    { bidder: "71,726,000", amount: "0.003", isGreen: false },
-    { bidder: "71,726,000", amount: "0.003", isGreen: false },
-    { bidder: "71,726,000", amount: "0.003", isGreen: false },
-  ];
+  const visiblePairs = PAIRS.filter((p) => {
+    const q = pairSearch.trim().toUpperCase();
+    if (q && !p.asset.includes(q) && !p.name.toUpperCase().includes(q)) return false;
+    return pairTab === 'ALL' || favorites.includes(p.symbol);
+  });
 
-  const recentTrades = [
-    { price: "61,408.47", qty: "0.357777", time: "0.357777", isGreen: false },
-    { price: "61,408.47", qty: "1.034090", time: "1.034090", isGreen: false },
-    { price: "61,408.47", qty: "0.023000", time: "0.023000", isGreen: false },
-    { price: "61,408.47", qty: "0.357777", time: "0.357777", isGreen: false },
-    { price: "61,408.47", qty: "1.034090", time: "1.034090", isGreen: false },
-    { price: "61,408.47", qty: "0.023000", time: "0.023000", isGreen: false },
-    { price: "61,408.47", qty: "0.357777", time: "0.357777", isGreen: false },
-    { price: "61,408.47", qty: "1.034090", time: "1.034090", isGreen: false },
-    { price: "61,408.47", qty: "0.023000", time: "0.023000", isGreen: false },
-    { price: "61,408.47", qty: "0.357777", time: "0.357777", isGreen: false },
-    { price: "61,408.47", qty: "1.034090", time: "1.034090", isGreen: false },
-  ];
+  const selectPair = (pair) => {
+    setSelectedPair(pair);
+    setPairMenuOpen(false);
+    setAmount('');
+    setMessage(null);
+  };
 
-  const pairsList = [
-    { star: true, pair: "BT/USDT", price: "17,010.1", change: "+0.68%", subChange: "110", amount: "311.52 million" },
-    { star: true, pair: "BTC/USDT", price: "6,416", change: "+3.62%", subChange: "-60.00", amount: "532.152 million" },
-    { star: true, pair: "ETH/USDT", price: "71,729,000", change: "-1.95%", subChange: "-4,010.00", amount: "462.417 million" },
-    { star: true, pair: "XRP/USDT", price: "180", change: "-11.08%", subChange: "-23.00", amount: "532.152 million" },
-    { star: true, pair: "LUNA/BNB", price: "3.465", change: "+6.82%", subChange: "60.00", amount: "532.152 million" },
-    { star: false, pair: "ETH/USDT", price: "71,729,000", change: "-1.95%", subChange: "-4,010.00", amount: "462.417 million" },
-    { star: false, pair: "XRP/USDT", price: "180", change: "-11.08%", subChange: "-23.00", amount: "532.152 million" },
-    { star: false, pair: "LUNA/BNB", price: "3.465", change: "+6.82%", subChange: "-60.00", amount: "532.152 million" },
-    { star: false, pair: "ETH/USDT", price: "71,729,000", change: "-1.95%", subChange: "-4,010.00", amount: "462.417 million" },
-    { star: false, pair: "XRP/USDT", price: "180", change: "-11.08%", subChange: "23.00", amount: "532.152 million" },
-    { star: false, pair: "LUNA/BNB", price: "3.465", change: "+6.82%", subChange: "-60.00", amount: "532.152 million" },
-    { star: false, pair: "LUNA/BNB", price: "3.465", change: "+6.82%", subChange: "-60.00", amount: "532.152 million" },
-    { star: false, pair: "ETH/USDT", price: "71,729,000", change: "-1.95%", subChange: "-4,010.00", amount: "462.417 million" },
-    { star: false, pair: "XRP/USDT", price: "180", change: "-11.08%", subChange: "-23.00", amount: "532.152 million" },
-  ];
+  /* ---------------- Market order (real, via /api/orders) ---------------- */
 
-  const openOrders = [
-    { date: "10-02 10:38:42", pair: "C98/BUSD", type: "Limit", side: "Sell", price: "7632", amount: "40.0", filled: "0.00%", total: "305.280 BUSD", trigger: "Cancel" },
-    { date: "10-02 10:38:42", pair: "C98/BUSD", type: "Limit", side: "Sell", price: "7632", amount: "40.0", filled: "0.00%", total: "305.280 BUSD", trigger: "Cancel" },
-    { date: "10-02 10:38:42", pair: "NEAR/BUSD", type: "Limit", side: "Sell", price: "7632", amount: "40.0", filled: "0.00%", total: "305.280 BUSD", trigger: "Cancel" },
-    { date: "10-02 10:38:42", pair: "ALICE/BUSD", type: "Limit", side: "Sell", price: "7632", amount: "40.0", filled: "0.00%", total: "305.280 BUSD", trigger: "Cancel" },
-    { date: "10-02 10:38:42", pair: "C98/BUSD", type: "Limit", side: "Sell", price: "7632", amount: "40.0", filled: "0.00%", total: "305.280 BUSD", trigger: "Cancel" },
-    { date: "10-02 10:38:42", pair: "NEAR/BUSD", type: "Limit", side: "Sell", price: "7632", amount: "40.0", filled: "0.00%", total: "305.280 BUSD", trigger: "Cancel" },
-    { date: "10-02 10:38:42", pair: "ALICE/BUSD", type: "Limit", side: "Sell", price: "7632", amount: "40.0", filled: "0.00%", total: "305.280 BUSD", trigger: "Cancel" },
-    { date: "10-02 10:38:42", pair: "C98/BUSD", type: "Limit", side: "Sell", price: "7632", amount: "40.0", filled: "0.00%", total: "305.280 BUSD", trigger: "Cancel" },
-    { date: "10-02 10:38:42", pair: "MBOX/USDT", type: "Limit", side: "Sell", price: "7632", amount: "40.0", filled: "0.00%", total: "305.280 BUSD", trigger: "Cancel" },
-    { date: "10-02 10:38:42", pair: "MBOX/USDT", type: "Limit", side: "Sell", price: "7632", amount: "40.0", filled: "0.00%", total: "305.280 BUSD", trigger: "Cancel" },
-    { date: "10-02 10:38:42", pair: "MBOX/USDT", type: "Limit", side: "Sell", price: "7632", amount: "40.0", filled: "0.00%", total: "305.280 BUSD", trigger: "Cancel" },
-  ];
+  const assetBalance = wallet.data?.balances?.find((b) => b.assetSymbol === selectedPair.asset)?.availableBalance ?? 0;
+  const usdBalance = wallet.data?.balances?.find((b) => b.assetSymbol === 'USD')?.availableBalance ?? 0;
+  const numericAmount = Number(amount) || 0;
+  const estimate = lastPrice ? (side === 'buy' ? numericAmount / lastPrice : numericAmount * lastPrice * (1 - FEE_RATE)) : 0;
+
+  const placeOrder = async (e) => {
+    e.preventDefault();
+    setMessage(null);
+    if (numericAmount <= 0) {
+      setMessage({ ok: false, text: 'Enter an amount greater than zero.' });
+      return;
+    }
+    setSubmitting(true);
+    try {
+      const body = side === 'buy'
+        ? { asset: selectedPair.asset, amountUsd: numericAmount, paymentMethod: 'card' }
+        : { asset: selectedPair.asset, amount: numericAmount };
+      const data = await authFetch(`/api/orders/${side}`, { method: 'POST', body: JSON.stringify(body) });
+      setMessage({ ok: true, text: `${side === 'buy' ? 'Bought' : 'Sold'} ${formatAmount(data.order.amount, 8)} ${selectedPair.asset} at ${formatMoney(data.order.price)}.` });
+      setAmount('');
+      wallet.reload();
+      bottom.reload();
+    } catch (err) {
+      setMessage({ ok: false, text: err.message });
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  /* ---------------- Render ---------------- */
+
+  const tabClass = (active) =>
+    `transition-colors ${active ? 'text-blue-500 font-bold border-b-2 border-blue-500' : `${muted} hover:text-slate-900 dark:hover:text-white`}`;
 
   return (
-    <div className="bg-[#12161f] text-slate-200 text-xs font-sans min-h-screen">
-      <h1 className="sr-only">Exchange</h1>
+    <div className="bg-slate-50 dark:bg-hero-dark text-slate-900 dark:text-gray-200 text-sm font-sans min-h-screen">
+      <h1 className="sr-only">Exchange — {selectedPair.asset}/{currency}</h1>
 
       {/* TOP MARKET HEADER BAR */}
-      <div className="flex items-center justify-between bg-[#1e232d] border-b border-[#2d3139] px-4 py-2 text-xs overflow-x-auto">
+      <div className="flex items-center bg-white dark:bg-crypto-color border-b border-gray-200 dark:border-line-color px-4 py-2 overflow-x-auto">
         <div className="flex items-center gap-6 min-w-max">
-          <div className="flex items-center gap-2">
-            <div className="w-5 h-5 rounded-full bg-amber-500 flex items-center justify-center text-[10px] font-bold text-black">
-              ₿
-            </div>
-            <div>
-              <div className="flex items-center gap-1 font-bold text-white text-sm">
-                BTC/USDT <FaChevronDown className="text-[10px] text-gray-400" />
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setPairMenuOpen((o) => !o)}
+              aria-haspopup="listbox"
+              aria-expanded={pairMenuOpen}
+              className="flex items-center gap-2 text-left"
+            >
+              <span className="w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-bold">{selectedPair.asset.slice(0, 1)}</span>
+              <span>
+                <span className="flex items-center gap-1 font-bold text-base">
+                  {selectedPair.asset}/{currency} <FaChevronDown className={`text-xs ${muted}`} aria-hidden="true" />
+                </span>
+                <span className={`block text-xs ${muted}`}>{selectedPair.name}</span>
+              </span>
+            </button>
+          </div>
+
+          <div className="h-8 w-px bg-gray-200 dark:bg-line-color" />
+
+          {tickers.error && !ticker ? (
+            <span role="alert" className={down}>Live market data unavailable.</span>
+          ) : (
+            [
+              ['Last price', lastPrice !== null ? formatMoney(lastPrice) : '…', changePct !== null ? (changePct >= 0 ? up : down) : ''],
+              ['24H Change', changePct !== null ? `${changePct >= 0 ? '+' : ''}${changePct.toFixed(2)}%` : '…', changePct !== null ? (changePct >= 0 ? up : down) : ''],
+              ['24H High', ticker ? formatMoney(ticker.highPrice) : '…', ''],
+              ['24H Low', ticker ? formatMoney(ticker.lowPrice) : '…', ''],
+              [`24H Turnover`, ticker ? formatMoney(ticker.quoteVolume, { notation: 'compact' }) : '…', ''],
+              [`24H Volume (${selectedPair.asset})`, ticker ? formatAmount(ticker.volume, 2) : '…', ''],
+            ].map(([label, value, cls]) => (
+              <div key={label}>
+                <div className={`text-xs ${muted}`}>{label}</div>
+                <div className={`font-semibold tabular-nums ${label === 'Last price' ? 'text-base' : ''} ${cls}`}>{value}</div>
               </div>
-              <div className="text-[10px] text-gray-400">Bitcoin</div>
-            </div>
-          </div>
-
-          <div className="h-8 w-px bg-[#2d3139]"></div>
-
-          <div>
-            <div className="text-emerald-400 font-bold text-sm">61,075.53</div>
-            <div className="text-[10px] text-emerald-400">≈ $61,075.53 USD</div>
-          </div>
-
-          <div>
-            <div className="text-gray-400 text-[10px]">24H Change</div>
-            <div className="text-emerald-400 font-semibold">+1.45%</div>
-          </div>
-
-          <div>
-            <div className="text-gray-400 text-[10px]">24H High</div>
-            <div className="text-white font-medium">62,378.38</div>
-          </div>
-
-          <div>
-            <div className="text-gray-400 text-[10px]">24H Low</div>
-            <div className="text-white font-medium">59,378.38</div>
-          </div>
-
-          <div>
-            <div className="text-gray-400 text-[10px]">24H Turnover(USDT)</div>
-            <div className="text-white font-medium">16,730,064.72</div>
-          </div>
-
-          <div>
-            <div className="text-gray-400 text-[10px]">24H Volume(BTC)</div>
-            <div className="text-white font-medium">273.37</div>
-          </div>
+            ))
+          )}
         </div>
       </div>
 
+      {pairMenuOpen && (
+        <div className="relative z-30 px-4">
+          <ul role="listbox" className="absolute left-4 top-1 w-60 bg-white dark:bg-crypto-color border border-gray-200 dark:border-line-color rounded-lg shadow-2xl p-1">
+            {PAIRS.map((p) => {
+              const t = tickers.data?.[p.symbol];
+              return (
+                <li key={p.symbol}>
+                  <button
+                    type="button"
+                    role="option"
+                    aria-selected={p.symbol === selectedPair.symbol}
+                    onClick={() => selectPair(p)}
+                    className="w-full flex justify-between px-3 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-input-field"
+                  >
+                    <span className="font-bold">{p.asset}/{currency}</span>
+                    <span className={t ? (Number(t.priceChangePercent) >= 0 ? up : down) : muted}>{t ? formatMoney(t.lastPrice) : '—'}</span>
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      )}
+
       {/* MAIN LAYOUT GRID */}
-      <div className="p-1 space-y-1">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-1">
-          
-          {/* LEFT & CENTER COLUMN (Chart + Order Book + Order Inputs) */}
-          <div className="lg:col-span-9 space-y-1">
-            
-            {/* CANDLESTICK CHART CONTAINER */}
-            <div className="bg-[#1e232d] p-2 rounded-sm border border-[#2d3139]">
-              {/* Chart Header Tools */}
-              <div className="flex items-center justify-between border-b border-[#2d3139] pb-2 text-[11px] text-gray-400">
+      <div className="p-2 space-y-2">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-2">
+
+          {/* LEFT & CENTER COLUMN */}
+          <div className="lg:col-span-9 space-y-2 min-w-0">
+
+            {/* CHART (live Binance candles) */}
+            <Panel className="p-2">
+              <div className="flex items-center justify-between border-b border-gray-200 dark:border-line-color pb-2 text-[13px]">
                 <div className="flex items-center gap-4">
-                  <span className="text-white font-bold tracking-wider">CHART</span>
-                  <div className="flex items-center gap-3">
-                    {['1m', '5m', '15m', '1h', '4h', 'D', 'W', 'M'].map((tf) => (
+                  <span className="font-bold tracking-wider">CHART</span>
+                  <div className="flex items-center gap-3" role="group" aria-label="Chart timeframe">
+                    {TIMEFRAMES.map((tf) => (
                       <button
-                        key={tf}
-                        onClick={() => setActiveChartTab(tf)}
-                        className={`hover:text-white transition-colors ${
-                          activeChartTab === tf ? 'text-blue-400 font-bold border-b-2 border-blue-500 pb-0.5' : ''
-                        }`}
+                        key={tf.value}
+                        type="button"
+                        onClick={() => setTimeframe(tf.value)}
+                        aria-pressed={timeframe === tf.value}
+                        className={`pb-0.5 ${tabClass(timeframe === tf.value)}`}
                       >
-                        {tf}
+                        {tf.label}
                       </button>
                     ))}
                   </div>
                 </div>
+                <span className={`hidden sm:block ${muted}`}>{selectedPair.symbol} · Binance</span>
               </div>
+              <TradingViewChart symbol={selectedPair.symbol} interval={timeframe} className="w-full h-96 mt-2" />
+            </Panel>
 
-              {/* Chart Canvas Mock Representation */}
-              <div className="relative h-80 w-full bg-[#161a23] mt-2 flex flex-col justify-between p-3 rounded-sm overflow-hidden font-mono text-[10px] text-gray-400">
-                <div className="flex justify-between items-center text-[10px] text-gray-400 z-10">
-                  <div className="space-x-3">
-                    <span>2021-11-03 11:00</span>
-                    <span>Open: <span className="text-emerald-400">61047.37</span></span>
-                    <span>Close: <span className="text-emerald-400">61053.90</span></span>
-                    <span>High: <span className="text-emerald-400">61053.90</span></span>
-                    <span>Low: <span className="text-rose-400">61003.94</span></span>
-                    <span>Volume: <span className="text-white">0.009014</span></span>
-                  </div>
-                </div>
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-2">
 
-                {/* Grid Overlay Lines */}
-                <div className="absolute inset-0 grid grid-cols-6 grid-rows-6 pointer-events-none opacity-10">
-                  {Array.from({ length: 36 }).map((_, i) => (
-                    <div key={i} className="border border-slate-500"></div>
-                  ))}
-                </div>
-
-                {/* Simulated Candlesticks */}
-                <div className="relative h-48 w-full flex items-end justify-between px-6 z-10">
-                  {[40, 55, 30, 45, 60, 75, 50, 65, 80, 95, 70, 85, 60, 40, 50, 65, 80, 90, 75, 85, 95].map((h, i) => {
-                    const isGreen = i % 2 === 0;
-                    return (
-                      <div key={i} className="flex flex-col items-center justify-end h-full w-2">
-                        <div className={`w-0.5 ${isGreen ? 'bg-emerald-400' : 'bg-rose-500'}`} style={{ height: `${h + 10}%` }}></div>
-                        <div className={`w-2.5 ${isGreen ? 'bg-emerald-500' : 'bg-rose-600'} rounded-xs`} style={{ height: `${h}%` }}></div>
-                      </div>
-                    );
-                  })}
-                </div>
-
-                <div className="flex justify-between text-gray-500 text-[10px] z-10 pt-2 border-t border-[#2d3139]">
-                  <span>03:00</span>
-                  <span>06:00</span>
-                  <span>09:00</span>
-                  <span>12:00</span>
-                  <span>2021-11-04 13:20</span>
-                  <span>15:00</span>
-                  <span>18:00</span>
-                  <span>21:00</span>
-                </div>
-              </div>
-            </div>
-
-            {/* ORDER BOOK & LIVE STATS & ORDER ENTRY SECTION */}
-            <div className="grid grid-cols-1 md:grid-cols-12 gap-1">
-              
-              {/* ORDER BOOK (COL 1-7) */}
-              <div className="md:col-span-7 bg-[#1e232d] p-2 rounded-sm border border-[#2d3139]">
-                {/* Navigation Tabs */}
-                <div className="grid grid-cols-3 text-center text-xs font-semibold text-gray-400 border-b border-[#2d3139] mb-2">
-                  {['GENERAL QUOTE', 'CUMULATIVE QUOTE', 'QUOTE ORDER'].map((tab) => (
+              {/* ORDER BOOK + MARKET STATS */}
+              <Panel className="md:col-span-7 p-2">
+                <div className="grid grid-cols-2 text-center font-semibold border-b border-gray-200 dark:border-line-color mb-2" role="tablist" aria-label="Order book view">
+                  {[['GENERAL', 'ORDER BOOK'], ['CUMULATIVE', 'CUMULATIVE DEPTH']].map(([value, label]) => (
                     <button
-                      key={tab}
-                      onClick={() => setActiveQuoteTab(tab)}
-                      className={`py-2 text-[11px] transition-colors ${
-                        activeQuoteTab === tab ? 'text-blue-400 border-b-2 border-blue-500 font-bold' : 'hover:text-white'
-                      }`}
+                      key={value}
+                      type="button"
+                      role="tab"
+                      aria-selected={bookView === value}
+                      onClick={() => setBookView(value)}
+                      className={`py-2 text-[13px] ${tabClass(bookView === value)}`}
                     >
-                      {tab}
+                      {label}
                     </button>
                   ))}
                 </div>
 
-                <div className="grid grid-cols-3 gap-2">
-                  {/* Visual Order Asks / Bids List */}
-                  <div className="col-span-2 space-y-1 border-r border-[#2d3139] pr-2">
-                    {/* Upper Asks */}
-                    <div className="space-y-0.5">
-                      {greenAsks.map((row, idx) => (
-                        <div key={idx} className="relative flex justify-between items-center h-5 text-[11px] font-mono">
-                          <div
-                            className="absolute right-0 top-0 bottom-0 bg-emerald-900/30 rounded-xs pointer-events-none"
-                            style={{ width: `${row.depth}%` }}
-                          />
-                          <span className="z-10 text-gray-300">{row.amount}</span>
-                          <span className="z-10 text-emerald-400">{row.price}</span>
-                          <span className="z-10 text-emerald-400 text-[10px]">{row.change}</span>
-                        </div>
-                      ))}
-                    </div>
-
-                    {/* Fastening Mid Bar */}
-                    <div className="flex justify-between items-center px-2 py-1 bg-[#161a23] my-1 rounded-xs text-[10px] text-gray-400">
-                      <span>Fastening</span>
-                      <span className="font-mono text-emerald-400 font-bold">+93.03%</span>
-                    </div>
-
-                    {/* Lower Bids */}
-                    <div className="space-y-0.5">
-                      <div className="flex justify-between text-[10px] text-gray-400 px-1 font-medium">
-                        <span>Bidder</span>
-                        <span>Contract Amount</span>
-                      </div>
-                      {bidsLeft.map((row, idx) => (
-                        <div key={idx} className="flex justify-between items-center px-1 h-5 text-[11px] font-mono">
-                          <span className="text-gray-400">{row.bidder}</span>
-                          <span className={row.isGreen ? "text-emerald-400" : "text-rose-500"}>
-                            {row.amount}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-
-                    <div className="flex justify-between px-2 pt-2 text-[11px] font-mono font-bold text-gray-300 border-t border-[#2d3139]">
-                      <span>2.147</span>
-                      <span className="text-[10px] font-normal text-gray-400">Quantity (BTC) ⇄</span>
-                      <span>2.227</span>
-                    </div>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div className="sm:col-span-2 sm:border-r border-gray-200 dark:border-line-color sm:pr-2 text-[13px]">
+                    <Status state={orderBook} empty={book && !book.asks.length && !book.bids.length ? 'No orders on the book.' : null}>
+                      {book && (
+                        <>
+                          <div className={`grid grid-cols-3 text-xs ${muted} pb-1`}>
+                            <span>Price ({currency})</span>
+                            <span className="text-right">{bookView === 'CUMULATIVE' ? 'Cumulative' : 'Amount'} ({selectedPair.asset})</span>
+                            <span className="text-right">Total</span>
+                          </div>
+                          <div className="space-y-0.5">{book.asks.map((r) => bookRow(r, true))}</div>
+                          <div className="flex justify-between items-center px-2 py-1 my-1 rounded bg-gray-50 dark:bg-input-field">
+                            <span className={`font-mono font-bold text-base ${changePct !== null && changePct < 0 ? down : up}`}>
+                              {lastPrice !== null ? formatMoney(lastPrice) : '—'}
+                            </span>
+                            <span className={`text-xs ${muted}`}>Spread {book.spread !== null ? formatMoney(book.spread) : '—'}</span>
+                          </div>
+                          <div className="space-y-0.5">{book.bids.map((r) => bookRow(r, false))}</div>
+                          <div className="flex justify-between pt-2 mt-1 font-mono font-bold border-t border-gray-200 dark:border-line-color">
+                            <span className={up}>{formatAmount(book.bidTotal, 3)}</span>
+                            <span className={`text-xs font-normal ${muted}`}>Bid vs ask quantity ({selectedPair.asset}, top 9)</span>
+                            <span className={down}>{formatAmount(book.askTotal, 3)}</span>
+                          </div>
+                        </>
+                      )}
+                    </Status>
                   </div>
 
-                  {/* Right Column Market Stats */}
-                  <div className="col-span-1 space-y-2 text-[10px] text-gray-400">
-                    <div>
-                      <div className="text-gray-400">Trading</div>
-                      <div className="font-mono font-bold text-white text-xs">7.841 BTC</div>
-                    </div>
-
-                    <div>
-                      <div className="text-gray-400">Volume Transaction Amount</div>
-                      <div className="font-mono font-bold text-white text-xs">564,464</div>
-                      <div className="text-[9px] text-gray-500">(Last 24 hours)</div>
-                    </div>
-
-                    <div>
-                      <div className="text-gray-400">52 weeks High</div>
-                      <div className="font-mono font-bold text-emerald-400 text-xs">82.7 million</div>
-                      <div className="text-[9px] text-gray-500">(2021.11.09)</div>
-                    </div>
-
-                    <div>
-                      <div className="text-gray-400">52 weeks Low</div>
-                      <div className="font-mono font-bold text-rose-500 text-xs">18,500,000</div>
-                      <div className="text-[9px] text-gray-500">(2020.11.27)</div>
-                    </div>
-
-                    <div className="pt-1 border-t border-[#2d3139] space-y-1">
-                      <div className="flex justify-between">
-                        <span>Previous</span>
-                        <span className="text-white font-mono">70,047,000</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Day's Closing</span>
-                        <span className="text-white font-mono">same-day</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Price</span>
-                        <span className="text-white font-mono">price</span>
-                      </div>
-                      <div className="flex justify-between items-center pt-1">
-                        <span>Price</span>
-                        <span className="font-mono font-bold text-emerald-400 text-xs">71,287,000</span>
-                      </div>
-                    </div>
+                  {/* Market stats (CoinGecko) */}
+                  <div className="space-y-2 text-xs">
+                    <Status state={coin}>
+                      {md && (
+                        <>
+                          <div>
+                            <div className={muted}>24h Trading volume</div>
+                            <div className="font-mono font-bold text-sm">{formatMoney(md.total_volume?.usd, { notation: 'compact' })}</div>
+                          </div>
+                          <div>
+                            <div className={muted}>Market cap</div>
+                            <div className="font-mono font-bold text-sm">{formatMoney(md.market_cap?.usd, { notation: 'compact' })}</div>
+                            {coin.data.market_cap_rank && <div className={`text-[11px] ${muted}`}>Rank #{coin.data.market_cap_rank}</div>}
+                          </div>
+                          <div>
+                            <div className={muted}>All-time high</div>
+                            <div className={`font-mono font-bold text-sm ${up}`}>{formatMoney(md.ath?.usd)}</div>
+                            {md.ath_date?.usd && <div className={`text-[11px] ${muted}`}>({new Date(md.ath_date.usd).toLocaleDateString()})</div>}
+                          </div>
+                          <div>
+                            <div className={muted}>All-time low</div>
+                            <div className={`font-mono font-bold text-sm ${down}`}>{formatMoney(md.atl?.usd, { maximumFractionDigits: 6 })}</div>
+                            {md.atl_date?.usd && <div className={`text-[11px] ${muted}`}>({new Date(md.atl_date.usd).toLocaleDateString()})</div>}
+                          </div>
+                          <div className="pt-1 border-t border-gray-200 dark:border-line-color space-y-1">
+                            {[
+                              ['7d change', md.price_change_percentage_7d],
+                              ['30d change', md.price_change_percentage_30d],
+                              ['1y change', md.price_change_percentage_1y],
+                            ].map(([label, v]) => (
+                              <div key={label} className="flex justify-between">
+                                <span className={muted}>{label}</span>
+                                <span className={`font-mono ${v >= 0 ? up : down}`}>{v === undefined || v === null ? '—' : `${v >= 0 ? '+' : ''}${Number(v).toFixed(2)}%`}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </>
+                      )}
+                    </Status>
                   </div>
-
                 </div>
-              </div>
+              </Panel>
 
-              {/* ORDER INPUT & RECENT TRADES (COL 8-12) */}
-              <div className="md:col-span-5 space-y-1">
-                
-                {/* Order Input Controls */}
-                <div className="bg-[#1e232d] p-3 rounded-sm border border-[#2d3139] space-y-3">
-                  <div className="flex justify-between items-center text-xs">
-                    <div className="flex gap-2">
-                      <button className="bg-[#2a2f3d] hover:bg-[#343a4a] text-white px-3 py-1 rounded-xs font-semibold">
-                        Cross
-                      </button>
-                      <button className="bg-[#2a2f3d] hover:bg-[#343a4a] text-white px-3 py-1 rounded-xs font-semibold">
-                        10.00x
-                      </button>
-                    </div>
-                    <FaCalculator className="text-gray-400 hover:text-white cursor-pointer" />
-                  </div>
-
-                  <div className="flex gap-4 border-b border-[#2d3139] pb-2 text-xs">
-                    {['Limit', 'Market', 'Conditional'].map((type) => (
+              {/* ORDER ENTRY + RECENT TRADES */}
+              <div className="md:col-span-5 space-y-2">
+                <Panel className="space-y-3">
+                  <div className="grid grid-cols-2 gap-1 p-1 rounded-md bg-gray-100 dark:bg-input-field" role="group" aria-label="Order side">
+                    {['buy', 'sell'].map((s) => (
                       <button
-                        key={type}
-                        onClick={() => setActiveOrderTab(type)}
-                        className={`text-gray-400 hover:text-white transition-colors ${
-                          activeOrderTab === type ? 'text-white font-bold border-b-2 border-blue-500 pb-1' : ''
-                        }`}
+                        key={s}
+                        type="button"
+                        onClick={() => { setSide(s); setAmount(''); setMessage(null); }}
+                        aria-pressed={side === s}
+                        className={`py-1.5 rounded font-bold ${side === s ? (s === 'buy' ? 'bg-green-700 text-white' : 'bg-red-600 text-white') : muted}`}
                       >
-                        {type}
+                        {s === 'buy' ? 'Buy' : 'Sell'} {selectedPair.asset}
                       </button>
                     ))}
                   </div>
+                  <p className={muted}>Market order · executes at the live price · {FEE_RATE * 100}% fee</p>
 
-                  {/* Order Input Price / Qty */}
-                  <div className="space-y-2">
-                    <div className="relative">
-                      <input
-                        type="text"
-                        placeholder="Order Price"
-                        className="w-full bg-[#12161f] border border-[#2d3139] text-white text-xs px-3 py-2 rounded-xs focus:outline-none focus:border-blue-500"
-                      />
-                      <span className="absolute right-3 top-2.5 text-gray-500 text-[10px]">USD</span>
-                    </div>
-
-                    <div className="relative">
-                      <input
-                        type="text"
-                        placeholder="Qty"
-                        className="w-full bg-[#12161f] border border-[#2d3139] text-white text-xs px-3 py-2 rounded-xs focus:outline-none focus:border-blue-500"
-                      />
-                      <span className="absolute right-3 top-2.5 text-gray-500 text-[10px]">{currency}</span>
-                    </div>
-                  </div>
-
-                  {/* Percentage Slider Step Nodes */}
-                  <div className="relative flex justify-between items-center py-2 px-1">
-                    <div className="absolute top-1/2 left-0 right-0 h-0.5 bg-[#2d3139] -translate-y-1/2 z-0" />
-                    {[0, 25, 50, 75, 100].map((step, idx) => (
-                      <div key={idx} className="relative z-10 text-gray-500 hover:text-white cursor-pointer">
-                        {idx === 2 ? <BsDiamondFill className="text-blue-400 text-xs" /> : <BsDiamond className="text-xs" />}
+                  {!loggedIn ? (
+                    <p className="py-4 text-center">
+                      <Link to="/signin" className="text-blue-500 font-semibold hover:underline">Sign in</Link> or{' '}
+                      <Link to="/signup" className="text-blue-500 font-semibold hover:underline">create an account</Link> to trade.
+                    </p>
+                  ) : (
+                    <form onSubmit={placeOrder} className="space-y-3">
+                      <div>
+                        <label htmlFor="exchange-amount" className={`flex justify-between mb-1 ${muted}`}>
+                          <span>{side === 'buy' ? 'You pay (card)' : 'You sell'}</span>
+                          <span>
+                            Available:{' '}
+                            {side === 'buy' ? formatMoney(usdBalance) : `${formatAmount(assetBalance, 8)} ${selectedPair.asset}`}
+                          </span>
+                        </label>
+                        <div className="relative">
+                          <input
+                            id="exchange-amount"
+                            type="number"
+                            inputMode="decimal"
+                            min="0"
+                            step="any"
+                            value={amount}
+                            onChange={(e) => setAmount(e.target.value)}
+                            placeholder={side === 'buy' ? `${MIN_TRADE_USD} – ${MAX_TRADE_USD.toLocaleString()}` : '0.00'}
+                            className="w-full bg-gray-50 dark:bg-input-field border border-gray-300 dark:border-line-color px-3 py-2 pr-14 rounded focus:outline-none focus:border-blue-500"
+                          />
+                          <span className={`absolute right-3 top-1/2 -translate-y-1/2 text-xs ${muted}`}>{side === 'buy' ? 'USD' : selectedPair.asset}</span>
+                        </div>
+                        {side === 'buy' && numericAmount > 0 && currency !== 'USD' && (
+                          <p className={`mt-1 text-xs ${muted}`}>≈ {formatMoney(numericAmount)}</p>
+                        )}
                       </div>
-                    ))}
-                  </div>
 
-                  {/* Options Checkboxes */}
-                  <div className="space-y-1.5 text-[11px] text-gray-400">
-                    <label className="flex items-center gap-2 cursor-pointer hover:text-gray-200">
-                      <input type="checkbox" className="rounded bg-[#12161f] border-[#2d3139]" />
-                      <span>Buy Long with TP/SL</span>
-                    </label>
-                    <label className="flex items-center gap-2 cursor-pointer hover:text-gray-200">
-                      <input type="checkbox" className="rounded bg-[#12161f] border-[#2d3139]" />
-                      <span>Sell Short with TP/SL</span>
-                    </label>
+                      {side === 'sell' && (
+                        <div className="grid grid-cols-4 gap-1.5">
+                          {[25, 50, 75, 100].map((pct) => (
+                            <button
+                              key={pct}
+                              type="button"
+                              disabled={assetBalance <= 0}
+                              onClick={() => setAmount(String(Number(((assetBalance * pct) / 100).toFixed(8))))}
+                              className="py-1 rounded border border-gray-300 dark:border-line-color hover:border-blue-500 disabled:opacity-40"
+                            >
+                              {pct}%
+                            </button>
+                          ))}
+                        </div>
+                      )}
 
-                    <div className="flex justify-between pt-2 text-[10px]">
-                      <span>Order Value</span>
-                      <span className="font-mono text-white">0.00000000 BTC</span>
-                    </div>
-                  </div>
-
-                  {/* Buy / Sell Buttons */}
-                  <div className="grid grid-cols-2 gap-2 pt-1">
-                    <button className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2 rounded-xs text-xs transition-colors">
-                      Buy / Long (BTC)
-                    </button>
-                    <button className="bg-rose-600 hover:bg-rose-500 text-white font-bold py-2 rounded-xs text-xs transition-colors">
-                      Sell / Short (BTC)
-                    </button>
-                  </div>
-
-                  <div className="flex justify-between text-[10px] text-gray-400 pt-1">
-                    <label className="flex items-center gap-1 cursor-pointer">
-                      <input type="checkbox" className="rounded bg-[#12161f] border-[#2d3139]" />
-                      <span>Post Only</span>
-                    </label>
-                    <label className="flex items-center gap-1 cursor-pointer">
-                      <input type="checkbox" className="rounded bg-[#12161f] border-[#2d3139]" />
-                      <span>Reduce-Only</span>
-                    </label>
-                    <span className="text-gray-400 cursor-pointer">Good-Till-Canceled ▾</span>
-                  </div>
-                </div>
-
-                {/* RECENT TRADES PANEL */}
-                <div className="bg-[#1e232d] p-2 rounded-sm border border-[#2d3139] space-y-2">
-                  <div className="text-xs font-bold text-gray-300 border-b border-[#2d3139] pb-1">RECENT TRADES</div>
-                  <div className="flex justify-between text-[10px] text-gray-400 px-1">
-                    <span>Price(USDT)</span>
-                    <span>Quantity(BTC)</span>
-                    <span>Timestamp</span>
-                  </div>
-                  <div className="space-y-1 h-32 overflow-y-auto font-mono text-[10px]">
-                    {recentTrades.map((trade, idx) => (
-                      <div key={idx} className="flex justify-between items-center px-1">
-                        <span className="text-rose-500 font-medium">{trade.price}</span>
-                        <span className="text-gray-300">{trade.qty}</span>
-                        <span className="text-gray-400">{trade.time}</span>
+                      <div className="flex justify-between">
+                        <span className={muted}>You receive (est.)</span>
+                        <span className="font-mono font-semibold">
+                          {!lastPrice ? '—' : side === 'buy' ? `${formatAmount(estimate, 8)} ${selectedPair.asset}` : formatMoney(estimate)}
+                        </span>
                       </div>
-                    ))}
-                  </div>
-                </div>
 
+                      {message && (
+                        <p role={message.ok ? 'status' : 'alert'} className={`p-2 rounded border ${message.ok ? `bg-green-500/10 border-green-500/30 ${up}` : `bg-red-500/10 border-red-500/30 ${down}`}`}>
+                          {message.text}
+                        </p>
+                      )}
+
+                      <button
+                        type="submit"
+                        disabled={submitting || !lastPrice}
+                        className={`w-full py-2 rounded font-bold text-white disabled:opacity-50 ${side === 'buy' ? 'bg-green-700 hover:bg-green-800' : 'bg-red-600 hover:bg-red-700'}`}
+                      >
+                        {submitting ? 'Placing order…' : `${side === 'buy' ? 'Buy' : 'Sell'} ${selectedPair.asset}`}
+                      </button>
+                    </form>
+                  )}
+                </Panel>
+
+                {/* RECENT TRADES (live Binance) */}
+                <Panel className="p-2 space-y-2">
+                  <div className="font-bold border-b border-gray-200 dark:border-line-color pb-1">RECENT TRADES</div>
+                  <Status state={trades} empty={trades.data && !trades.data.length ? 'No recent trades.' : null}>
+                    <div className={`grid grid-cols-3 text-xs ${muted} px-1`}>
+                      <span>Price ({currency})</span>
+                      <span className="text-right">Quantity ({selectedPair.asset})</span>
+                      <span className="text-right">Time</span>
+                    </div>
+                    <div className="space-y-1 h-40 overflow-y-auto font-mono text-xs tabular-nums">
+                      {trades.data?.map((t) => (
+                        <div key={t.id} className="grid grid-cols-3 items-center px-1">
+                          {/* isBuyerMaker = the taker sold */}
+                          <span className={`font-medium ${t.isBuyerMaker ? down : up}`}>{formatMoney(t.price)}</span>
+                          <span className="text-right">{formatAmount(t.qty, 6)}</span>
+                          <span className={`text-right ${muted}`}>{new Date(t.time).toLocaleTimeString('en-GB')}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </Status>
+                </Panel>
               </div>
-
             </div>
-
           </div>
 
-          {/* RIGHT COLUMN (Market Pairs List & Wallet Info) */}
-          <div className="lg:col-span-3 space-y-1">
-            
-            {/* SEARCH & MARKETS PAIR TABLE */}
-            <div className="bg-[#1e232d] p-3 rounded-sm border border-[#2d3139] space-y-3">
-              {/* Search Bar */}
+          {/* RIGHT COLUMN */}
+          <div className="lg:col-span-3 space-y-2">
+
+            {/* MARKETS */}
+            <Panel className="space-y-3">
               <div className="relative">
                 <input
-                  type="text"
+                  type="search"
+                  value={pairSearch}
+                  onChange={(e) => setPairSearch(e.target.value)}
                   placeholder="Search"
-                  className="w-full bg-[#12161f] border border-[#2d3139] text-white text-xs pl-8 pr-3 py-1.5 rounded-xs focus:outline-none focus:border-blue-500"
+                  aria-label="Search markets"
+                  className="w-full bg-gray-50 dark:bg-input-field border border-gray-300 dark:border-line-color pl-8 pr-3 py-1.5 rounded focus:outline-none focus:border-blue-500"
                 />
-                <FaSearch className="absolute left-2.5 top-2.5 text-gray-500 text-xs" />
+                <FaSearch className={`absolute left-2.5 top-1/2 -translate-y-1/2 ${muted}`} aria-hidden="true" />
               </div>
 
-              {/* Markets Tabs */}
-              <div className="flex items-center gap-2 overflow-x-auto text-[11px] text-gray-400 pb-1 border-b border-[#2d3139] min-w-max">
-                <button className="flex items-center gap-1 text-yellow-400 font-bold">
-                  <FaStar className="text-xs" /> FAVORITE
-                </button>
-                {['BUSD', 'USDT', 'BNB', 'BTC', 'ALTS', 'FIAT'].map((tab) => (
-                  <button key={tab} className="hover:text-white transition-colors">
-                    {tab}
+              <div className="flex items-center gap-4 text-[13px] border-b border-gray-200 dark:border-line-color" role="tablist" aria-label="Markets">
+                {[['FAVORITES', 'Favorites'], ['ALL', `${currency} markets`]].map(([value, label]) => (
+                  <button
+                    key={value}
+                    type="button"
+                    role="tab"
+                    aria-selected={pairTab === value}
+                    onClick={() => setPairTab(value)}
+                    className={`flex items-center gap-1 pb-1 ${tabClass(pairTab === value)}`}
+                  >
+                    {value === 'FAVORITES' && <FaStar className="text-amber-500" aria-hidden="true" />} {label}
                   </button>
                 ))}
               </div>
 
-              {/* Table Headers */}
-              <div className="grid grid-cols-4 text-[10px] text-gray-400 border-b border-[#2d3139] pb-1">
+              <div className={`grid grid-cols-[1.2fr_1fr_0.8fr_1fr] text-xs ${muted} pb-1 border-b border-gray-200 dark:border-line-color`}>
                 <span>Pair</span>
-                <span className="text-right">Current Price ↕</span>
-                <span className="text-right">Day to day ↕</span>
-                <span className="text-right">Transaction amount ↕</span>
+                <span className="text-right">Price</span>
+                <span className="text-right">24h</span>
+                <span className="text-right">Turnover</span>
               </div>
 
-              {/* Pairs List */}
-              <div className="space-y-2 h-96 overflow-y-auto pr-1 text-[11px]">
-                {pairsList.map((item, idx) => (
-                  <div key={idx} className="grid grid-cols-4 items-center hover:bg-[#252b37] p-1 rounded-xs cursor-pointer font-mono">
-                    <div className="flex items-center gap-1">
-                      {item.star ? (
-                        <FaStar className="text-yellow-400 text-[10px]" />
-                      ) : (
-                        <FaRegStar className="text-gray-500 text-[10px]" />
-                      )}
-                      <span className="text-white font-sans text-xs">{item.pair}</span>
+              <Status state={tickers} empty={visiblePairs.length === 0 ? (pairTab === 'FAVORITES' ? 'No favorites yet — tap a star.' : 'No matching markets.') : null}>
+                <div className="space-y-1 max-h-96 overflow-y-auto text-[13px]">
+                  {visiblePairs.map((p) => {
+                    const t = tickers.data?.[p.symbol];
+                    const pct = t ? Number(t.priceChangePercent) : null;
+                    const fav = favorites.includes(p.symbol);
+                    return (
+                      <div
+                        key={p.symbol}
+                        className={`grid grid-cols-[1.2fr_1fr_0.8fr_1fr] items-center p-1 rounded font-mono hover:bg-gray-50 dark:hover:bg-input-field ${p.symbol === selectedPair.symbol ? 'bg-blue-500/10' : ''}`}
+                      >
+                        <div className="flex items-center gap-1 font-sans">
+                          <button type="button" onClick={() => toggleFavorite(p.symbol)} aria-label={fav ? `Remove ${p.asset} from favorites` : `Add ${p.asset} to favorites`} aria-pressed={fav}>
+                            {fav ? <FaStar className="text-amber-500 text-xs" /> : <FaRegStar className={`text-xs ${muted}`} />}
+                          </button>
+                          <button type="button" onClick={() => selectPair(p)} className="font-semibold hover:text-blue-500">
+                            {p.asset}<span className={muted}>/{currency}</span>
+                          </button>
+                        </div>
+                        <div className="text-right">{t ? formatMoney(t.lastPrice, { maximumFractionDigits: 4 }) : '—'}</div>
+                        <div className={`text-right ${pct === null ? muted : pct >= 0 ? up : down}`}>{pct === null ? '—' : `${pct >= 0 ? '+' : ''}${pct.toFixed(2)}%`}</div>
+                        <div className={`text-right text-xs ${muted}`}>{t ? formatMoney(t.quoteVolume, { notation: 'compact' }) : '—'}</div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </Status>
+            </Panel>
+
+            {/* ASSETS */}
+            <Panel className="space-y-3">
+              <div className="flex justify-between items-center font-bold">
+                <span>Assets</span>
+                <Link to="/wallet" className="text-blue-500 text-xs flex items-center gap-1 hover:underline">
+                  <FaExternalLinkAlt className="text-[11px]" aria-hidden="true" /> Wallet
+                </Link>
+              </div>
+              {!loggedIn ? (
+                <p className={muted}><Link to="/signin" className="text-blue-500 hover:underline">Sign in</Link> to see your balances.</p>
+              ) : (
+                <Status state={wallet}>
+                  <div className="space-y-1 text-[13px]">
+                    <div className="flex justify-between">
+                      <span className={muted}>Available {selectedPair.asset}</span>
+                      <span className="font-mono font-semibold">{formatAmount(assetBalance, 8)} {selectedPair.asset}</span>
                     </div>
-                    <div className="text-right text-gray-200">{item.price}</div>
-                    <div className={`text-right ${item.change.startsWith('+') ? 'text-emerald-400' : 'text-rose-500'}`}>
-                      <div>{item.change}</div>
-                      <div className="text-[9px] text-gray-500">{item.subChange}</div>
+                    <div className="flex justify-between">
+                      <span className={muted}>Available USD</span>
+                      <span className="font-mono font-semibold">{formatMoney(usdBalance)}</span>
                     </div>
-                    <div className="text-right text-gray-400 text-[10px]">{item.amount}</div>
+                    <div className="flex justify-between">
+                      <span className={muted}>Portfolio value</span>
+                      <span className="font-mono font-semibold">{formatMoney(wallet.data?.portfolioValue || 0)}</span>
+                    </div>
+                  </div>
+                </Status>
+              )}
+              <div className="grid grid-cols-3 gap-2 text-center font-semibold">
+                <Link to="/deposit" className="bg-blue-600 hover:bg-blue-700 text-white py-1.5 rounded">Deposit</Link>
+                <Link to="/buy-crypto" className="bg-gray-100 dark:bg-input-field hover:bg-gray-200 dark:hover:bg-line-color py-1.5 rounded">Buy</Link>
+                <Link to="/sell-crypto" className="bg-gray-100 dark:bg-input-field hover:bg-gray-200 dark:hover:bg-line-color py-1.5 rounded">Sell</Link>
+              </div>
+            </Panel>
+
+            {/* MARKET DETAILS (CoinGecko) */}
+            <Panel className="space-y-2 text-[13px]">
+              <div className="font-bold text-sm border-b border-gray-200 dark:border-line-color pb-1">Market Details · {selectedPair.name}</div>
+              <Status state={coin}>
+                {md && [
+                  ['Current price', formatMoney(md.current_price?.usd)],
+                  ['Circulating supply', `${formatAmount(md.circulating_supply, 0)} ${selectedPair.asset}`],
+                  ['Total supply', md.total_supply ? `${formatAmount(md.total_supply, 0)} ${selectedPair.asset}` : '—'],
+                  ['Max supply', md.max_supply ? `${formatAmount(md.max_supply, 0)} ${selectedPair.asset}` : 'Unlimited'],
+                  ['Fully diluted value', md.fully_diluted_valuation?.usd ? formatMoney(md.fully_diluted_valuation.usd, { notation: 'compact' }) : '—'],
+                  ['Last updated', md.last_updated ? new Date(md.last_updated).toLocaleTimeString() : '—'],
+                ].map(([label, value]) => (
+                  <div key={label} className="flex justify-between gap-2">
+                    <span className={muted}>{label}</span>
+                    <span className="font-mono text-right">{value}</span>
                   </div>
                 ))}
-              </div>
-            </div>
-
-            {/* ASSETS & DEPOSIT PANEL */}
-            <div className="bg-[#1e232d] p-3 rounded-sm border border-[#2d3139] space-y-3">
-              <div className="flex justify-between items-center text-xs font-bold text-gray-300">
-                <span>Assets ⚙</span>
-                <button className="text-blue-400 text-[10px] flex items-center gap-1 hover:underline">
-                  <FaExternalLinkAlt className="text-[9px]" /> Transfer Assets
-                </button>
-              </div>
-
-              <div className="space-y-1 text-[11px]">
-                <div className="flex justify-between text-gray-400">
-                  <span>Equity (Derivatives Account)</span>
-                  <span className="text-white font-mono font-semibold">0.00000000 BTC</span>
-                </div>
-                <div className="flex justify-between text-gray-400">
-                  <span>Available Balance (Derivatives Account)</span>
-                  <span className="text-white font-mono font-semibold">0.00000000 BTC</span>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-3 gap-2 pt-1 text-center font-semibold text-xs">
-                <button className="bg-blue-600 hover:bg-blue-500 text-white py-1.5 rounded-xs transition-colors">
-                  Deposit
-                </button>
-                <button className="bg-[#2a2f3d] hover:bg-[#343a4a] text-white py-1.5 rounded-xs transition-colors">
-                  Exchange
-                </button>
-                <button className="bg-[#2a2f3d] hover:bg-[#343a4a] text-white py-1.5 rounded-xs transition-colors">
-                  Buy
-                </button>
-              </div>
-            </div>
-
-            {/* CONTRACT DETAILS PANEL */}
-            <div className="bg-[#1e232d] p-3 rounded-sm border border-[#2d3139] space-y-2 text-[11px] text-gray-400">
-              <div className="font-bold text-gray-300 text-xs border-b border-[#2d3139] pb-1">
-                Contract Details BTC USD
-              </div>
-
-              <div className="flex justify-between">
-                <span>Expiration Date</span>
-                <span className="text-white font-mono">Perpetual</span>
-              </div>
-              <div className="flex justify-between">
-                <span>Index Price</span>
-                <span className="text-emerald-400 font-mono">63,070.47</span>
-              </div>
-              <div className="flex justify-between">
-                <span>Mark Price</span>
-                <span className="text-emerald-400 font-mono">63,048.39</span>
-              </div>
-              <div className="flex justify-between">
-                <span>Open Interest</span>
-                <span className="text-white font-mono">51,631.59 BTC</span>
-              </div>
-              <div className="flex justify-between">
-                <span>24H Turnover</span>
-                <span className="text-white font-mono">3,229,855,012 USD</span>
-              </div>
-              <div className="flex justify-between">
-                <span>Risk Limit</span>
-                <span className="text-white font-mono">150 BTC</span>
-              </div>
-              <div className="flex justify-between">
-                <span>Contract Value</span>
-                <span className="text-white font-mono">1 USD</span>
-              </div>
-            </div>
-
-          </div>
-
-        </div>
-
-        {/* BOTTOM SECTION - OPEN ORDERS & TRADE HISTORY */}
-        <div className="bg-[#1e232d] p-3 rounded-sm border border-[#2d3139] space-y-3">
-          {/* Bottom Tabs */}
-          <div className="flex gap-6 border-b border-[#2d3139] pb-2 text-xs font-bold text-gray-400">
-            {['OPEN ORDER(11)', 'ORDER HISTORY', 'TRADE HISTORY', 'FUNDS'].map((tab) => {
-              const cleanTab = tab.split('(')[0];
-              return (
-                <button
-                  key={tab}
-                  onClick={() => setActiveBottomTab(cleanTab)}
-                  className={`hover:text-white transition-colors ${
-                    activeBottomTab === cleanTab ? 'text-white border-b-2 border-blue-500 pb-2' : ''
-                  }`}
-                >
-                  {tab}
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Orders Table */}
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse text-[11px] font-mono">
-              <thead>
-                <tr className="text-gray-400 border-b border-[#2d3139] font-sans">
-                  <th className="py-2 px-2 font-normal">Date</th>
-                  <th className="py-2 px-2 font-normal">Pair</th>
-                  <th className="py-2 px-2 font-normal">Type</th>
-                  <th className="py-2 px-2 font-normal">Side</th>
-                  <th className="py-2 px-2 font-normal">Price</th>
-                  <th className="py-2 px-2 font-normal">Amount</th>
-                  <th className="py-2 px-2 font-normal">Filled</th>
-                  <th className="py-2 px-2 font-normal">Total</th>
-                  <th className="py-2 px-2 font-normal">Trigger Conditions</th>
-                  <th className="py-2 px-2 font-normal text-right">Cancel All ✕</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[#2d3139]/50 text-gray-300">
-                {openOrders.map((order, idx) => (
-                  <tr key={idx} className="hover:bg-[#252b37] transition-colors">
-                    <td className="py-1.5 px-2 text-gray-400">{order.date}</td>
-                    <td className="py-1.5 px-2 font-sans text-white">{order.pair}</td>
-                    <td className="py-1.5 px-2">{order.type}</td>
-                    <td className="py-1.5 px-2 text-rose-500">{order.side}</td>
-                    <td className="py-1.5 px-2">{order.price}</td>
-                    <td className="py-1.5 px-2">{order.amount}</td>
-                    <td className="py-1.5 px-2">{order.filled}</td>
-                    <td className="py-1.5 px-2">{order.total}</td>
-                    <td className="py-1.5 px-2 text-gray-500">-</td>
-                    <td className="py-1.5 px-2 text-right">
-                      <button className="text-blue-400 hover:underline">Cancel</button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+              </Status>
+            </Panel>
           </div>
         </div>
 
+        {/* BOTTOM — ORDERS, TRADES & FUNDS (signed-in user's real records) */}
+        <Panel className="space-y-3">
+          <div className="flex gap-6 border-b border-gray-200 dark:border-line-color text-sm font-bold overflow-x-auto" role="tablist" aria-label="Your activity">
+            {BOTTOM_TABS.map((tab) => (
+              <button key={tab} type="button" role="tab" aria-selected={bottomTab === tab} onClick={() => setBottomTab(tab)} className={`pb-2 whitespace-nowrap ${tabClass(bottomTab === tab)}`}>
+                {tab}
+              </button>
+            ))}
+          </div>
+
+          {!loggedIn ? (
+            <p className={`py-6 text-center ${muted}`}>
+              <Link to="/signin" className="text-blue-500 hover:underline">Sign in</Link> to see your orders, trades and funds.
+            </p>
+          ) : bottomTab === 'FUNDS' ? (
+            <Status state={wallet} empty={wallet.data && !wallet.data.balances.some((b) => b.totalBalance > 0) ? 'Your wallet is empty.' : null}>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-[13px]">
+                  <thead>
+                    <tr className={`border-b border-gray-200 dark:border-line-color ${muted}`}>
+                      <th className="py-2 px-2 font-normal">Asset</th>
+                      <th className="py-2 px-2 font-normal text-right">Available</th>
+                      <th className="py-2 px-2 font-normal text-right">Locked</th>
+                      <th className="py-2 px-2 font-normal text-right">Total</th>
+                      <th className="py-2 px-2 font-normal text-right">Value</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100 dark:divide-line-color font-mono">
+                    {wallet.data?.balances.filter((b) => b.totalBalance > 0).map((b) => (
+                      <tr key={b.assetSymbol}>
+                        <td className="py-1.5 px-2 font-sans font-semibold">{b.assetSymbol}</td>
+                        <td className="py-1.5 px-2 text-right">{formatAmount(b.availableBalance, 8)}</td>
+                        <td className="py-1.5 px-2 text-right">{formatAmount(b.lockedBalance, 8)}</td>
+                        <td className="py-1.5 px-2 text-right">{formatAmount(b.totalBalance, 8)}</td>
+                        <td className="py-1.5 px-2 text-right">{formatMoney(b.usdValue)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </Status>
+          ) : (
+            <Status
+              state={bottom}
+              empty={bottom.data && bottom.data.length === 0 ? (bottomTab === 'OPEN ORDERS' ? 'No open orders — market orders fill immediately.' : 'No records yet.') : null}
+            >
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-[13px]">
+                  <thead>
+                    <tr className={`border-b border-gray-200 dark:border-line-color ${muted}`}>
+                      <th className="py-2 px-2 font-normal">Date</th>
+                      <th className="py-2 px-2 font-normal">{bottomTab === 'TRADE HISTORY' ? 'Asset' : 'Pair'}</th>
+                      <th className="py-2 px-2 font-normal">{bottomTab === 'TRADE HISTORY' ? 'Type' : 'Side'}</th>
+                      {bottomTab !== 'TRADE HISTORY' && <th className="py-2 px-2 font-normal">Price</th>}
+                      <th className="py-2 px-2 font-normal text-right">Amount</th>
+                      <th className="py-2 px-2 font-normal text-right">Fee</th>
+                      <th className="py-2 px-2 font-normal text-right">Total</th>
+                      <th className="py-2 px-2 font-normal">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100 dark:divide-line-color font-mono">
+                    {bottom.data?.map((r) => {
+                      const isTrade = bottomTab === 'TRADE HISTORY';
+                      const kind = isTrade ? r.type : r.side;
+                      const asset = isTrade ? r.asset : r.pair.split('/')[0];
+                      return (
+                        <tr key={r.id} className="hover:bg-gray-50 dark:hover:bg-input-field">
+                          <td className={`py-1.5 px-2 whitespace-nowrap ${muted}`}>{formatDate(r.created_at)}</td>
+                          <td className="py-1.5 px-2 font-sans font-semibold">{isTrade ? asset : `${asset}/${currency}`}</td>
+                          <td className={`py-1.5 px-2 ${kind === 'BUY' ? up : down}`}>{kind === 'BUY' ? 'Buy' : 'Sell'}</td>
+                          {!isTrade && <td className="py-1.5 px-2">{formatMoney(r.price)}</td>}
+                          <td className="py-1.5 px-2 text-right whitespace-nowrap">{formatAmount(r.amount, 8)} {asset}</td>
+                          <td className="py-1.5 px-2 text-right">{formatMoney(r.fee)}</td>
+                          <td className="py-1.5 px-2 text-right">{formatMoney(r.total)}</td>
+                          <td className="py-1.5 px-2 font-sans">{r.status.charAt(0) + r.status.slice(1).toLowerCase()}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+              <div className="pt-2 text-right">
+                <Link to="/orderstrades" className="text-blue-500 hover:underline">View all orders & trades →</Link>
+              </div>
+            </Status>
+          )}
+        </Panel>
       </div>
     </div>
   );

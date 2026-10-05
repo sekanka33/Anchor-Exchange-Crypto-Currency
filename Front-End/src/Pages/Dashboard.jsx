@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { NavLink, Link, useNavigate } from 'react-router-dom';
 import {
   TrendingUp,
@@ -38,19 +38,10 @@ import { authFetch } from '../api/authFetch';
 import { useApi } from '../hooks/useApi';
 import { Card, CardTitle, PanelMessage, StatCard } from '../Components/DashboardUI';
 import BarChart from '../Components/BarChart';
+import TradingViewChart from '../Components/TradingViewChart';
+import { PAIRS, FEE_RATE, MIN_TRADE_USD, MAX_TRADE_USD } from '../api/tradingPairs';
 import { getBinanceTicker, getBinanceOrderBook, getBinanceTrades } from '../api/coingecko';
 
-// Assets the backend can actually trade (Back-End/utils/assetPrices.js),
-// quoted against USDT on Binance for live market data.
-const PAIRS = [
-  { asset: 'BTC', name: 'Bitcoin' },
-  { asset: 'ETH', name: 'Ethereum' },
-  { asset: 'BNB', name: 'BNB' },
-  { asset: 'SOL', name: 'Solana' },
-  { asset: 'XRP', name: 'XRP' },
-  { asset: 'DOGE', name: 'Dogecoin' },
-  { asset: 'ADA', name: 'Cardano' },
-].map((p) => ({ ...p, symbol: `${p.asset}USDT` }));
 
 // TradingView intervals
 const TIMEFRAMES = [
@@ -63,10 +54,6 @@ const TIMEFRAMES = [
   { label: 'M', value: 'M' },
 ];
 
-// Mirrors Back-End/config/tradingConfig.js
-const FEE_RATE = 0.01;
-const MIN_TRADE_USD = 10;
-const MAX_TRADE_USD = 10000;
 
 const NAV_MAIN = [
   { name: 'Dashboard', to: '/dashboard', icon: LayoutDashboard },
@@ -225,38 +212,6 @@ function Dashboard() {
   const ticker = tickers.data?.[selectedPair.symbol];
   const lastPrice = ticker ? Number(ticker.lastPrice) : null;
   const changePct = ticker ? Number(ticker.priceChangePercent) : null;
-
-  /* ---------------- TradingView chart ---------------- */
-
-  const chartContainerRef = useRef(null);
-
-  useEffect(() => {
-    const container = chartContainerRef.current;
-    if (!container) return;
-
-    container.innerHTML = '';
-    const script = document.createElement('script');
-    script.src = 'https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js';
-    script.type = 'text/javascript';
-    script.async = true;
-    script.innerHTML = JSON.stringify({
-      autosize: true,
-      symbol: `BINANCE:${selectedPair.symbol}`,
-      interval: timeframe,
-      timezone: 'Etc/UTC',
-      theme: isDarkMode ? 'dark' : 'light',
-      style: '1',
-      locale: 'en',
-      enable_publishing: false,
-      hide_top_toolbar: true,
-      hide_legend: false,
-      save_image: false,
-      calendar: false,
-      hide_volume: false,
-      support_host: 'https://www.tradingview.com',
-    });
-    container.appendChild(script);
-  }, [selectedPair.symbol, timeframe, isDarkMode]);
 
   /* ---------------- Trade form ---------------- */
 
@@ -708,7 +663,7 @@ function Dashboard() {
                     </div>
                     <span className="hidden sm:block text-xs text-gray-500 dark:text-text-color">{selectedPair.symbol} · Binance</span>
                   </div>
-                  <div ref={chartContainerRef} className="w-full h-80" />
+                  <TradingViewChart symbol={selectedPair.symbol} interval={timeframe} />
                 </Card>
 
                 {/* 30-day account activity */}
