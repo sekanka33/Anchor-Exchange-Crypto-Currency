@@ -10,8 +10,10 @@ const THIRD_PARTY = /tradingview|coingecko|binance|googleapis|gstatic|qrserver|c
 test.describe('no console or page errors', () => {
   test('every page loads without console errors, uncaught exceptions, or failed first-party requests', async ({ page }) => {
     test.setTimeout(90_000) // walks 25 full page loads against the real backend; 45s default is too tight and flakes near the boundary
-    const user = await createUser({ role: 'admin' })
-    await loginViaStorage(page, { ...user, role: 'admin' })
+    // Customer pages as a customer (an admin is redirected to /admin; the
+    // admin app's own console check is in roles.spec.js).
+    const user = await createUser()
+    await loginViaStorage(page, user)
 
     const problems = []
     let current = ''

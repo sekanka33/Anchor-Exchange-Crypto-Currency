@@ -4,7 +4,7 @@ const router = express.Router();
 router.param("id", require("../middleware/validateId"));
 const rateLimit = require("express-rate-limit");
 
-const authenticate = require("../middleware/authenticate");
+const { requireCustomer } = require("../middleware/authorizeRole");
 const { createBuyOrder, createSellOrder, getOrders, getOrderById } = require("../controllers/orderController");
 
 const orderLimiter = rateLimit({
@@ -16,12 +16,12 @@ const orderLimiter = rateLimit({
     message: { message: "Too many order attempts. Please slow down." }
 });
 
-router.get("/", authenticate, getOrders);
+router.get("/", requireCustomer, getOrders);
 
-router.post("/buy", authenticate, orderLimiter, createBuyOrder);
+router.post("/buy", requireCustomer, orderLimiter, createBuyOrder);
 
-router.post("/sell", authenticate, orderLimiter, createSellOrder);
+router.post("/sell", requireCustomer, orderLimiter, createSellOrder);
 
-router.get("/:id", authenticate, getOrderById);
+router.get("/:id", requireCustomer, getOrderById);
 
 module.exports = router;

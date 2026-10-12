@@ -3,13 +3,13 @@ const router = express.Router();
 
 router.param("id", require("../middleware/validateId"));
 
-const authenticate = require("../middleware/authenticate");
+const { requireAccount } = require("../middleware/authorizeRole");
 const { getNotifications, markAsRead, markAllAsRead } = require("../controllers/notificationController");
 
-router.get("/", authenticate, getNotifications);
+router.get("/", requireAccount, getNotifications);
 
-router.patch("/read-all", authenticate, markAllAsRead);
+router.patch("/read-all", requireAccount, markAllAsRead);
 
-router.patch("/:id/read", authenticate, markAsRead);
+router.patch("/:id/read", requireAccount, markAsRead);
 
 module.exports = router;

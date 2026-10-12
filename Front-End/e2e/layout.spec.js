@@ -10,7 +10,9 @@ const ROUTES = [
   '/withdraw', '/withdraw/crypto', '/withdrawals/confirm', '/transactions', '/profile-setting', '/admin',
   '/about', '/careers', '/no-such-page',
 ]
-const NO_FOOTER = ['/dashboard']
+// These tests run signed in as a customer: /admin, /signin and /signup all
+// redirect to /dashboard, which (like the admin app) has no site footer.
+const NO_FOOTER = ['/dashboard', '/admin', '/signin', '/signup']
 const TOKEN_PAGES = ['/reset-password', '/verify-email', '/qr-auth', '/withdrawals/confirm']
 
 const VIEWPORTS = { mobile: { width: 375, height: 667 }, tablet: { width: 768, height: 1024 }, desktop: { width: 1440, height: 900 } }
@@ -38,8 +40,8 @@ test.describe('footer layout', () => {
   for (const [name, viewport] of Object.entries(VIEWPORTS)) {
     test(`every route at ${name} (${viewport.width}x${viewport.height})`, async ({ page }) => {
       test.setTimeout(120_000)
-      const user = await createUser({ role: 'admin' })
-      await loginViaStorage(page, { ...user, role: 'admin' })
+      const user = await createUser()
+      await loginViaStorage(page, user)
       await page.setViewportSize(viewport)
 
       const problems = []
@@ -83,8 +85,8 @@ test.describe('footer layout', () => {
 test.describe('page content', () => {
   test('every route renders a heading and real content, and unknown URLs get a 404 page', async ({ page }) => {
     test.setTimeout(120_000)
-    const user = await createUser({ role: 'admin' })
-    await loginViaStorage(page, { ...user, role: 'admin' })
+    const user = await createUser()
+    await loginViaStorage(page, user)
 
     const problems = []
     for (const path of ROUTES) {

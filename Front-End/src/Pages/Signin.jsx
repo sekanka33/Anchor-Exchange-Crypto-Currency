@@ -1,12 +1,15 @@
 import { useEffect, useState } from "react";
 import { FaEye, FaQrcode } from 'react-icons/fa'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { io } from "socket.io-client";
 import { API_BASE_URL } from "../api/config";
+import { useAuth } from "../hooks/useAuth";
 
   const Signin = () => {
 
-  const navigate = useNavigate();
+  // Recording the session is all this page does: GuestRoute then sends
+  // admins to /admin and users on to where they were going.
+  const { signIn, reason } = useAuth();
 
   const [socket, setSocket] = useState(null);
 
@@ -136,21 +139,9 @@ const connectWebSocket = (qr_token) => {
             );
 
 
-            localStorage.setItem("token", data.token);
-            if (data.user?.id) {
-                localStorage.setItem("userId", data.user.id);
-            }
-            if (data.user?.role) {
-                localStorage.setItem("role", data.user.role);
-            }
-
-
-            navigate(
-                "/dashboard"
-            );
-
-
             newSocket.disconnect();
+
+            signIn(data.token, data.user);
 
         }
     );
@@ -189,15 +180,7 @@ const handleLogin = async (e) => {
             return;
         }
 
-        localStorage.setItem("token", data.token);
-        if (data.user?.id) {
-            localStorage.setItem("userId", data.user.id);
-        }
-        if (data.user?.role) {
-            localStorage.setItem("role", data.user.role);
-        }
-
-        navigate("/dashboard");
+        signIn(data.token, data.user);
 
     } catch {
 
@@ -221,17 +204,6 @@ const handleLogin = async (e) => {
             <div className='items-center text-center'>
               <h2 className='text-3xl font-semibold pt-18'>Log In to Anchor Exchange</h2>
               <p className='pt-3'>Welcome back! Log In now to start trading</p>
-
-              <div className='flex gap-6 justify-center pt-5'>
-                <div className='border-2 border-blue-500 hover:bg-blue-600 h-8 w-19 text-center rounded-full'>
-                  <p>Email</p>
-                </div>
-
-                <div className='border-2 border-blue-500 hover:bg-blue-600 h-8 w-19 text-center rounded-full'>
-                  <p>Mobile</p>
-                </div>
-              </div>
-
             </div>
 
 
@@ -266,6 +238,14 @@ const handleLogin = async (e) => {
 
               </div>
               
+              {
+              !error && reason && (
+              <p role="status" className="text-slate-700 dark:text-gray-300 mt-3">
+                {reason === "expired" ? "Your session has ended. Please sign in again." : reason}
+              </p>
+              )
+              }
+
               {
               error && (
               <p role="alert" className="text-red-700 dark:text-red-400 mt-3">

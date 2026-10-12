@@ -1,10 +1,11 @@
-import { Link, NavLink } from 'react-router-dom'
+import { Link, NavLink, useNavigate } from 'react-router-dom'
 import { FiMoon, FiSun, FiBell, FiMenu, FiX } from "react-icons/fi";
 import { useState } from 'react';
 import { useTheme } from '../hooks/useTheme';
 import CurrencySelect from "./CurrencySelect";
 import { PagesMenu, PagesMenuList } from "./PagesMenu";
 import { FaUserCircle } from "react-icons/fa";
+import { useAuth } from '../hooks/useAuth';
 
 const Navbar = () => {
   // Active page link is blue-500; `idle` is the colour used otherwise.
@@ -16,8 +17,10 @@ const Navbar = () => {
 
   const [profileOpen, setProfileOpen] = useState(false);
   
-  const token = localStorage.getItem("token");
-  const role = localStorage.getItem("role");
+  // Only ever rendered for visitors and customers (App hides it for admins).
+  const { status, signOut } = useAuth();
+  const navigate = useNavigate();
+  const token = status === "authenticated";
 
   return (
     <nav className="relative flex justify-between items-center bg-white dark:bg-[#0d0e12] w-full h-14 text-slate-900 dark:text-white px-6 text-sm font-medium border-b border-gray-200 dark:border-gray-800 transition-colors duration-300">
@@ -177,27 +180,11 @@ const Navbar = () => {
                     </Link>
 
 
-                    {role === "admin" && (
-                      <Link
-                        to="/admin"
-                        className="
-                        block
-                        py-2
-                        text-indigo-400
-                        hover:text-indigo-300
-                        "
-                      >
-                        4. Admin Panel
-                      </Link>
-                    )}
-
-
                     <button
                       onClick={()=>{
-                        localStorage.removeItem("token");
-                        localStorage.removeItem("userId");
-                        localStorage.removeItem("role");
-                        window.location.href="/signin";
+                        setProfileOpen(false);
+                        signOut();
+                        navigate("/signin", { replace: true });
                       }}
                       className="
                       block
@@ -206,7 +193,7 @@ const Navbar = () => {
                       hover:text-red-700
                       "
                     >
-                      {role === "admin" ? "5." : "4."} Log out
+                      4. Log out
                     </button>
 
 

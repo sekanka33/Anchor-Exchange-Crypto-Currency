@@ -1,5 +1,7 @@
 const { test, describe, before, after } = require("node:test");
 const assert = require("node:assert/strict");
+const { execFile } = require("node:child_process");
+const path = require("node:path");
 const h = require("../helpers/harness");
 
 before(h.start);
@@ -251,5 +253,108 @@ describe("cross-user data isolation", () => {
         assert.equal((await h.api("PATCH", `/api/notifications/${id}/read`, { token: bob.token })).status, 404);
         assert.equal((await h.pool.query("SELECT is_read FROM notifications WHERE id = $1", [id])).rows[0].is_read, false);
         assert.equal((await h.api("PATCH", `/api/notifications/${id}/read`, { token: alice.token })).status, 200);
+    });
+});
+
+// Customer-only APIs: an administrator manages the exchange, they don't trade on it.
+const CUSTOMER_REQUESTS = [
+    ["GET", "/api/wallet"], ["GET", "/api/wallet/transactions"],
+    ["GET", "/api/orders"], ["POST", "/api/orders/buy"], ["POST", "/api/orders/sell"],
+    ["GET", "/api/deposits"], ["POST", "/api/deposits/fiat"], ["GET", "/api/deposits/crypto/networks"],
+    ["GET", "/api/withdrawals"], ["POST", "/api/withdrawals/crypto"], ["POST", "/api/withdrawals/fiat"],
+    ["GET", "/api/transactions"], ["GET", "/api/users/stats"],
+];
+
+describe("role separation", () => {
+    test("an admin gets 403 on every customer API, and no money moves", async () => {
+        const admin = await h.createUser({ role: "admin" });
+        for (const [method, url] of CUSTOMER_REQUESTS) {
+            const body = method === "POST" ? { asset: "BTC", amountUsd: 100, paymentMethod: "bank", amount: 100 } : undefined;
+            const res = await h.api(method, url, { token: admin.token, body });
+            assert.equal(res.status, 403, `${method} ${url}`);
+            assert.match(res.body.message, /administrator/i, `${method} ${url}`);
+        }
+        assert.equal((await h.pool.query("SELECT count(*)::int n FROM orders WHERE user_id = $1", [admin.id])).rows[0].n, 0);
+    });
+
+    test("a regular user still reaches the customer APIs", async () => {
+        const user = await h.createUser();
+        for (const url of ["/api/wallet", "/api/orders", "/api/deposits", "/api/withdrawals", "/api/transactions", "/api/users/stats"]) {
+            assert.equal((await h.api("GET", url, { token: user.token })).status, 200, url);
+        }
+    });
+
+    test("both roles can read their own profile, which reports the role from the DB", async () => {
+        const admin = await h.createUser({ role: "admin" });
+        const user = await h.createUser();
+        assert.equal((await h.api("GET", "/api/users/profile", { token: admin.token })).body.user.role, "admin");
+        assert.equal((await h.api("GET", "/api/users/profile", { token: user.token })).body.user.role, "user");
+        assert.equal((await h.api("GET", "/api/notifications", { token: admin.token })).status, 200);
+    });
+
+    test("promoting a user cuts off their customer access on the very next request", async () => {
+        const user = await h.createUser();
+        assert.equal((await h.api("GET", "/api/wallet", { token: user.token })).status, 200);
+        await h.pool.query("UPDATE users SET role = 'admin' WHERE id = $1", [user.id]);
+        assert.equal((await h.api("GET", "/api/wallet", { token: user.token })).status, 403);
+        assert.equal((await h.api("GET", "/api/admin/stats", { token: user.token })).status, 200);
+    });
+
+    test("suspending an account invalidates its existing token immediately", async () => {
+        const user = await h.createUser();
+        await h.pool.query("UPDATE users SET is_suspended = true WHERE id = $1", [user.id]);
+        for (const url of ["/api/wallet", "/api/users/profile", "/api/notifications"]) {
+            const res = await h.api("GET", url, { token: user.token });
+            assert.equal(res.status, 403, url);
+            assert.match(res.body.message, /suspended/i, url);
+        }
+    });
+
+    test("a token for a deleted account is no longer a session (401)", async () => {
+        const jwt = require("jsonwebtoken");
+        const ghost = jwt.sign({ id: 2147483000, email: "ghost@test.local" }, process.env.JWT_SECRET, { expiresIn: "1h" });
+        assert.equal((await h.api("GET", "/api/users/profile", { token: ghost })).status, 401);
+    });
+
+    test("the emailed withdrawal-confirmation link stays public (no session needed)", async () => {
+        const res = await h.api("GET", "/api/withdrawals/confirm");
+        assert.notEqual(res.status, 401);
+        assert.notEqual(res.status, 403);
+    });
+
+    test("the database only accepts known roles", async () => {
+        const user = await h.createUser();
+        await assert.rejects(h.pool.query("UPDATE users SET role = 'superuser' WHERE id = $1", [user.id]), /users_role_valid/);
+        await assert.rejects(h.pool.query("UPDATE users SET role = NULL WHERE id = $1", [user.id]), /null value/);
+    });
+});
+
+describe("scripts/set-role.js (first-admin setup)", () => {
+    const run = (...args) => new Promise((resolve) => {
+        execFile(process.execPath, [path.join(__dirname, "../../scripts/set-role.js"), ...args], { env: process.env }, (error, stdout, stderr) => {
+            resolve({ code: error ? error.code : 0, out: stdout + stderr });
+        });
+    });
+
+    test("promotes and demotes an existing account, and refuses bad input", async () => {
+        const user = await h.createUser();
+        const promoted = await run(user.email, "admin");
+        assert.equal(promoted.code, 0, promoted.out);
+        assert.equal((await h.api("GET", "/api/admin/stats", { token: user.token })).status, 200);
+
+        assert.equal((await run(user.email, "user")).code, 0);
+        assert.equal((await h.api("GET", "/api/admin/stats", { token: user.token })).status, 403);
+
+        assert.notEqual((await run(user.email, "superuser")).code, 0);
+        assert.notEqual((await run("nobody-here@test.local", "admin")).code, 0);
+    });
+
+    test("refuses to demote the last remaining admin", async () => {
+        await h.pool.query("UPDATE users SET role = 'user' WHERE role = 'admin'");
+        const only = await h.createUser({ role: "admin" });
+        const res = await run(only.email, "user");
+        assert.notEqual(res.code, 0);
+        assert.match(res.out, /last remaining admin/i);
+        assert.equal((await h.pool.query("SELECT role FROM users WHERE id = $1", [only.id])).rows[0].role, "admin");
     });
 });

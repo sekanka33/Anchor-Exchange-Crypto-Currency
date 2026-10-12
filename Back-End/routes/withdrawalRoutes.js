@@ -4,7 +4,7 @@ const router = express.Router();
 router.param("id", require("../middleware/validateId"));
 const rateLimit = require("express-rate-limit");
 
-const authenticate = require("../middleware/authenticate");
+const { requireCustomer } = require("../middleware/authorizeRole");
 const {
     requestCryptoWithdrawal,
     requestFiatWithdrawal,
@@ -23,16 +23,16 @@ const withdrawalLimiter = rateLimit({
     message: { message: "Too many withdrawal attempts. Please slow down." }
 });
 
-router.get("/", authenticate, getWithdrawals);
+router.get("/", requireCustomer, getWithdrawals);
 
 router.get("/confirm", confirmWithdrawal);
 
-router.post("/crypto", authenticate, withdrawalLimiter, requestCryptoWithdrawal);
+router.post("/crypto", requireCustomer, withdrawalLimiter, requestCryptoWithdrawal);
 
-router.post("/fiat", authenticate, withdrawalLimiter, requestFiatWithdrawal);
+router.post("/fiat", requireCustomer, withdrawalLimiter, requestFiatWithdrawal);
 
-router.post("/:id/cancel", authenticate, cancelWithdrawal);
+router.post("/:id/cancel", requireCustomer, cancelWithdrawal);
 
-router.get("/:id", authenticate, getWithdrawalById);
+router.get("/:id", requireCustomer, getWithdrawalById);
 
 module.exports = router;

@@ -3,7 +3,7 @@ const rateLimit = require("express-rate-limit");
 
 const router = express.Router();
 
-const authenticate = require("../middleware/authenticate");
+const { requireAccount, requireCustomer } = require("../middleware/authorizeRole");
 
 const {
     getStats,
@@ -28,35 +28,35 @@ const changePasswordLimiter = rateLimit({
 
 router.get(
     "/profile",
-    authenticate,
+    requireAccount,
     getProfile
 );
 
 
 router.get(
     "/stats",
-    authenticate,
+    requireCustomer,
     getStats
 );
 
 
 router.put(
     "/profile",
-    authenticate,
+    requireAccount,
     updateProfile
 );
 
 
 router.put(
     "/preferences",
-    authenticate,
+    requireAccount,
     updatePreferences
 );
 
 
 router.post(
     "/change-password",
-    authenticate,
+    requireAccount,
     changePasswordLimiter,
     changePassword
 );
