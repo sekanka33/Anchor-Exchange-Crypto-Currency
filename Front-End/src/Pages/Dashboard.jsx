@@ -535,7 +535,6 @@ function Dashboard() {
             {tickers.error && !ticker ? (
               <span role="alert" className="text-xs text-red-600 dark:text-red-400">Live market data unavailable.</span>
             ) : (
-              
               <div className="flex items-center gap-6 text-xs overflow-x-auto pb-1 sm:pb-0">
                 {[
                   ['24h High', ticker && formatMoney(ticker.highPrice)],
