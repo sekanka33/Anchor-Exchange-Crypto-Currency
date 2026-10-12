@@ -34,12 +34,20 @@ const ProfileAndSetting = lazy(() => import('./Pages/ProfileAndSetting'))
 const Forgot = lazy(() => import('./Pages/Forgot'))
 const ResetPassword = lazy(() => import('./Pages/ResetPassword'))
 const VerifyEmail = lazy(() => import('./Pages/VerifyEmail'))
+const About = lazy(() => import('./Pages/About'))
+const Careers = lazy(() => import('./Pages/Careers'))
+const NotFound = lazy(() => import('./Pages/NotFound'))
 import ProtectedRoute from './Components/ProtectedRoute'
 
 const PAGE_TITLES = {
   '/': 'Home',
   '/markets': 'Markets',
   '/exchange': 'Exchange',
+  '/spot': 'Spot',
+  '/bitusdt': 'BIT/USDT',
+  '/assets': 'Assets',
+  '/about': 'About',
+  '/careers': 'Careers',
   '/signin': 'Sign In',
   '/signup': 'Create Account',
   '/forgot-password': 'Forgot Password',
@@ -74,6 +82,13 @@ const App = () => {
   const mainRef = useRef(null);
   const firstRender = useRef(true);
 
+  // Every navigation starts at the top (footer links would otherwise land
+  // mid-page, even when they point at the current page); #hash links are
+  // scrolled by the page that owns the anchor.
+  useEffect(() => {
+    if (!location.hash) window.scrollTo(0, 0);
+  }, [location.key, location.hash]);
+
   useEffect(() => {
     const page = PAGE_TITLES[location.pathname];
     document.title = page ? `${page} | Anchor Exchange` : 'Anchor Exchange';
@@ -93,6 +108,9 @@ const App = () => {
       >
         Skip to main content
       </a>
+      {/* Full-height column: main grows to fill the space between navbar and
+          footer, so short pages keep the footer at the bottom of the viewport. */}
+      <div className="flex min-h-dvh flex-col">
       {
         !isDashboard && (
           <header className="sticky top-0 z-40">
@@ -100,7 +118,7 @@ const App = () => {
           </header>
         )
       }
-      <main id="main-content" ref={mainRef} tabIndex={-1} className="outline-none">
+      <main id="main-content" ref={mainRef} tabIndex={-1} className="flex flex-1 flex-col outline-none">
         <Suspense fallback={<p role="status" className="p-8 text-center">Loading…</p>}>
         <Routes>
 
@@ -116,6 +134,8 @@ const App = () => {
           <Route path="/contact" element={<Contact />} />
           <Route path="/blog" element={<Blog />} />
           <Route path="/faq" element={<HelpCenter />} />
+          <Route path="/about" element={<About />} />
+          <Route path="/careers" element={<Careers />} />
 
           {/* AUTH */}
           <Route path="/signin" element={<Signin />} />
@@ -243,12 +263,15 @@ const App = () => {
             }
           />
 
+          <Route path="*" element={<NotFound />} />
+
         </Routes>
         </Suspense>
       </main>
       {
         !isDashboard && <Footer />
       }
+      </div>
     </CurrencyProvider>
     </ThemeProvider>
   )

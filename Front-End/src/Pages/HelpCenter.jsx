@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Link } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { Link, useLocation } from "react-router-dom";
 import PageHeader from "../Components/PageHeader";
 import CreateAnAccoutSection from "../Components/CreateAnAccoutSection";
 
@@ -27,6 +27,20 @@ const FAQS = [
     link: { to: "/buy-crypto", label: "Go to Buy Crypto" },
   },
   {
+    id: "fees",
+    question: "What fees does Anchor Exchange charge?",
+    // Mirrors Back-End/config (tradingConfig, paymentConfig, withdrawalConfig).
+    answer:
+      "Buying, selling, and trading on the Exchange cost 1% of the order value. Fiat deposits are free by bank transfer and 1.5% by card. Fiat withdrawals cost 1%. Crypto withdrawals carry a fixed network fee per asset, shown in the withdrawal summary before you confirm.",
+  },
+  {
+    id: "trading-rules",
+    question: "What are the trading rules and limits?",
+    answer:
+      "Orders are market orders, filled at the live price when you confirm. Each buy or sell must be worth between $10 and $10,000, and fiat deposits follow the same $10 to $10,000 range. Tradable assets are BTC, ETH, BNB, SOL, XRP, DOGE, and ADA, plus USDT for deposits and withdrawals. Every withdrawal must be confirmed from the link emailed to you before funds are released.",
+    link: { to: "/exchange", label: "Open the Exchange" },
+  },
+  {
     question: "How long do deposits and withdrawals take?",
     answer:
       "Fiat and crypto deposits are typically confirmed within seconds in this demo environment. Withdrawals require confirming a link sent to your email before funds are released.",
@@ -39,7 +53,7 @@ const FAQS = [
 ];
 
 const FAQItem = ({ faq, isOpen, onToggle }) => (
-  <div className="border-b border-gray-200 dark:border-line-color">
+  <div id={faq.id} className="border-b border-gray-200 dark:border-line-color scroll-mt-20">
     <button
       type="button"
       onClick={onToggle}
@@ -69,7 +83,19 @@ const FAQItem = ({ faq, isOpen, onToggle }) => (
 );
 
 const HelpCenter = () => {
-  const [openIndex, setOpenIndex] = useState(0);
+  // Footer links such as /faq#fees open and scroll to that question.
+  const { hash } = useLocation();
+  const hashIndex = FAQS.findIndex((faq) => faq.id && `#${faq.id}` === hash);
+  const [openIndex, setOpenIndex] = useState(hashIndex === -1 ? 0 : hashIndex);
+  const [prevHash, setPrevHash] = useState(hash);
+  if (hash !== prevHash) {
+    setPrevHash(hash);
+    if (hashIndex !== -1) setOpenIndex(hashIndex);
+  }
+
+  useEffect(() => {
+    if (hashIndex !== -1) document.getElementById(FAQS[hashIndex].id)?.scrollIntoView({ block: "start" });
+  }, [hashIndex, hash]);
 
   return (
     <div>

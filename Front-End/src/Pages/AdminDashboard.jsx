@@ -349,12 +349,12 @@ const AdminDashboard = () => {
   };
 
   if (accessState === "checking") {
-    return <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-hero-dark text-slate-900 dark:text-white">Checking access...</div>;
+    return <div className="flex-1 flex items-center justify-center bg-slate-50 dark:bg-hero-dark text-slate-900 dark:text-white">Checking access...</div>;
   }
 
   if (accessState === "denied") {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 dark:bg-hero-dark text-slate-900 dark:text-white gap-4">
+      <div className="flex-1 flex flex-col items-center justify-center px-6 py-12 text-center bg-slate-50 dark:bg-hero-dark text-slate-900 dark:text-white gap-4">
         <h1 className="text-2xl font-bold">Access denied</h1>
         <p className="text-gray-600 dark:text-gray-400">This area is restricted to Anchor Exchange administrators.</p>
         <Link to="/dashboard" className="text-blue-400 hover:underline">Back to Dashboard</Link>
@@ -384,9 +384,9 @@ const AdminDashboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-hero-dark text-slate-900 dark:text-white font-sans flex">
+    <div className="flex-1 bg-slate-50 dark:bg-hero-dark text-slate-900 dark:text-white font-sans flex">
       {/* SIDEBAR (desktop) */}
-      <aside className="hidden lg:flex flex-col w-60 shrink-0 border-r border-gray-200 dark:border-line-color bg-white dark:bg-dark-void p-5 sticky top-14 h-[calc(100vh-3.5rem)] overflow-y-auto">
+      <aside className="hidden lg:flex flex-col w-60 shrink-0 border-r border-gray-200 dark:border-line-color bg-white dark:bg-dark-void p-5 sticky top-14 h-[calc(100dvh-3.5rem)] overflow-y-auto">
         <p className="text-lg font-bold mb-1">Admin Panel</p>
         <p className="text-xs text-gray-500 dark:text-text-color mb-6">Exchange operations</p>
         <nav aria-label="Admin sections" className="space-y-1">

@@ -1,18 +1,19 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import CreateAnAccoutSection from '../Components/CreateAnAccoutSection';
 import PageHeader from '../Components/PageHeader';
 
 const Contact = () => {
   const [form, setForm] = useState({ name: "", email: "", subject: "Deposit", message: "" });
-  const [sent, setSent] = useState(false);
+  const [attempted, setAttempted] = useState(false);
 
   const handleChange = (field) => (e) => setForm((f) => ({ ...f, [field]: e.target.value }));
 
-  // No contact-submission backend exists yet — this is an honest local
-  // confirmation rather than a fabricated API call.
+  // No contact-submission backend exists yet, so nothing is sent. Say so
+  // plainly instead of pretending the message was received.
   const handleSubmit = (e) => {
     e.preventDefault();
-    setSent(true);
+    setAttempted(true);
   };
 
   return (
@@ -30,10 +31,16 @@ const Contact = () => {
         <div className='hidden lg:block w-full max-w-md h-125 rounded-2xl bg-slate-200 dark:bg-crypto-color border border-gray-200 dark:border-transparent' />
 
         <div className='w-full max-w-120'>
-          {sent ? (
-            <div role="status" className='flex flex-col gap-3 items-center text-center py-10 rounded-2xl border border-gray-200 dark:border-line-color'>
-              <p className='text-xl font-semibold'>Thanks for reaching out!</p>
-              <p className='text-gray-500 dark:text-text-color'>We've received your message and will get back to you soon.</p>
+          <p className='mb-6 text-sm rounded-xl px-4 py-3 bg-slate-100 dark:bg-crypto-color text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-line-color'>
+            Online messaging isn't connected yet, so this form can't send messages. For answers now, visit the{' '}
+            <Link to="/faq" className='text-blue-600 dark:text-blue-400 underline'>Help Center</Link>.
+          </p>
+
+          {attempted ? (
+            <div role="status" className='flex flex-col gap-3 items-center text-center py-10 px-6 rounded-2xl border border-gray-200 dark:border-line-color'>
+              <p className='text-xl font-semibold'>Your message wasn't sent</p>
+              <p className='text-gray-500 dark:text-text-color'>Messaging isn't available yet. Your text is still here if you want to copy it.</p>
+              <button type='button' onClick={() => setAttempted(false)} className='text-blue-600 dark:text-blue-400 hover:underline'>Back to the form</button>
             </div>
           ) : (
             <form onSubmit={handleSubmit} className='flex flex-col gap-5 w-full'>

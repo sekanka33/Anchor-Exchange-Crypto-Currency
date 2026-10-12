@@ -285,9 +285,9 @@ const Signup = () => {
         <form onSubmit={handleSubmit} className='flex gap-5 flex-col pt-7 w-full max-w-161'>
           <div className='flex flex-col gap-3'>
             <h2>Email</h2>
-            <div className='relative flex items-center w-full max-w-130'>
+            <div className='relative flex items-center w-full max-w-161'>
               <input id="email" name="email" type="email" value={formData.email} onChange={handleChange} required aria-label="Email" autoComplete="email" placeholder='Please fill in the email form.' className='h-13 w-full bg-slate-100 dark:bg-gray-900 rounded-2xl pl-3 pr-32 sm:pr-44 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500' />
-              <button type='button' onClick={authenticateEmail} className='absolute right-0 h-13 w-28 sm:w-40 bg-blue-600 hover:bg-blue-700 rounded-e-2xl font-medium text-sm sm:text-base text-white'>Authenticate</button>
+              
             </div>
           </div>
 

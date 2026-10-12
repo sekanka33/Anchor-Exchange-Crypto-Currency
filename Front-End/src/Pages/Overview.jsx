@@ -15,7 +15,7 @@ const Overview = () => {
         <div className="hidden md:block h-140 w-0 border-r-2 border-gray-200 dark:border-hero-dark"></div>
 
         {/* CONTENT */}
-        <div className="text-slate-900 dark:text-white w-full max-w-3xl">
+        <div className="text-slate-900 dark:text-white w-full min-w-0 max-w-3xl">
 
           <h2 className="text-3xl font-bold mb-4">
             Crypto Overview
@@ -26,7 +26,7 @@ const Overview = () => {
             and discover assets available on Anchor Exchange.
           </p>
 
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
 
             <div className="bg-white dark:bg-[#16181e] p-6 rounded-2xl border border-gray-200 dark:border-transparent">
               <p className="text-gray-600 dark:text-gray-400 text-sm">
@@ -60,7 +60,7 @@ const Overview = () => {
               </p>
 
               <Link
-                to="/"
+                to="/markets"
                 className="inline-block mt-4 bg-blue-600 px-5 py-2 rounded-full text-sm text-white"
               >
                 View Market

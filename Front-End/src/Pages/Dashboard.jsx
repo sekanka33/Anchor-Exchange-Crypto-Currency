@@ -339,7 +339,7 @@ function Dashboard() {
   /* ---------------- Render ---------------- */
 
   return (
-    <div className="min-h-screen flex flex-col font-sans bg-slate-50 dark:bg-hero-dark text-slate-900 dark:text-gray-100">
+    <div className="flex-1 flex flex-col font-sans bg-slate-50 dark:bg-hero-dark text-slate-900 dark:text-gray-100">
       <h1 className="sr-only">Dashboard</h1>
 
       {/* MOBILE NAV OVERLAY */}

@@ -217,7 +217,7 @@ const TradingTerminal = ({ title }) => {
     `transition-colors ${active ? 'text-blue-500 font-bold border-b-2 border-blue-500' : `${muted} hover:text-slate-900 dark:hover:text-white`}`;
 
   return (
-    <div className="bg-slate-50 dark:bg-hero-dark text-slate-900 dark:text-gray-200 text-sm font-sans min-h-screen">
+    <div className="bg-slate-50 dark:bg-hero-dark text-slate-900 dark:text-gray-200 text-sm font-sans flex-1">
       <h1 className="sr-only">{title} — {selectedPair.asset}/{currency}</h1>
 
       {/* TOP MARKET HEADER BAR */}
