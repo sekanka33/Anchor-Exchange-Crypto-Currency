@@ -6,6 +6,7 @@ const { validateEnv } = require("../../config/validateEnv");
 const good = {
     DB_HOST: "h", DB_PORT: "5432", DB_USER: "u", DB_PASSWORD: "p", DB_NAME: "n",
     JWT_SECRET: "x".repeat(64), PAYMENT_WEBHOOK_SECRET: "w".repeat(32), CRYPTO_ADDRESS_SECRET: "c".repeat(32),
+    CUSTODY_WEBHOOK_SECRET: "k".repeat(32), BENEFICIARY_ENCRYPTION_KEY: "ab".repeat(32),
 };
 
 const prod = {
@@ -56,9 +57,25 @@ describe("validateEnv", () => {
     });
 
     test("the same missing secrets are only warnings outside production", () => {
-        const { errors, warnings } = validateEnv({ ...good, PAYMENT_WEBHOOK_SECRET: undefined, CRYPTO_ADDRESS_SECRET: undefined });
+        const { errors, warnings } = validateEnv({
+            ...good, PAYMENT_WEBHOOK_SECRET: undefined, CRYPTO_ADDRESS_SECRET: undefined,
+            CUSTODY_WEBHOOK_SECRET: undefined, BENEFICIARY_ENCRYPTION_KEY: undefined
+        });
         assert.equal(errors.length, 0);
-        assert.equal(warnings.length, 2);
+        assert.equal(warnings.length, 4);
+    });
+
+    test("production requires the custody webhook secret and the beneficiary encryption key", () => {
+        assert.ok(validateEnv({ ...prod, CUSTODY_WEBHOOK_SECRET: undefined }).errors.some((e) => /CUSTODY_WEBHOOK_SECRET/.test(e)));
+        assert.ok(validateEnv({ ...prod, BENEFICIARY_ENCRYPTION_KEY: undefined }).errors.some((e) => /BENEFICIARY_ENCRYPTION_KEY/.test(e)));
+        assert.ok(validateEnv({ ...good, BENEFICIARY_ENCRYPTION_KEY: "too-short" }).errors.some((e) => /32 bytes/.test(e)), "a malformed key is an error everywhere");
+    });
+
+    test("an unimplemented provider name is a startup error, never a silent fallback to demo", () => {
+        for (const env of [{ ...good, PAYMENT_PROVIDER: "stripe" }, { ...good, CUSTODY_PROVIDER: "fireblocks" }, { ...prod, PAYMENT_PROVIDER: "stripe" }]) {
+            assert.ok(validateEnv(env).errors.some((e) => /not implemented/.test(e)), JSON.stringify(env.PAYMENT_PROVIDER || env.CUSTODY_PROVIDER));
+        }
+        assert.equal(validateEnv({ ...good, PAYMENT_PROVIDER: "demo", CUSTODY_PROVIDER: "DEMO" }).errors.length, 0);
     });
 
     test("PORT must be a real port", () => {

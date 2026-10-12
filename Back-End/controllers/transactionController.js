@@ -1,12 +1,18 @@
 const pool = require("../config/database");
+const { FIAT_CURRENCIES } = require("../config/fiatCurrencies");
 
-// The unified ledger every money-moving action (Stage 6-10) writes a row
-// into once it actually completes — buys/sells write directly, deposits and
-// withdrawals write only when their own async/email-confirmed lifecycle
-// reaches COMPLETED. This controller is a read-only, filterable, paginated
-// view over that existing table; it introduces no new write paths.
+// The customer's activity feed: one row per buy/sell, and one per deposit or
+// withdrawal from the moment it starts, whose status follows the underlying
+// record (services/history.js). Balances themselves come from the ledger.
+// Read-only, filterable, paginated, and always scoped to the signed-in user.
 const VALID_TYPES = ["BUY", "SELL", "DEPOSIT", "WITHDRAWAL"];
-const VALID_STATUSES = ["PENDING", "COMPLETED", "FAILED"];
+const VALID_STATUSES = [
+    "PENDING", "DETECTED", "CONFIRMING", "PENDING_CONFIRMATION", "PROCESSING",
+    "COMPLETED", "FAILED", "UNDER_REVIEW", "CANCELLED", "EXPIRED", "REJECTED"
+];
+const FIAT_ASSETS = Object.keys(FIAT_CURRENCIES);
+
+const validDate = (value) => typeof value === "string" && /^\d{4}-\d{2}-\d{2}(T[\d:.]+(Z|[+-]\d{2}:?\d{2})?)?$/.test(value) && !Number.isNaN(Date.parse(value));
 
 const parseFilters = (query) => {
 
@@ -46,12 +52,26 @@ const parseFilters = (query) => {
 
     }
 
-    if (query.startDate) {
+    // Fiat currencies vs cryptocurrencies.
+    if (query.category === "fiat") conditions.push(`asset = ANY(${addParam(FIAT_ASSETS)})`);
+    if (query.category === "crypto") conditions.push(`NOT (asset = ANY(${addParam(FIAT_ASSETS)}))`);
+
+    // Only activity that carried a fee.
+    if (query.feesOnly === "true") conditions.push("fee > 0");
+
+    if (query.search) {
+        const term = addParam(`%${String(query.search).slice(0, 100)}%`);
+        conditions.push(`(reference ILIKE ${term} OR tx_hash ILIKE ${term})`);
+    }
+
+    // A date-only end date includes that whole day.
+    if (validDate(query.startDate)) {
         conditions.push(`created_at >= ${addParam(query.startDate)}`);
     }
 
-    if (query.endDate) {
-        conditions.push(`created_at <= ${addParam(query.endDate)}`);
+    if (validDate(query.endDate)) {
+        const end = /^\d{4}-\d{2}-\d{2}$/.test(query.endDate) ? `${query.endDate}T23:59:59.999Z` : query.endDate;
+        conditions.push(`created_at <= ${addParam(end)}`);
     }
 
     return { conditions, params, addParam };

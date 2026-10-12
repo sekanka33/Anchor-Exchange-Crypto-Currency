@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useCurrency } from "../hooks/useCurrency";
+import { formatFiat } from "../utils/finance";
 import { Link } from "react-router-dom";
 import CreateAnAccoutSection from "../Components/CreateAnAccoutSection";
 import PageHeader from "../Components/PageHeader";
@@ -64,14 +64,17 @@ const SellCrypto = () => {
 
   const feePercentage = 0.01;
 
+  // Proceeds are paid into the ZAR or USD balance.
+  const [payoutCurrency, setPayoutCurrency] = useState("ZAR");
+
   const fetchPrice = async () => {
     try {
       setLoading(true);
       setError("");
 
-      const data = await getCoinPrice(selectedCoin.id);
-
-      const currentPrice = data[selectedCoin.id]?.usd;
+      const vs = payoutCurrency.toLowerCase();
+      const data = await getCoinPrice(selectedCoin.id, vs);
+      const currentPrice = data[selectedCoin.id]?.[vs];
 
       if (!currentPrice) {
         throw new Error("Price unavailable");
@@ -94,7 +97,8 @@ const SellCrypto = () => {
     }, 30000);
 
     return () => clearInterval(interval);
-  }, [selectedCoin]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedCoin, payoutCurrency]);
 
   const cryptoAmount = Number(amount) || 0;
 
@@ -121,19 +125,8 @@ const SellCrypto = () => {
     setStep(2);
   };
 
-  const formatUSD = (value) => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    }).format(value);
-  };
-
-  const { currency: displayCurrency, formatMoney } = useCurrency();
-  // Transactions settle in USD; show the display-currency equivalent alongside.
-  const fmt = (usd) =>
-    displayCurrency === "USD" ? formatUSD(usd) : `${formatUSD(usd)} (≈ ${formatMoney(usd)})`;
+  // Every figure on this page is in the payout currency.
+  const fmt = (value) => formatFiat(value, payoutCurrency);
 
   /*
    * Submit the sale to the backend — the backend recalculates price, fee,
@@ -156,7 +149,8 @@ const SellCrypto = () => {
         },
         body: JSON.stringify({
           asset: selectedCoin.symbol,
-          amount: cryptoAmount,
+          amount: String(amount).trim(),
+          currency: payoutCurrency,
         }),
       });
 
@@ -205,7 +199,7 @@ const SellCrypto = () => {
                 {loading ? (
                   "Loading current price..."
                 ) : price ? (
-                  `Reference Price: ${formatMoney(price)} / ${selectedCoin.symbol}`
+                  `Reference Price: ${fmt(price)} / ${selectedCoin.symbol}`
                 ) : (
                   "Price unavailable"
                 )}
@@ -291,7 +285,7 @@ const SellCrypto = () => {
                     <img src="/src/assets/Group 564.png" alt="Exchange icon" />
                   </div>
 
-                  {/* USD */}
+                  {/* PAYOUT CURRENCY */}
                   <div className="flex-1">
 
                     <label htmlFor="sell-receive-amount" className="block text-base font-semibold text-gray-700 dark:text-gray-300 mb-2">
@@ -305,16 +299,21 @@ const SellCrypto = () => {
                         type="text"
                         readOnly
                         value={
-                          price
-                            ? formatUSD(grossUSD)
-                            : "$0.00"
+                          price ? fmt(grossUSD) : fmt(0)
                         }
                         className="w-full bg-transparent outline-none focus:ring-2 focus:ring-blue-500 text-slate-900 dark:text-white text-sm"
                       />
 
-                      <span className="text-sm font-semibold">
-                        USD
-                      </span>
+                      <label htmlFor="sell-payout-currency" className="sr-only">Receive in</label>
+                      <select
+                        id="sell-payout-currency"
+                        value={payoutCurrency}
+                        onChange={(e) => setPayoutCurrency(e.target.value)}
+                        className="bg-transparent text-sm font-semibold outline-none"
+                      >
+                        <option value="ZAR">ZAR</option>
+                        <option value="USD">USD</option>
+                      </select>
 
                     </div>
 

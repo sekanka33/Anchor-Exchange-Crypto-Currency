@@ -13,6 +13,7 @@ const {
     getWithdrawals,
     getWithdrawalById
 } = require("../controllers/withdrawalController");
+const { listBeneficiaries, addBeneficiary, archiveBeneficiary } = require("../controllers/beneficiaryController");
 
 const withdrawalLimiter = rateLimit({
     windowMs: 60 * 1000,
@@ -24,6 +25,11 @@ const withdrawalLimiter = rateLimit({
 });
 
 router.get("/", requireCustomer, getWithdrawals);
+
+// Saved bank accounts for fiat payouts (declared before "/:id").
+router.get("/beneficiaries", requireCustomer, listBeneficiaries);
+router.post("/beneficiaries", requireCustomer, withdrawalLimiter, addBeneficiary);
+router.delete("/beneficiaries/:id", requireCustomer, archiveBeneficiary);
 
 router.get("/confirm", confirmWithdrawal);
 

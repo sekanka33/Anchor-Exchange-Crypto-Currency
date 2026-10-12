@@ -1,10 +1,12 @@
 import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { LayoutDashboard, Users, ArrowLeftRight, ArrowDownToLine, ArrowUpFromLine, List } from "lucide-react";
+import { LayoutDashboard, Users, ArrowLeftRight, ArrowDownToLine, ArrowUpFromLine, List, Scale, ScrollText, Coins } from "lucide-react";
 import AdminOverview from "../Components/AdminOverview";
 import { useCurrency } from "../hooks/useCurrency";
 import Modal from "../Components/Modal";
 import AdminHeader from "../Components/AdminHeader";
+import { DepositsPanel, WithdrawalsPanel, ReconciliationPanel, AuditLogPanel, AssetsPanel } from "../Components/AdminFinance";
+import { StatusBadge } from "../Components/FinanceUI";
 import { useAuth } from "../hooks/useAuth";
 import { Link } from "react-router-dom";
 import { API_BASE_URL } from "../api/config";
@@ -14,16 +16,6 @@ const authHeaders = () => ({
 });
 
 
-const statusStyles = {
-  COMPLETED: "bg-green-500/10 text-green-700 dark:text-green-400",
-  OPEN: "bg-amber-500/10 text-amber-700 dark:text-amber-400",
-  PENDING: "bg-amber-500/10 text-amber-700 dark:text-amber-400",
-  PENDING_CONFIRMATION: "bg-amber-500/10 text-amber-700 dark:text-amber-400",
-  FAILED: "bg-red-500/10 text-red-600 dark:text-red-400",
-  CANCELLED: "bg-gray-500/10 text-gray-600 dark:text-gray-400",
-  EXPIRED: "bg-gray-500/10 text-gray-600 dark:text-gray-400",
-};
-
 const TABS = [
   { label: "Overview", icon: LayoutDashboard },
   { label: "Users", icon: Users },
@@ -31,6 +23,9 @@ const TABS = [
   { label: "Deposits", icon: ArrowDownToLine },
   { label: "Withdrawals", icon: ArrowUpFromLine },
   { label: "Orders", icon: List },
+  { label: "Reconciliation", icon: Scale },
+  { label: "Audit log", icon: ScrollText },
+  { label: "Assets", icon: Coins },
 ];
 
 // Placeholder row for a table with no matching records.
@@ -72,11 +67,6 @@ const PaginationBar = ({ pagination, setPage }) => {
   );
 };
 
-const StatusBadge = ({ status }) => (
-  <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${statusStyles[status] || "bg-gray-500/10 text-gray-600 dark:text-gray-400"}`}>
-    {status}
-  </span>
-);
 
 const AdminDashboard = () => {
   const { formatMoney } = useCurrency();
@@ -109,18 +99,8 @@ const AdminDashboard = () => {
   const [txPage, setTxPage] = useState(1);
   const [txTypeFilter, setTxTypeFilter] = useState("");
 
-  // Deposits
-  const [deposits, setDeposits] = useState([]);
-  const [depositsPagination, setDepositsPagination] = useState(null);
-  const [depositsPage, setDepositsPage] = useState(1);
-  const [depositStatusFilter, setDepositStatusFilter] = useState("");
-
-  // Withdrawals
-  const [withdrawals, setWithdrawals] = useState([]);
-  const [withdrawalsPagination, setWithdrawalsPagination] = useState(null);
-  const [withdrawalsPage, setWithdrawalsPage] = useState(1);
-  const [withdrawalStatusFilter, setWithdrawalStatusFilter] = useState("");
-  const [rejectingId, setRejectingId] = useState(null);
+  // Deposits / Withdrawals: status pre-selected when opened from Overview.
+  const [tabStatus, setTabStatus] = useState({});
 
   // Orders
   const [orders, setOrders] = useState([]);
@@ -174,8 +154,7 @@ const AdminDashboard = () => {
 
   // Jump from an Overview panel to a section, optionally pre-filtered by status.
   const openTab = (tab, statusFilter = "") => {
-    if (tab === "Deposits") { setDepositStatusFilter(statusFilter); setDepositsPage(1); }
-    if (tab === "Withdrawals") { setWithdrawalStatusFilter(statusFilter); setWithdrawalsPage(1); }
+    if (tab === "Deposits" || tab === "Withdrawals") setTabStatus({ [tab]: statusFilter });
     setActiveTab(tab);
     window.scrollTo({ top: 0 });
   };
@@ -209,40 +188,6 @@ const AdminDashboard = () => {
       })
       .catch(() => {});
   }, [accessState, activeTab, txPage, txTypeFilter]);
-
-  useEffect(() => {
-    if (accessState !== "granted" || activeTab !== "Deposits") return;
-
-    const params = new URLSearchParams({ page: String(depositsPage), limit: "20" });
-    if (depositStatusFilter) params.set("status", depositStatusFilter);
-
-    fetch(`${API_BASE_URL}/api/admin/deposits?${params.toString()}`, { headers: authHeaders() })
-      .then((res) => res.json())
-      .then((data) => {
-        setDeposits(data.deposits || []);
-        setDepositsPagination(data.pagination || null);
-      })
-      .catch(() => {});
-  }, [accessState, activeTab, depositsPage, depositStatusFilter]);
-
-  const fetchWithdrawals = () => {
-    const params = new URLSearchParams({ page: String(withdrawalsPage), limit: "20" });
-    if (withdrawalStatusFilter) params.set("status", withdrawalStatusFilter);
-
-    fetch(`${API_BASE_URL}/api/admin/withdrawals?${params.toString()}`, { headers: authHeaders() })
-      .then((res) => res.json())
-      .then((data) => {
-        setWithdrawals(data.withdrawals || []);
-        setWithdrawalsPagination(data.pagination || null);
-      })
-      .catch(() => {});
-  };
-
-  useEffect(() => {
-    if (accessState !== "granted" || activeTab !== "Withdrawals") return;
-    fetchWithdrawals();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [accessState, activeTab, withdrawalsPage, withdrawalStatusFilter]);
 
   useEffect(() => {
     if (accessState !== "granted" || activeTab !== "Orders") return;
@@ -329,28 +274,6 @@ const AdminDashboard = () => {
       refreshUsersList();
     } catch {
       setUserActionError("Unable to connect to Anchor Exchange server.");
-    }
-  };
-
-  const handleRejectWithdrawal = async (id) => {
-    if (rejectingId) return;
-
-    const reason = window.prompt("Reason for rejecting this withdrawal (optional):") || "";
-
-    setRejectingId(id);
-
-    try {
-      const res = await fetch(`${API_BASE_URL}/api/admin/withdrawals/${id}/reject`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", ...authHeaders() },
-        body: JSON.stringify({ reason }),
-      });
-
-      if (res.ok) fetchWithdrawals();
-    } catch {
-      // best-effort
-    } finally {
-      setRejectingId(null);
     }
   };
 
@@ -532,118 +455,21 @@ const AdminDashboard = () => {
         )}
 
         {/* DEPOSITS */}
-        {activeTab === "Deposits" && (
-          <div>
-            <div className="mb-4">
-              <select
-                value={depositStatusFilter}
-                onChange={(e) => { setDepositStatusFilter(e.target.value); setDepositsPage(1); }}
-                className="bg-slate-100 dark:bg-input-field text-slate-900 dark:text-white border border-gray-300 dark:border-line-color rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="">All statuses</option>
-                <option value="PENDING">Pending</option>
-                <option value="COMPLETED">Completed</option>
-                <option value="FAILED">Failed</option>
-              </select>
-            </div>
-
-            <div className="bg-white dark:bg-crypto-color rounded-2xl border border-gray-200 dark:border-line-color overflow-hidden">
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="text-left text-gray-600 dark:text-gray-400 border-b border-gray-200 dark:border-line-color">
-                      <th className="px-5 py-3 font-medium">Date</th>
-                      <th className="px-5 py-3 font-medium">User</th>
-                      <th className="px-5 py-3 font-medium">Type</th>
-                      <th className="px-5 py-3 font-medium">Asset</th>
-                      <th className="px-5 py-3 font-medium">Net Amount</th>
-                      <th className="px-5 py-3 font-medium">Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {deposits.length === 0 && <EmptyRow colSpan={6} />}
-                    {deposits.map((d) => (
-                      <tr key={d.id} className="border-b border-gray-200 dark:border-line-color">
-                        <td className="px-5 py-3 text-gray-600 dark:text-gray-400 whitespace-nowrap">{new Date(d.created_at).toLocaleString()}</td>
-                        <td className="px-5 py-3">{d.user_email}</td>
-                        <td className="px-5 py-3">{d.type}</td>
-                        <td className="px-5 py-3">{d.asset}</td>
-                        <td className="px-5 py-3">{Number(d.net_amount).toLocaleString()}</td>
-                        <td className="px-5 py-3"><StatusBadge status={d.status} /></td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-              <PaginationBar pagination={depositsPagination} page={depositsPage} setPage={setDepositsPage} />
-            </div>
-          </div>
-        )}
+        {/* DEPOSITS */}
+        {activeTab === "Deposits" && <DepositsPanel key={tabStatus.Deposits || "all"} initialStatus={tabStatus.Deposits || ""} />}
 
         {/* WITHDRAWALS */}
-        {activeTab === "Withdrawals" && (
-          <div>
-            <div className="mb-4">
-              <select
-                value={withdrawalStatusFilter}
-                onChange={(e) => { setWithdrawalStatusFilter(e.target.value); setWithdrawalsPage(1); }}
-                className="bg-slate-100 dark:bg-input-field text-slate-900 dark:text-white border border-gray-300 dark:border-line-color rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="">All statuses</option>
-                <option value="PENDING_CONFIRMATION">Pending confirmation</option>
-                <option value="COMPLETED">Completed</option>
-                <option value="CANCELLED">Cancelled</option>
-                <option value="EXPIRED">Expired</option>
-              </select>
-            </div>
+        {activeTab === "Withdrawals" && <WithdrawalsPanel key={tabStatus.Withdrawals || "all"} initialStatus={tabStatus.Withdrawals || ""} />}
 
-            <div className="bg-white dark:bg-crypto-color rounded-2xl border border-gray-200 dark:border-line-color overflow-hidden">
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="text-left text-gray-600 dark:text-gray-400 border-b border-gray-200 dark:border-line-color">
-                      <th className="px-5 py-3 font-medium">Date</th>
-                      <th className="px-5 py-3 font-medium">User</th>
-                      <th className="px-5 py-3 font-medium">Type</th>
-                      <th className="px-5 py-3 font-medium">Asset</th>
-                      <th className="px-5 py-3 font-medium">Amount</th>
-                      <th className="px-5 py-3 font-medium">Status</th>
-                      <th className="px-5 py-3 font-medium">Action</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {withdrawals.length === 0 && <EmptyRow colSpan={7} />}
-                    {withdrawals.map((w) => (
-                      <tr key={w.id} className="border-b border-gray-200 dark:border-line-color">
-                        <td className="px-5 py-3 text-gray-600 dark:text-gray-400 whitespace-nowrap">{new Date(w.created_at).toLocaleString()}</td>
-                        <td className="px-5 py-3">{w.user_email}</td>
-                        <td className="px-5 py-3">{w.type}</td>
-                        <td className="px-5 py-3">{w.asset}</td>
-                        <td className="px-5 py-3">{Number(w.amount).toLocaleString()}</td>
-                        <td className="px-5 py-3"><StatusBadge status={w.status} /></td>
-                        <td className="px-5 py-3">
-                          {w.status === "PENDING_CONFIRMATION" && (
-                            <button
-                              type="button"
-                              onClick={() => handleRejectWithdrawal(w.id)}
-                              disabled={rejectingId === w.id}
-                              className="text-xs text-red-400 hover:text-red-300 font-semibold disabled:opacity-50"
-                            >
-                              {rejectingId === w.id ? "Rejecting..." : "Reject"}
-                            </button>
-                          )}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-              <PaginationBar pagination={withdrawalsPagination} page={withdrawalsPage} setPage={setWithdrawalsPage} />
-            </div>
-          </div>
-        )}
+        {/* RECONCILIATION */}
+        {activeTab === "Reconciliation" && <ReconciliationPanel />}
 
-        {/* ORDERS */}
+        {/* AUDIT LOG */}
+        {activeTab === "Audit log" && <AuditLogPanel />}
+
+        {/* ASSETS */}
+        {activeTab === "Assets" && <AssetsPanel />}
+
         {activeTab === "Orders" && (
           <div>
             <div className="mb-4">

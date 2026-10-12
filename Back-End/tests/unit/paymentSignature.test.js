@@ -2,7 +2,9 @@ require("../helpers/env");
 const { test, describe } = require("node:test");
 const assert = require("node:assert/strict");
 const crypto = require("crypto");
-const { signPayload, verifySignature, chargePaymentMethod } = require("../../services/paymentProviderService");
+const demo = require("../../services/payments/demoPaymentProvider");
+const custody = require("../../services/custody/demoCustody");
+const { sign: signPayload, verifySignature, chargeInstant } = demo;
 
 describe("webhook HMAC", () => {
     const secret = process.env.PAYMENT_WEBHOOK_SECRET;
@@ -42,16 +44,34 @@ describe("webhook HMAC", () => {
 });
 
 describe("demo payment provider", () => {
-    test("charges succeed only in demo mode and are clearly marked demo", async () => {
-        const result = await chargePaymentMethod({ amount: 10, method: "card" });
+    test("instant charges are clearly marked demo", async () => {
+        const result = await chargeInstant({ amount: "10.00", currency: "USD", method: "card" });
         assert.equal(result.success, true);
         assert.equal(result.demo, true);
-        assert.match(result.reference, /^DEMO-[0-9A-F]{16}$/);
+        assert.match(result.providerReference, /^DEMO-[0-9A-F]{16}$/);
     });
 
     test("references are unique", async () => {
         const refs = new Set();
-        for (let i = 0; i < 200; i++) refs.add((await chargePaymentMethod({ amount: 1, method: "card" })).reference);
+        for (let i = 0; i < 200; i++) refs.add((await chargeInstant({ amount: "1.00", currency: "USD", method: "card" })).providerReference);
         assert.equal(refs.size, 200);
+    });
+
+    test("bank-transfer instructions never contain a bank account", async () => {
+        const { instructions } = await demo.createDeposit({ reference: "DEP-T", amount: "100.00", currency: "ZAR", method: "bank", webhookUrl: "http://127.0.0.1:9/none" });
+        assert.equal(instructions.demo, true);
+        assert.equal(instructions.reference, "DEP-T");
+        assert.equal(JSON.stringify(instructions).match(/account\s*number|\b\d{9,}\b/i), null);
+        demo.controls.reset();
+    });
+});
+
+describe("demo custody", () => {
+    test("custody webhooks use their own signature, and demo tx hashes are unmistakable", async () => {
+        const body = '{"x":1}';
+        assert.equal(custody.verifySignature(body, custody.sign(body)), true);
+        assert.equal(custody.verifySignature(body, signPayload(body)), false, "a payment-provider signature must not pass as custody");
+        const address = await custody.getDepositAddress({ userId: 1, asset: "BTC", network: "BTC" });
+        assert.ok(address.address.startsWith("bc1q"));
     });
 });

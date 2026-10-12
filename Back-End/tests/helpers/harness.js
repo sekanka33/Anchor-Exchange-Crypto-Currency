@@ -8,6 +8,7 @@ const { upstream } = require("./upstreamStub");
 const pool = require("../../config/database");
 const redis = require("../../config/redis");
 const app = require("../../app");
+const ledger = require("../../services/ledger");
 
 let server;
 const BASE = `http://localhost:${process.env.PORT}`;
@@ -82,15 +83,28 @@ const createUser = async ({ role = "user", verified = true, ...overrides } = {})
     return { id, email: payload.email, password: payload.password, token: login.body.token };
 };
 
+// Test funding goes through the ledger like every other movement, so
+// reconciliation stays clean.
 const fund = async (userId, asset, amount) => {
-    const wallet = await pool.query("SELECT id FROM wallets WHERE user_id = $1", [userId]);
-    await pool.query(
-        `INSERT INTO wallet_balances(wallet_id, asset_symbol, available_balance)
-         VALUES($1, $2, $3)
-         ON CONFLICT (wallet_id, asset_symbol)
-         DO UPDATE SET available_balance = wallet_balances.available_balance + EXCLUDED.available_balance`,
-        [wallet.rows[0].id, asset, amount]
-    );
+    const client = await pool.connect();
+    try {
+        await client.query("BEGIN");
+        await ledger.postJournal(client, {
+            key: `test-funding:${crypto.randomUUID()}`,
+            kind: "TEST_FUNDING",
+            description: "Test fixture funding",
+            entries: [
+                { account: "external:test-funding", asset, amount: `-${amount}` },
+                { account: ledger.account.available(userId), asset, amount: String(amount) }
+            ]
+        });
+        await client.query("COMMIT");
+    } catch (error) {
+        await client.query("ROLLBACK");
+        throw error;
+    } finally {
+        client.release();
+    }
 };
 
 const balance = async (userId, asset) => {
@@ -120,10 +134,38 @@ const signWebhook = (payload) => {
     return { body, signature };
 };
 
+// Signed provider events in the documented webhook formats.
+const signEvent = (secret, event) => {
+    const body = JSON.stringify(event);
+    return { body, signature: crypto.createHmac("sha256", secret).update(body).digest("hex") };
+};
+const eventId = () => `evt_test_${crypto.randomBytes(8).toString("hex")}`;
+
+const paymentEvent = (type, data, { id = eventId(), signature } = {}) => {
+    const signed = signEvent(process.env.PAYMENT_WEBHOOK_SECRET, { id, type, data });
+    return api("POST", "/api/webhooks/payments", {
+        raw: signed.body,
+        headers: { "Content-Type": "application/json", "X-Webhook-Signature": signature ?? signed.signature }
+    });
+};
+
+const custodyEvent = (type, data, { id = eventId(), signature } = {}) => {
+    const signed = signEvent(process.env.CUSTODY_WEBHOOK_SECRET, { id, type, data });
+    return api("POST", "/api/webhooks/custody", {
+        raw: signed.body,
+        headers: { "Content-Type": "application/json", "X-Custody-Signature": signature ?? signed.signature }
+    });
+};
+
+const reconcile = () => ledger.reconcile(pool);
+
 const validAddresses = {
     BTC: "bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq",
     ERC20: "0x52908400098527886E0F7030069857D2E4169EE7",
     TRC20: "TJRabPrwbZy45sbavfcjinPJC18kjpRTv8"
 };
 
-module.exports = { app, start, stop, api, pool, upstream, createUser, fund, balance, waitFor, signWebhook, uniqueEmail, registerPayload, PASSWORD, validAddresses };
+module.exports = {
+    app, start, stop, api, pool, upstream, createUser, fund, balance, waitFor, signWebhook, uniqueEmail, registerPayload,
+    PASSWORD, validAddresses, paymentEvent, custodyEvent, eventId, reconcile
+};

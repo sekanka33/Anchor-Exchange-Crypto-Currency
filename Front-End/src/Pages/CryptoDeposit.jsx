@@ -4,6 +4,8 @@ import CreateAnAccoutSection from "../Components/CreateAnAccoutSection";
 import PageHeader from "../Components/PageHeader";
 import MoneyFlowSidebar from "../Components/MoneyFlowSidebar";
 import { API_BASE_URL } from "../api/config";
+import { StatusBadge, DemoNotice } from "../Components/FinanceUI";
+import { formatCrypto as formatAmount, isFinalStatus } from "../utils/finance";
 
 const assets = [
   { symbol: "BTC", name: "Bitcoin", icon: "₿" },
@@ -20,7 +22,6 @@ const authHeaders = () => ({
   Authorization: `Bearer ${localStorage.getItem("token")}`,
 });
 
-const formatCrypto = (value) => Number(value).toFixed(8).replace(/0+$/, "").replace(/\.$/, "");
 
 const CryptoDeposit = () => {
   const [selectedAsset, setSelectedAsset] = useState(assets[0]);
@@ -38,9 +39,25 @@ const CryptoDeposit = () => {
   const [simulateAmount, setSimulateAmount] = useState("");
   const [simulating, setSimulating] = useState(false);
   const [simulateError, setSimulateError] = useState("");
-  const [activeDeposit, setActiveDeposit] = useState(null);
+  const [activeTxHash, setActiveTxHash] = useState(null);
+  const [recent, setRecent] = useState([]);
 
   const pollRef = useRef(null);
+
+  // This asset+network's deposits, as recorded by the backend from custody
+  // events (newest first). Refreshed while any is still confirming.
+  const loadRecent = async (asset = selectedAsset.symbol, network = selectedNetwork) => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/deposits?limit=50`, { headers: authHeaders() });
+      const data = await res.json();
+      if (!res.ok) return [];
+      const rows = (data.deposits || []).filter((d) => d.type === "CRYPTO" && d.asset === asset && d.network === network);
+      setRecent(rows);
+      return rows;
+    } catch {
+      return [];
+    }
+  };
 
   // Load available networks whenever the selected asset changes.
   useEffect(() => {
@@ -61,7 +78,7 @@ const CryptoDeposit = () => {
 
     fetchNetworks();
     setAddressData(null);
-    setActiveDeposit(null);
+    setActiveTxHash(null);
     if (pollRef.current) clearInterval(pollRef.current);
   }, [selectedAsset]);
 
@@ -87,6 +104,7 @@ const CryptoDeposit = () => {
         }
 
         setAddressData(data);
+        loadRecent(selectedAsset.symbol, selectedNetwork);
       } catch {
         setAddressError("Unable to connect to Anchor Exchange server.");
       } finally {
@@ -95,6 +113,7 @@ const CryptoDeposit = () => {
     };
 
     fetchAddress();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedAsset, selectedNetwork]);
 
   useEffect(() => {
@@ -109,22 +128,13 @@ const CryptoDeposit = () => {
     setTimeout(() => setCopied(""), 2000);
   };
 
-  const pollDeposit = (depositId) => {
+  // Polls until every recent deposit has reached a final state.
+  const pollDeposits = () => {
+    if (pollRef.current) clearInterval(pollRef.current);
     pollRef.current = setInterval(async () => {
-      try {
-        const res = await fetch(`${API_BASE_URL}/api/deposits/${depositId}`, {
-          headers: authHeaders(),
-        });
-        const data = await res.json();
-        if (!res.ok) return;
-
-        setActiveDeposit(data.deposit);
-
-        if (data.deposit.status !== "PENDING") {
-          clearInterval(pollRef.current);
-        }
-      } catch {
-        // Transient network error — keep polling.
+      const rows = await loadRecent();
+      if (rows.length > 0 && rows.every((d) => isFinalStatus(d.status) || d.status === "UNDER_REVIEW")) {
+        clearInterval(pollRef.current);
       }
     }, 1500);
   };
@@ -163,8 +173,10 @@ const CryptoDeposit = () => {
         return;
       }
 
-      setActiveDeposit(data.deposit);
-      pollDeposit(data.deposit.id);
+      // The demo custodian reports the transfer shortly; the backend records
+      // it from that event, exactly as it would a real one.
+      setActiveTxHash(data.txHash);
+      pollDeposits();
     } catch {
       setSimulateError("Unable to connect to Anchor Exchange server.");
     } finally {
@@ -172,9 +184,14 @@ const CryptoDeposit = () => {
     }
   };
 
+  // Rows for the asset+network on screen (a reload may still be in flight
+  // after switching).
+  const visibleRecent = recent.filter((d) => d.asset === selectedAsset.symbol && d.network === selectedNetwork);
+  const activeDeposit = visibleRecent.find((d) => d.tx_hash === activeTxHash) || null;
+
   const resetSimulation = () => {
     if (pollRef.current) clearInterval(pollRef.current);
-    setActiveDeposit(null);
+    setActiveTxHash(null);
     setSimulateAmount("");
     setSimulateError("");
   };
@@ -243,10 +260,11 @@ const CryptoDeposit = () => {
                 )}
               </div>
 
-              {networks.length > 1 && (
+              {networks.length > 0 && (
                 <div className="flex-1">
-                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Network</label>
+                  <label htmlFor="deposit-network" className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Network</label>
                   <select
+                    id="deposit-network"
                     value={selectedNetwork}
                     onChange={(e) => setSelectedNetwork(e.target.value)}
                     className="w-full bg-slate-100 dark:bg-input-field text-slate-900 dark:text-white border border-blue-500 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-500"
@@ -272,11 +290,21 @@ const CryptoDeposit = () => {
 
             {addressData && (
               <>
-                {/* DEMO WARNING */}
-                <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4 mb-6">
-                  <p className="text-sm text-red-400 font-semibold">⚠ Demo address — do not send real funds</p>
-                  <p className="text-xs text-red-300/80 mt-1">{addressData.warning}</p>
-                </div>
+                {addressData.demo ? (
+                  <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4 mb-6">
+                    <p className="text-sm text-red-600 dark:text-red-400 font-semibold">⚠ Demo address — do not send real funds</p>
+                    <p className="text-xs text-red-700 dark:text-red-300/80 mt-1">{addressData.warning}</p>
+                  </div>
+                ) : (
+                  <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-4 mb-6 text-sm text-amber-800 dark:text-amber-300">
+                    {addressData.warning}
+                  </div>
+                )}
+
+                <p className="text-sm mb-6">
+                  Send only <strong>{selectedAsset.symbol}</strong> on the <strong>{addressData.networkLabel}</strong> network.
+                  Sending another asset, or using another network, will lose the funds.
+                </p>
 
                 {/* ADDRESS + QR */}
                 <div className="flex flex-col sm:flex-row gap-6 mb-6 items-start">
@@ -323,7 +351,8 @@ const CryptoDeposit = () => {
 
                     <div className="text-xs text-gray-600 dark:text-gray-400 space-y-1">
                       <p>Minimum deposit: {addressData.minDeposit} {selectedAsset.symbol}</p>
-                      <p>Required confirmations: {addressData.requiredConfirmations}</p>
+                      <p>Credited after {addressData.requiredConfirmations} network confirmation{addressData.requiredConfirmations === 1 ? "" : "s"}</p>
+                      <p>Deposits below the minimum are not credited automatically.</p>
                     </div>
                   </div>
                 </div>
@@ -331,15 +360,17 @@ const CryptoDeposit = () => {
             )}
 
             {/* DEMO TOOLS — simulate an incoming on-chain deposit */}
-            {addressData && (
+            {addressData?.demo && (
               <div className="border border-dashed border-gray-300 dark:border-gray-700 rounded-xl p-5 mt-2">
                 <p className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">Demo Tools</p>
-                <p className="text-xs text-gray-600 dark:text-gray-400 mb-4">
-                  There's no real blockchain being watched in this demo. In production, an incoming transaction to the
-                  address above would be detected automatically. Use this to simulate that happening.
-                </p>
+                <div className="mb-4">
+                  <DemoNotice>
+                    No blockchain is being watched. This sends a simulated transfer to your demo address; the demo
+                    custodian then reports it and its confirmations, as a real one would.
+                  </DemoNotice>
+                </div>
 
-                {!activeDeposit && (
+                {!activeTxHash && (
                   <div className="flex flex-col sm:flex-row gap-3">
                     <input
                       type="number"
@@ -366,22 +397,21 @@ const CryptoDeposit = () => {
                   <p role="alert" className="text-red-400 text-xs mt-3">{simulateError}</p>
                 )}
 
+                {activeTxHash && !activeDeposit && (
+                  <p role="status" className="text-sm text-gray-600 dark:text-gray-400">Waiting for the custodian to detect the transfer…</p>
+                )}
+
                 {activeDeposit && (
                   <div className="mt-1">
                     <div className="flex justify-between text-sm mb-2">
                       <span className="text-gray-600 dark:text-gray-400">
-                        {activeDeposit.amount} {activeDeposit.asset}
+                        {formatAmount(activeDeposit.amount, activeDeposit.asset)}
                       </span>
-                      <span
-                        className={
-                          activeDeposit.status === "COMPLETED"
-                            ? "text-green-400 font-semibold"
-                            : "text-blue-400 font-semibold"
-                        }
-                      >
-                        {activeDeposit.status === "COMPLETED"
-                          ? "Completed"
-                          : `${activeDeposit.confirmations}/${activeDeposit.required_confirmations} confirmations`}
+                      <span className="flex items-center gap-2">
+                        {activeDeposit.status !== "COMPLETED" && (
+                          <span className="text-xs text-gray-600 dark:text-gray-400">{activeDeposit.confirmations}/{activeDeposit.required_confirmations}</span>
+                        )}
+                        <StatusBadge status={activeDeposit.status} />
                       </span>
                     </div>
 
@@ -399,7 +429,7 @@ const CryptoDeposit = () => {
 
                     <p className="text-xs text-gray-500 mt-2 break-all">Tx hash: {activeDeposit.tx_hash}</p>
 
-                    {activeDeposit.status === "COMPLETED" && (
+                    {isFinalStatus(activeDeposit.status) && (
                       <div className="flex gap-3 mt-4">
                         <Link
                           to="/wallet"
@@ -422,6 +452,34 @@ const CryptoDeposit = () => {
             )}
 
           </div>
+
+          {addressData && (
+            <section aria-labelledby="recent-deposits" className="mt-6 bg-white dark:bg-[#16181e] p-6 rounded-2xl border border-gray-200 dark:border-gray-800/50">
+              <h2 id="recent-deposits" className="text-lg font-bold mb-3">Recent {selectedAsset.symbol} deposits ({addressData.networkLabel})</h2>
+              {visibleRecent.length === 0 ? (
+                <p className="text-sm text-gray-600 dark:text-gray-400">No deposits to this address yet. Incoming transfers appear here once the network sees them.</p>
+              ) : (
+                <ul className="divide-y divide-gray-200 dark:divide-gray-800">
+                  {visibleRecent.map((d) => (
+                    <li key={d.id} className="py-3 text-sm space-y-1">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <span className="font-semibold">{formatAmount(d.amount, d.asset)}</span>
+                        <span className="flex items-center gap-2">
+                          {!isFinalStatus(d.status) && d.status !== "UNDER_REVIEW" && (
+                            <span className="text-xs text-gray-600 dark:text-gray-400">{d.confirmations}/{d.required_confirmations} confirmations</span>
+                          )}
+                          <StatusBadge status={d.status} />
+                        </span>
+                      </div>
+                      <p className="text-xs text-gray-600 dark:text-gray-400 break-all">Tx: {d.tx_hash}</p>
+                      {d.failure_reason && <p className="text-xs text-gray-600 dark:text-gray-400">{d.failure_reason}</p>}
+                      <p className="text-xs text-gray-500">{new Date(d.created_at).toLocaleString()}</p>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </section>
+          )}
 
         </div>
       </div>

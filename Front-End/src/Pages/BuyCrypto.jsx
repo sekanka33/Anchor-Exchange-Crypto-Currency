@@ -1,10 +1,14 @@
 import { useEffect, useState } from "react";
-import { useCurrency } from "../hooks/useCurrency";
+
 import CreateAnAccoutSection from "../Components/CreateAnAccoutSection";
 import PageHeader from "../Components/PageHeader";
 import MoneyFlowSidebar from "../Components/MoneyFlowSidebar";
 import StepIndicator from "../Components/StepIndicator";
 import { getCoinPrice } from "../api/coingecko";
+import { authFetch } from "../api/authFetch";
+import { useApi } from "../hooks/useApi";
+import { formatFiat } from "../utils/finance";
+import { DemoNotice } from "../Components/FinanceUI";
 import { Link } from "react-router-dom";
 import { API_BASE_URL } from "../api/config";
 
@@ -41,6 +45,9 @@ const cryptocurrencies = [
   },
 ];
 
+// Mirrors Back-End/config/fiatCurrencies.js trade limits.
+const TRADE_LIMITS = { ZAR: { min: 100, max: 200000 }, USD: { min: 10, max: 10000 } };
+
 const BuyCrypto = () => {
   const [selectedCoin, setSelectedCoin] = useState(
     cryptocurrencies[0]
@@ -58,7 +65,11 @@ const BuyCrypto = () => {
 
   const [showCoinDropdown, setShowCoinDropdown] = useState(false);
 
-  const [paymentMethod, setPaymentMethod] = useState("card");
+  // Orders settle in ZAR or USD; "wallet" pays from that fiat balance.
+  const [payCurrency, setPayCurrency] = useState("ZAR");
+  const [paymentMethod, setPaymentMethod] = useState("wallet");
+  const wallet = useApi(() => authFetch("/api/wallet"), []);
+  const walletAvailable = (wallet.data?.balances || []).find((b) => b.assetSymbol === payCurrency)?.availableBalance ?? 0;
 
   const [submitting, setSubmitting] = useState(false);
   const [orderResult, setOrderResult] = useState(null);
@@ -74,9 +85,9 @@ const BuyCrypto = () => {
       setLoading(true);
       setError("");
 
-      const data = await getCoinPrice(selectedCoin.id);
-
-      const currentPrice = data[selectedCoin.id]?.usd;
+      const vs = payCurrency.toLowerCase();
+      const data = await getCoinPrice(selectedCoin.id, vs);
+      const currentPrice = data[selectedCoin.id]?.[vs];
 
       if (!currentPrice) {
         throw new Error("Price not available");
@@ -103,7 +114,8 @@ const BuyCrypto = () => {
     }, 30000);
 
     return () => clearInterval(interval);
-  }, [selectedCoin]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedCoin, payCurrency]);
 
   /*
    * Convert USD -> crypto
@@ -138,13 +150,15 @@ const BuyCrypto = () => {
       return;
     }
 
-    if (numericAmount < 10) {
-      setError("Minimum purchase amount is $10.");
+    // Display-side check only; the backend enforces the same limits.
+    const limits = TRADE_LIMITS[payCurrency];
+    if (numericAmount < limits.min) {
+      setError(`Minimum purchase amount is ${fmt(limits.min)}.`);
       return;
     }
 
-    if (numericAmount > 10000) {
-      setError("Maximum purchase amount is $10,000.");
+    if (numericAmount > limits.max) {
+      setError(`Maximum purchase amount is ${fmt(limits.max)}.`);
       return;
     }
 
@@ -165,22 +179,8 @@ const BuyCrypto = () => {
     setStep((currentStep) => currentStep - 1);
   };
 
-  /*
-   * Format USD
-   */
-  const formatUSD = (value) => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    }).format(value);
-  };
-
-  const { currency: displayCurrency, formatMoney } = useCurrency();
-  // Transactions settle in USD; show the display-currency equivalent alongside.
-  const fmt = (usd) =>
-    displayCurrency === "USD" ? formatUSD(usd) : `${formatUSD(usd)} (≈ ${formatMoney(usd)})`;
+  // Every figure on this page is in the order's own currency.
+  const fmt = (value) => formatFiat(value, payCurrency);
 
   /*
    * Format crypto
@@ -210,7 +210,8 @@ const BuyCrypto = () => {
         },
         body: JSON.stringify({
           asset: selectedCoin.symbol,
-          amountUsd: numericAmount,
+          amount: String(amount).trim(),
+          currency: payCurrency,
           paymentMethod,
         }),
       });
@@ -270,7 +271,7 @@ const BuyCrypto = () => {
                   </span>
                 ) : price ? (
                   <span className="text-slate-900 dark:text-white font-semibold">
-                    {formatMoney(price)} /{" "}
+                    {fmt(price)} /{" "}
                     {selectedCoin.symbol}
                   </span>
                 ) : (
@@ -304,8 +305,7 @@ const BuyCrypto = () => {
                       <input
                         id="buy-pay-amount"
                         type="number"
-                        min="10"
-                        max="10000"
+                        min="0"
                         step="0.01"
                         value={amount}
                         onChange={(e) =>
@@ -315,15 +315,16 @@ const BuyCrypto = () => {
                         placeholder="0.00"
                       />
 
-                      <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-900 dark:text-white ml-2">
-
-                        <span className="w-4 h-4 rounded-full bg-green-500 text-black font-bold text-[10px] flex items-center justify-center">
-                          $
-                        </span>
-
-                        <span>USD</span>
-
-                      </div>
+                      <label htmlFor="buy-pay-currency" className="sr-only">Pay currency</label>
+                      <select
+                        id="buy-pay-currency"
+                        value={payCurrency}
+                        onChange={(e) => setPayCurrency(e.target.value)}
+                        className="ml-2 bg-transparent text-xs font-semibold outline-none"
+                      >
+                        <option value="ZAR">ZAR</option>
+                        <option value="USD">USD</option>
+                      </select>
 
                     </div>
 
@@ -434,7 +435,7 @@ const BuyCrypto = () => {
 
                     <span>
                       {price
-                        ? formatMoney(price)
+                        ? fmt(price)
                         : "--"}
                     </span>
                   </div>
@@ -599,6 +600,22 @@ const BuyCrypto = () => {
 
                 <button
                   type="button"
+                  onClick={() => setPaymentMethod("wallet")}
+                  aria-pressed={paymentMethod === "wallet"}
+                  className={`w-full p-4 rounded-xl border text-left transition ${
+                    paymentMethod === "wallet" ? "border-blue-500 bg-blue-500/10" : "border-gray-300 dark:border-gray-700"
+                  }`}
+                >
+                  <p className="font-semibold">{payCurrency} wallet balance</p>
+                  <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                    Available: {wallet.loading ? "…" : fmt(walletAvailable)}
+                    {!wallet.loading && Number(walletAvailable) < total && " — not enough for this order; deposit first or choose another method"}
+                  </p>
+                </button>
+
+
+                <button
+                  type="button"
                   onClick={() =>
                     setPaymentMethod("card")
                   }
@@ -614,7 +631,7 @@ const BuyCrypto = () => {
                   </p>
 
                   <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
-                    Pay securely using your bank card.
+                    Instant charge through the payment provider.
                   </p>
 
                 </button>
@@ -636,10 +653,14 @@ const BuyCrypto = () => {
                   </p>
 
                   <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
-                    Pay using a supported bank account.
+                    Instant bank payment through the payment provider.
                   </p>
 
                 </button>
+
+                {paymentMethod !== "wallet" && (
+                  <DemoNotice>Card and instant bank payments are simulated: nothing is charged.</DemoNotice>
+                )}
 
               </div>
 

@@ -220,6 +220,7 @@ describe("QR login", () => {
         const res = await h.api("GET", "/api/qr/init");
         assert.equal(res.status, 200);
         assert.ok(res.body.qr_token);
+        assert.match(res.body.qrCode, /^data:image\/png;base64,/, "rendered locally: the login token never goes to a third-party QR service");
         assert.equal(res.body.expires_in, 60);
     });
 

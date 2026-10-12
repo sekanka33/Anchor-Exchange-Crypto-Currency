@@ -5,6 +5,8 @@ import PageHeader from "../Components/PageHeader";
 import MoneyFlowSidebar from "../Components/MoneyFlowSidebar";
 import StepIndicator from "../Components/StepIndicator";
 import { API_BASE_URL } from "../api/config";
+import { StatusBadge } from "../Components/FinanceUI";
+import { isFinalStatus } from "../utils/finance";
 
 const assets = [
   { symbol: "BTC", name: "Bitcoin", icon: "₿" },
@@ -42,6 +44,7 @@ const CryptoWithdraw = () => {
   const [cancelling, setCancelling] = useState(false);
 
   const pollRef = useRef(null);
+  const idempotencyKey = useRef(null);
 
   useEffect(() => {
     const fetchNetworks = async () => {
@@ -89,6 +92,7 @@ const CryptoWithdraw = () => {
     }
 
     setError("");
+    idempotencyKey.current = crypto.randomUUID(); // one request per review, however many clicks
     setStep(2);
   };
 
@@ -103,7 +107,8 @@ const CryptoWithdraw = () => {
 
         setWithdrawal(data.withdrawal);
 
-        if (data.withdrawal.status !== "PENDING_CONFIRMATION") {
+        // Keep following it through processing until the custodian's final answer.
+        if (isFinalStatus(data.withdrawal.status)) {
           clearInterval(pollRef.current);
         }
       } catch {
@@ -123,12 +128,13 @@ const CryptoWithdraw = () => {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          "Idempotency-Key": idempotencyKey.current,
           ...authHeaders(),
         },
         body: JSON.stringify({
           asset: selectedAsset.symbol,
           network: selectedNetwork,
-          amount: numericAmount,
+          amount: amount.trim(),
           address: address.trim(),
           memo: memo.trim() || undefined,
         }),
@@ -382,12 +388,37 @@ const CryptoWithdraw = () => {
                 </>
               )}
 
+              {withdrawal.status === "PROCESSING" && (
+                <>
+                  <div className="w-14 h-14 rounded-full bg-blue-500/20 text-blue-500 flex items-center justify-center mx-auto mb-4 text-2xl animate-pulse">⏳</div>
+                  <h2 className="text-2xl font-bold mb-2">Sending…</h2>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">Confirmed and submitted to the custodian. This page updates when the transaction is confirmed on the network.</p>
+                </>
+              )}
+
+              {withdrawal.status === "UNDER_REVIEW" && (
+                <>
+                  <h2 className="text-2xl font-bold mb-2">Checking the transfer</h2>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">We couldn't confirm the outcome with the custodian yet. Your funds stay reserved until we know whether it was sent.</p>
+                </>
+              )}
+
               {withdrawal.status === "COMPLETED" && (
                 <>
-                  <div className="w-14 h-14 rounded-full bg-green-500/20 text-green-400 flex items-center justify-center mx-auto mb-4 text-2xl">✓</div>
+                  <div className="w-14 h-14 rounded-full bg-green-500/20 text-green-500 flex items-center justify-center mx-auto mb-4 text-2xl">✓</div>
                   <h2 className="text-2xl font-bold mb-4">Withdrawal completed</h2>
                 </>
               )}
+
+              {(withdrawal.status === "FAILED" || withdrawal.status === "REJECTED") && (
+                <>
+                  <div className="w-14 h-14 rounded-full bg-red-500/20 text-red-500 flex items-center justify-center mx-auto mb-4 text-2xl">✕</div>
+                  <h2 className="text-2xl font-bold mb-2">{withdrawal.status === "FAILED" ? "Withdrawal failed" : "Withdrawal rejected"}</h2>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">{withdrawal.failure_reason} The funds are back in your available balance.</p>
+                </>
+              )}
+
+              <div className="flex justify-center mt-2"><StatusBadge status={withdrawal.status} /></div>
 
               {(withdrawal.status === "CANCELLED" || withdrawal.status === "EXPIRED") && (
                 <>
@@ -412,9 +443,13 @@ const CryptoWithdraw = () => {
                   <span>Recipient receives</span>
                   <span>{withdrawal.receive_amount} {withdrawal.asset}</span>
                 </div>
+                <div className="flex justify-between text-xs text-gray-500">
+                  <span>Reference</span>
+                  <span className="break-all text-right">{withdrawal.reference}</span>
+                </div>
                 {withdrawal.tx_hash && (
-                  <div className="flex justify-between text-xs text-gray-500">
-                    <span>Tx hash</span>
+                  <div className="flex justify-between gap-4 text-xs text-gray-500">
+                    <span>Tx hash{withdrawal.tx_hash.startsWith("demo-") ? " (simulated)" : ""}</span>
                     <span className="break-all text-right">{withdrawal.tx_hash}</span>
                   </div>
                 )}
@@ -433,7 +468,7 @@ const CryptoWithdraw = () => {
                   </button>
                 )}
 
-                {withdrawal.status !== "PENDING_CONFIRMATION" && (
+                {isFinalStatus(withdrawal.status) && (
                   <button type="button" onClick={resetFlow} className="bg-blue-600 hover:bg-blue-700 px-8 py-2.5 rounded-full text-sm font-semibold text-white">
                     New Withdrawal
                   </button>

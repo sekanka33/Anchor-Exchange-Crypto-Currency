@@ -1,171 +1,157 @@
 const pool = require("../config/database");
 const crypto = require("crypto");
-const { getUsdPrice } = require("../utils/assetPrices");
-const { FEE_RATE, MIN_BUY_USD, MAX_BUY_USD, MIN_SELL_USD, MAX_SELL_USD, SUPPORTED_ASSETS } = require("../config/tradingConfig");
-const { chargePaymentMethod } = require("../services/paymentProviderService");
+const { getPrice } = require("../utils/assetPrices");
+const { FEE_RATE, SUPPORTED_ASSETS } = require("../config/tradingConfig");
+const { getFiatCurrency, DEFAULT_CURRENCY } = require("../config/fiatCurrencies");
+const { getPaymentProvider, withTimeout } = require("../services/payments");
+const { toUnits, toDecimalString, applyRate, multiply, divide } = require("../utils/money");
+const { account, postJournal, lockBalance } = require("../services/ledger");
 const { sendEmail } = require("../utils/emailService");
 const { buyOrderEmail, sellOrderEmail } = require("../emails/templates");
 const { createNotification } = require("../utils/notify");
-const { PAYMENT_METHODS } = require("../config/paymentConfig");
 
-const paymentMethodSet = new Set(PAYMENT_METHODS);
+// Market orders against the exchange (platform:trading is the counterparty),
+// priced server-side from the live market in the order's fiat currency.
+//   Buy:  pay `amount` of fiat (+ fee) from the wallet balance, or by an
+//         instant card/bank charge through the payment provider.
+//   Sell: sell `amount` of crypto for fiat (− fee) into the wallet.
+// Each fill is one ledger journal, so balances, fees and the exchange's
+// inventory always reconcile.
+const BUY_METHODS = ["wallet", "card", "bank"];
+
+const badRequest = (res, message) => res.status(400).json({ message });
+
+const quotePrice = async (res, symbol, currency) => {
+    const price = await getPrice(symbol, currency.code);
+    if (!price || price <= 0) {
+        res.status(502).json({ message: "Live price unavailable right now. Please try again shortly." });
+        return null;
+    }
+    return toUnits(price.toFixed(8));
+};
 
 const createBuyOrder = async (req, res) => {
 
     const userId = req.user.id;
-    const { asset, amountUsd, paymentMethod } = req.body;
-
+    const { asset, paymentMethod = "wallet" } = req.body;
     const symbol = typeof asset === "string" ? asset.toUpperCase() : "";
-    const spendAmount = Number(amountUsd);
+    const currency = getFiatCurrency(req.body.currency ?? DEFAULT_CURRENCY);
+    // `amountUsd` is the field name older clients send.
+    const rawAmount = req.body.amount ?? req.body.amountUsd;
 
-    if (!SUPPORTED_ASSETS.includes(symbol)) {
-        return res.status(400).json({ message: "Unsupported asset" });
+    if (!SUPPORTED_ASSETS.includes(symbol)) return badRequest(res, "Unsupported asset");
+    if (!currency) return badRequest(res, "Unsupported currency");
+    if (!BUY_METHODS.includes(paymentMethod)) return badRequest(res, "Invalid payment method");
+
+    let spend;
+    try {
+        spend = toUnits(rawAmount, { maxDecimals: currency.decimals });
+    } catch (error) {
+        return badRequest(res, error.message);
+    }
+    const fmt = (u) => `${currency.symbol}${toDecimalString(u, currency.decimals)}`;
+    if (spend <= 0n) return badRequest(res, "Amount must be a positive number");
+    if (spend < toUnits(currency.trade.min)) return badRequest(res, `Minimum purchase amount is ${fmt(toUnits(currency.trade.min))}`);
+    if (spend > toUnits(currency.trade.max)) return badRequest(res, `Maximum purchase amount is ${fmt(toUnits(currency.trade.max))}`);
+
+    // Price, fee and quantity are computed here; the frontend's numbers are
+    // display-only and never trusted.
+    const price = await quotePrice(res, symbol, currency);
+    if (price === null) return;
+
+    const fee = applyRate(spend, String(FEE_RATE), currency.decimals);
+    const total = spend + fee;
+    const quantity = divide(spend, price); // rounded down: never more crypto than was paid for
+    if (quantity <= 0n) return badRequest(res, "Amount is too small to buy any of this asset");
+
+    let funding = account.available(userId);
+    let payment = { demo: false, providerReference: null };
+
+    if (paymentMethod !== "wallet") {
+        try {
+            const provider = getPaymentProvider();
+            const charge = await withTimeout(provider.chargeInstant({
+                amount: toDecimalString(total, currency.decimals), currency: currency.code, method: paymentMethod
+            }));
+            if (!charge.success) return res.status(402).json({ message: "Payment failed. Please try a different payment method." });
+            payment = { demo: provider.demo === true, providerReference: charge.providerReference };
+            funding = account.external(provider.name);
+        } catch (error) {
+            return res.status(error.status || 502).json({ message: error.status ? error.message : "The payment provider is unavailable. Please try again later." });
+        }
     }
 
-    if (!Number.isFinite(spendAmount) || spendAmount <= 0) {
-        return res.status(400).json({ message: "Amount must be a positive number" });
-    }
-
-    if (spendAmount < MIN_BUY_USD) {
-        return res.status(400).json({ message: `Minimum purchase amount is $${MIN_BUY_USD}` });
-    }
-
-    if (spendAmount > MAX_BUY_USD) {
-        return res.status(400).json({ message: `Maximum purchase amount is $${MAX_BUY_USD}` });
-    }
-
-    if (!paymentMethodSet.has(paymentMethod)) {
-        return res.status(400).json({ message: "Invalid payment method" });
-    }
-
-    // Price and fee are always computed server-side — the frontend's
-    // displayed numbers are for UX only and are never trusted here.
-    const livePrice = await getUsdPrice(symbol);
-
-    if (!livePrice || livePrice <= 0) {
-        return res.status(502).json({ message: "Live price unavailable right now. Please try again shortly." });
-    }
-
-    const fee = Number((spendAmount * FEE_RATE).toFixed(2));
-    const totalCharged = Number((spendAmount + fee).toFixed(2));
-    const cryptoAmount = spendAmount / livePrice;
-
-    const payment = await chargePaymentMethod({
-        amount: totalCharged,
-        currency: "USD",
-        method: paymentMethod
-    });
-
-    if (!payment.success) {
-        return res.status(402).json({ message: "Payment failed. Please try a different payment method." });
-    }
-
+    const reference = payment.providerReference || `BUY-${crypto.randomBytes(8).toString("hex").toUpperCase()}`;
     const client = await pool.connect();
 
     try {
-
         await client.query("BEGIN");
 
-        const walletResult = await client.query(
-            "SELECT id FROM wallets WHERE user_id = $1 FOR UPDATE",
-            [userId]
-        );
-
-        if (walletResult.rows.length === 0) {
-            throw Object.assign(new Error("Wallet not found"), { status: 404 });
+        if (paymentMethod === "wallet") {
+            const balance = await lockBalance(client, userId, currency.code);
+            if (balance.available < total) {
+                throw Object.assign(new Error(`Insufficient ${currency.code} balance. You need ${fmt(total)} including the fee.`), { status: 400 });
+            }
         }
 
-        const walletId = walletResult.rows[0].id;
+        const order = (await client.query(
+            `INSERT INTO orders (user_id, pair, side, type, price, amount, filled_amount, fee, total, status)
+             VALUES ($1, $2, 'BUY', 'MARKET', $3, $4, $4, $5, $6, 'COMPLETED')
+             RETURNING id, pair, side, type, price, amount, fee, total, status, created_at`,
+            [userId, `${symbol}/${currency.code}`, toDecimalString(price), toDecimalString(quantity), toDecimalString(fee), toDecimalString(spend)]
+        )).rows[0];
 
-        const userResult = await client.query(
-            "SELECT fullname, email FROM users WHERE id = $1",
-            [userId]
-        );
-
-        const fullName = userResult.rows[0]?.fullname;
-        const userEmail = userResult.rows[0]?.email || req.user.email;
-
-        const orderResult = await client.query(
-            `
-            INSERT INTO orders(user_id, pair, side, type, price, amount, filled_amount, fee, total, status)
-            VALUES($1, $2, 'BUY', 'MARKET', $3, $4, $4, $5, $6, 'COMPLETED')
-            RETURNING id, pair, side, type, price, amount, fee, total, status, created_at
-            `,
-            [userId, `${symbol}/USD`, livePrice, cryptoAmount, fee, spendAmount]
-        );
-
-        const order = orderResult.rows[0];
-
-        const txResult = await client.query(
-            `
-            INSERT INTO transactions(user_id, type, asset, amount, fee, total, status, reference, metadata)
-            VALUES($1, 'BUY', $2, $3, $4, $5, 'COMPLETED', $6, $7)
-            RETURNING id, type, asset, amount, fee, total, status, reference, created_at
-            `,
-            [
-                userId,
-                symbol,
-                cryptoAmount,
-                fee,
-                totalCharged,
-                payment.reference,
-                JSON.stringify({ price: livePrice, paymentMethod, orderId: order.id, demo: payment.demo === true })
+        await postJournal(client, {
+            key: `order:${order.id}:fill`,
+            kind: "TRADE_BUY",
+            referenceType: "order",
+            referenceId: order.id,
+            description: `Buy ${toDecimalString(quantity)} ${symbol} at ${toDecimalString(price, currency.decimals)} ${currency.code}`,
+            entries: [
+                { account: funding, asset: currency.code, amount: -total },
+                { account: account.trading, asset: currency.code, amount: spend },
+                { account: account.fees, asset: currency.code, amount: fee },
+                { account: account.trading, asset: symbol, amount: -quantity },
+                { account: account.available(userId), asset: symbol, amount: quantity }
             ]
-        );
+        });
 
-        await client.query(
-            `
-            INSERT INTO wallet_balances(wallet_id, asset_symbol, available_balance)
-            VALUES($1, $2, $3)
-            ON CONFLICT (wallet_id, asset_symbol)
-            DO UPDATE SET available_balance = wallet_balances.available_balance + EXCLUDED.available_balance, updated_at = NOW()
-            `,
-            [walletId, symbol, cryptoAmount]
-        );
+        const transaction = (await client.query(
+            `INSERT INTO transactions (user_id, type, asset, amount, fee, total, status, reference, metadata)
+             VALUES ($1, 'BUY', $2, $3, $4, $5, 'COMPLETED', $6, $7)
+             RETURNING id, type, asset, amount, fee, total, status, reference, created_at`,
+            [userId, symbol, toDecimalString(quantity), toDecimalString(fee), toDecimalString(total), reference,
+                JSON.stringify({ price: toDecimalString(price), currency: currency.code, paymentMethod, orderId: order.id, demo: payment.demo })]
+        )).rows[0];
+
+        const user = (await client.query("SELECT fullname, email FROM users WHERE id = $1", [userId])).rows[0];
 
         await client.query("COMMIT");
 
-        const email_ = buyOrderEmail({
-            fullName,
-            asset: symbol,
-            cryptoAmount,
-            price: livePrice,
-            fee,
-            total: totalCharged,
-            reference: payment.reference
-        });
-
-        sendEmail({ to: userEmail, subject: email_.subject, html: email_.html })
-            .catch((err) => console.error("SEND BUY CONFIRMATION EMAIL FAILED:", err));
+        if (user) {
+            const email_ = buyOrderEmail({
+                fullName: user.fullname, asset: symbol, cryptoAmount: toDecimalString(quantity),
+                price: toDecimalString(price), fee: toDecimalString(fee), total: toDecimalString(total), reference, currency: currency.code
+            });
+            sendEmail({ to: user.email, subject: email_.subject, html: email_.html })
+                .catch((err) => console.error("SEND BUY CONFIRMATION EMAIL FAILED:", err));
+        }
 
         createNotification(userId, {
             title: "Buy order completed",
-            message: `You bought ${cryptoAmount.toFixed(8)} ${symbol} for ${totalCharged.toFixed(2)} USD.`,
+            message: `You bought ${toDecimalString(quantity)} ${symbol} for ${fmt(total)}.`,
             type: "SUCCESS",
             link: "/orderstrades"
         });
 
-        res.status(201).json({
-            message: "Purchase completed",
-            order,
-            transaction: txResult.rows[0],
-            demo: payment.demo === true
-        });
+        res.status(201).json({ message: "Purchase completed", order, transaction, demo: payment.demo });
 
     } catch (error) {
-
         await client.query("ROLLBACK");
-
-        console.error("CREATE BUY ORDER ERROR:", error);
-
-        res.status(error.status || 500).json({
-            message: error.status ? error.message : "Unable to complete purchase"
-        });
-
+        if (!error.status) console.error("CREATE BUY ORDER ERROR:", error);
+        res.status(error.status || 500).json({ message: error.status ? error.message : "Unable to complete purchase" });
     } finally {
-
         client.release();
-
     }
 
 };
@@ -173,167 +159,97 @@ const createBuyOrder = async (req, res) => {
 const createSellOrder = async (req, res) => {
 
     const userId = req.user.id;
-    const { asset, amount } = req.body;
+    const symbol = typeof req.body.asset === "string" ? req.body.asset.toUpperCase() : "";
+    const currency = getFiatCurrency(req.body.currency ?? DEFAULT_CURRENCY);
 
-    const symbol = typeof asset === "string" ? asset.toUpperCase() : "";
-    const sellAmount = Number(amount);
+    if (!SUPPORTED_ASSETS.includes(symbol)) return badRequest(res, "Unsupported asset");
+    if (!currency) return badRequest(res, "Unsupported currency");
 
-    if (!SUPPORTED_ASSETS.includes(symbol)) {
-        return res.status(400).json({ message: "Unsupported asset" });
+    let quantity;
+    try {
+        quantity = toUnits(req.body.amount);
+    } catch (error) {
+        return badRequest(res, error.message);
     }
+    if (quantity <= 0n) return badRequest(res, "Amount must be a positive number");
 
-    if (!Number.isFinite(sellAmount) || sellAmount <= 0) {
-        return res.status(400).json({ message: "Amount must be a positive number" });
-    }
+    const price = await quotePrice(res, symbol, currency);
+    if (price === null) return;
 
-    // Price and fee are always computed server-side — the frontend's
-    // displayed numbers are for UX only and are never trusted here.
-    const livePrice = await getUsdPrice(symbol);
+    const fmt = (u) => `${currency.symbol}${toDecimalString(u, currency.decimals)}`;
+    const gross = multiply(quantity, price, currency.decimals);
+    if (gross < toUnits(currency.trade.min)) return badRequest(res, `Minimum sale value is ${fmt(toUnits(currency.trade.min))}`);
+    if (gross > toUnits(currency.trade.max)) return badRequest(res, `Maximum sale value is ${fmt(toUnits(currency.trade.max))}`);
 
-    if (!livePrice || livePrice <= 0) {
-        return res.status(502).json({ message: "Live price unavailable right now. Please try again shortly." });
-    }
-
-    const grossUsd = sellAmount * livePrice;
-
-    if (grossUsd < MIN_SELL_USD) {
-        return res.status(400).json({ message: `Minimum sale value is $${MIN_SELL_USD}` });
-    }
-
-    if (grossUsd > MAX_SELL_USD) {
-        return res.status(400).json({ message: `Maximum sale value is $${MAX_SELL_USD}` });
-    }
-
-    const fee = Number((grossUsd * FEE_RATE).toFixed(2));
-    const receiveUsd = Number((grossUsd - fee).toFixed(2));
-
+    const fee = applyRate(gross, String(FEE_RATE), currency.decimals);
+    const proceeds = gross - fee;
+    const reference = `SELL-${crypto.randomBytes(8).toString("hex").toUpperCase()}`;
     const client = await pool.connect();
 
     try {
-
         await client.query("BEGIN");
 
-        const walletResult = await client.query(
-            "SELECT id FROM wallets WHERE user_id = $1 FOR UPDATE",
-            [userId]
-        );
+        const balance = await lockBalance(client, userId, symbol);
+        if (balance.available < quantity) throw Object.assign(new Error("Insufficient balance"), { status: 400 });
 
-        if (walletResult.rows.length === 0) {
-            throw Object.assign(new Error("Wallet not found"), { status: 404 });
-        }
+        const order = (await client.query(
+            `INSERT INTO orders (user_id, pair, side, type, price, amount, filled_amount, fee, total, status)
+             VALUES ($1, $2, 'SELL', 'MARKET', $3, $4, $4, $5, $6, 'COMPLETED')
+             RETURNING id, pair, side, type, price, amount, fee, total, status, created_at`,
+            [userId, `${symbol}/${currency.code}`, toDecimalString(price), toDecimalString(quantity), toDecimalString(fee), toDecimalString(gross)]
+        )).rows[0];
 
-        const walletId = walletResult.rows[0].id;
-
-        const balanceResult = await client.query(
-            "SELECT available_balance FROM wallet_balances WHERE wallet_id = $1 AND asset_symbol = $2",
-            [walletId, symbol]
-        );
-
-        const availableBalance = Number(balanceResult.rows[0]?.available_balance || 0);
-
-        if (availableBalance < sellAmount) {
-            throw Object.assign(new Error("Insufficient balance"), { status: 400 });
-        }
-
-        const userResult = await client.query(
-            "SELECT fullname, email FROM users WHERE id = $1",
-            [userId]
-        );
-
-        const fullName = userResult.rows[0]?.fullname;
-        const userEmail = userResult.rows[0]?.email || req.user.email;
-
-        const reference = `SELL-${crypto.randomBytes(8).toString("hex").toUpperCase()}`;
-
-        const orderResult = await client.query(
-            `
-            INSERT INTO orders(user_id, pair, side, type, price, amount, filled_amount, fee, total, status)
-            VALUES($1, $2, 'SELL', 'MARKET', $3, $4, $4, $5, $6, 'COMPLETED')
-            RETURNING id, pair, side, type, price, amount, fee, total, status, created_at
-            `,
-            [userId, `${symbol}/USD`, livePrice, sellAmount, fee, grossUsd]
-        );
-
-        const order = orderResult.rows[0];
-
-        const txResult = await client.query(
-            `
-            INSERT INTO transactions(user_id, type, asset, amount, fee, total, status, reference, metadata)
-            VALUES($1, 'SELL', $2, $3, $4, $5, 'COMPLETED', $6, $7)
-            RETURNING id, type, asset, amount, fee, total, status, reference, created_at
-            `,
-            [
-                userId,
-                symbol,
-                sellAmount,
-                fee,
-                receiveUsd,
-                reference,
-                JSON.stringify({ price: livePrice, orderId: order.id })
+        await postJournal(client, {
+            key: `order:${order.id}:fill`,
+            kind: "TRADE_SELL",
+            referenceType: "order",
+            referenceId: order.id,
+            description: `Sell ${toDecimalString(quantity)} ${symbol} at ${toDecimalString(price, currency.decimals)} ${currency.code}`,
+            entries: [
+                { account: account.available(userId), asset: symbol, amount: -quantity },
+                { account: account.trading, asset: symbol, amount: quantity },
+                { account: account.trading, asset: currency.code, amount: -gross },
+                { account: account.available(userId), asset: currency.code, amount: proceeds },
+                { account: account.fees, asset: currency.code, amount: fee }
             ]
-        );
+        });
 
-        await client.query(
-            `
-            UPDATE wallet_balances
-            SET available_balance = available_balance - $1, updated_at = NOW()
-            WHERE wallet_id = $2 AND asset_symbol = $3 AND available_balance >= $1
-            `,
-            [sellAmount, walletId, symbol]
-        );
+        const transaction = (await client.query(
+            `INSERT INTO transactions (user_id, type, asset, amount, fee, total, status, reference, metadata)
+             VALUES ($1, 'SELL', $2, $3, $4, $5, 'COMPLETED', $6, $7)
+             RETURNING id, type, asset, amount, fee, total, status, reference, created_at`,
+            [userId, symbol, toDecimalString(quantity), toDecimalString(fee), toDecimalString(proceeds), reference,
+                JSON.stringify({ price: toDecimalString(price), currency: currency.code, orderId: order.id })]
+        )).rows[0];
 
-        await client.query(
-            `
-            INSERT INTO wallet_balances(wallet_id, asset_symbol, available_balance)
-            VALUES($1, 'USD', $2)
-            ON CONFLICT (wallet_id, asset_symbol)
-            DO UPDATE SET available_balance = wallet_balances.available_balance + EXCLUDED.available_balance, updated_at = NOW()
-            `,
-            [walletId, receiveUsd]
-        );
+        const user = (await client.query("SELECT fullname, email FROM users WHERE id = $1", [userId])).rows[0];
 
         await client.query("COMMIT");
 
-        const email_ = sellOrderEmail({
-            fullName,
-            asset: symbol,
-            cryptoAmount: sellAmount,
-            price: livePrice,
-            fee,
-            receiveAmount: receiveUsd,
-            reference
-        });
-
-        sendEmail({ to: userEmail, subject: email_.subject, html: email_.html })
-            .catch((err) => console.error("SEND SELL CONFIRMATION EMAIL FAILED:", err));
+        if (user) {
+            const email_ = sellOrderEmail({
+                fullName: user.fullname, asset: symbol, cryptoAmount: toDecimalString(quantity), price: toDecimalString(price),
+                fee: toDecimalString(fee), receiveAmount: toDecimalString(proceeds), reference, currency: currency.code
+            });
+            sendEmail({ to: user.email, subject: email_.subject, html: email_.html })
+                .catch((err) => console.error("SEND SELL CONFIRMATION EMAIL FAILED:", err));
+        }
 
         createNotification(userId, {
             title: "Sell order completed",
-            message: `You sold ${sellAmount.toFixed(8)} ${symbol} for ${receiveUsd.toFixed(2)} USD.`,
+            message: `You sold ${toDecimalString(quantity)} ${symbol} for ${fmt(proceeds)}.`,
             type: "SUCCESS",
             link: "/orderstrades"
         });
 
-        res.status(201).json({
-            message: "Sale completed",
-            order,
-            transaction: txResult.rows[0]
-        });
+        res.status(201).json({ message: "Sale completed", order, transaction });
 
     } catch (error) {
-
         await client.query("ROLLBACK");
-
-        console.error("CREATE SELL ORDER ERROR:", error);
-
-        res.status(error.status || 500).json({
-            message: error.status ? error.message : "Unable to complete sale"
-        });
-
+        if (!error.status) console.error("CREATE SELL ORDER ERROR:", error);
+        res.status(error.status || 500).json({ message: error.status ? error.message : "Unable to complete sale" });
     } finally {
-
         client.release();
-
     }
 
 };

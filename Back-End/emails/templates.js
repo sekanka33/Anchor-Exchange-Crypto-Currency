@@ -1,3 +1,4 @@
+const { getFiatCurrency, isFiat } = require("../config/fiatCurrencies");
 const { wrap, escapeHtml } = require("./layout");
 
 const button = (href, label) => `
@@ -60,10 +61,15 @@ const passwordChangedEmail = ({ fullName }) => ({
   })
 });
 
-const formatUsd = (value) => `$${Number(value).toFixed(2)}`;
+// Display formatting only (amounts are already exact decimal strings).
+const formatFiat = (value, currency = "USD") => {
+  const fiat = getFiatCurrency(currency);
+  return fiat ? `${fiat.symbol}${Number(value).toFixed(fiat.decimals)}` : `${Number(value).toFixed(2)} ${escapeHtml(currency)}`;
+};
 const formatCrypto = (value) => `${Number(value).toFixed(8)}`;
+const formatAmount = (value, asset) => (isFiat(asset) ? formatFiat(value, asset) : `${formatCrypto(value)} ${escapeHtml(asset)}`);
 
-const buyOrderEmail = ({ fullName, asset, cryptoAmount, price, fee, total, reference }) => ({
+const buyOrderEmail = ({ fullName, asset, cryptoAmount, price, fee, total, reference, currency = "USD" }) => ({
   subject: `Your Anchor Exchange purchase of ${asset} is complete`,
   html: wrap({
     title: "Buy order completed",
@@ -73,9 +79,9 @@ const buyOrderEmail = ({ fullName, asset, cryptoAmount, price, fee, total, refer
       <p>Hi ${escapeHtml(fullName) || "there"}, your order has been filled.</p>
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:16px 0;font-size:14px;">
         <tr><td style="color:#9ca3af;padding:4px 0;">You received</td><td style="text-align:right;">${formatCrypto(cryptoAmount)} ${escapeHtml(asset)}</td></tr>
-        <tr><td style="color:#9ca3af;padding:4px 0;">Price</td><td style="text-align:right;">${formatUsd(price)} / ${escapeHtml(asset)}</td></tr>
-        <tr><td style="color:#9ca3af;padding:4px 0;">Fee</td><td style="text-align:right;">${formatUsd(fee)}</td></tr>
-        <tr><td style="color:#9ca3af;padding:4px 0;font-weight:bold;">Total charged</td><td style="text-align:right;font-weight:bold;">${formatUsd(total)}</td></tr>
+        <tr><td style="color:#9ca3af;padding:4px 0;">Price</td><td style="text-align:right;">${formatFiat(price, currency)} / ${escapeHtml(asset)}</td></tr>
+        <tr><td style="color:#9ca3af;padding:4px 0;">Fee</td><td style="text-align:right;">${formatFiat(fee, currency)}</td></tr>
+        <tr><td style="color:#9ca3af;padding:4px 0;font-weight:bold;">Total charged</td><td style="text-align:right;font-weight:bold;">${formatFiat(total, currency)}</td></tr>
         <tr><td style="color:#9ca3af;padding:4px 0;">Reference</td><td style="text-align:right;">${escapeHtml(reference)}</td></tr>
       </table>
       <p style="color:#9ca3af;font-size:13px;">This purchase is now reflected in your wallet.</p>
@@ -83,7 +89,7 @@ const buyOrderEmail = ({ fullName, asset, cryptoAmount, price, fee, total, refer
   })
 });
 
-const sellOrderEmail = ({ fullName, asset, cryptoAmount, price, fee, receiveAmount, reference }) => ({
+const sellOrderEmail = ({ fullName, asset, cryptoAmount, price, fee, receiveAmount, reference, currency = "USD" }) => ({
   subject: `Your Anchor Exchange sale of ${asset} is complete`,
   html: wrap({
     title: "Sell order completed",
@@ -93,29 +99,29 @@ const sellOrderEmail = ({ fullName, asset, cryptoAmount, price, fee, receiveAmou
       <p>Hi ${escapeHtml(fullName) || "there"}, your order has been filled.</p>
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:16px 0;font-size:14px;">
         <tr><td style="color:#9ca3af;padding:4px 0;">You sold</td><td style="text-align:right;">${formatCrypto(cryptoAmount)} ${escapeHtml(asset)}</td></tr>
-        <tr><td style="color:#9ca3af;padding:4px 0;">Price</td><td style="text-align:right;">${formatUsd(price)} / ${escapeHtml(asset)}</td></tr>
-        <tr><td style="color:#9ca3af;padding:4px 0;">Fee</td><td style="text-align:right;">${formatUsd(fee)}</td></tr>
-        <tr><td style="color:#9ca3af;padding:4px 0;font-weight:bold;">You received</td><td style="text-align:right;font-weight:bold;">${formatUsd(receiveAmount)}</td></tr>
+        <tr><td style="color:#9ca3af;padding:4px 0;">Price</td><td style="text-align:right;">${formatFiat(price, currency)} / ${escapeHtml(asset)}</td></tr>
+        <tr><td style="color:#9ca3af;padding:4px 0;">Fee</td><td style="text-align:right;">${formatFiat(fee, currency)}</td></tr>
+        <tr><td style="color:#9ca3af;padding:4px 0;font-weight:bold;">You received</td><td style="text-align:right;font-weight:bold;">${formatFiat(receiveAmount, currency)}</td></tr>
         <tr><td style="color:#9ca3af;padding:4px 0;">Reference</td><td style="text-align:right;">${escapeHtml(reference)}</td></tr>
       </table>
-      <p style="color:#9ca3af;font-size:13px;">The proceeds are now reflected in your USD wallet balance.</p>
+      <p style="color:#9ca3af;font-size:13px;">The proceeds are now reflected in your ${escapeHtml(currency)} wallet balance.</p>
     `
   })
 });
 
-const depositConfirmationEmail = ({ fullName, amount, fee, netAmount, method, reference }) => ({
+const depositConfirmationEmail = ({ fullName, amount, fee, netAmount, method, reference, currency = "USD" }) => ({
   subject: "Your Anchor Exchange deposit is complete",
   html: wrap({
     title: "Deposit completed",
-    preheader: `Your deposit of ${formatUsd(netAmount)} has landed in your wallet.`,
+    preheader: `Your deposit of ${formatFiat(netAmount, currency)} has landed in your wallet.`,
     bodyHtml: `
       <h2 style="color:#ffffff;margin-top:0;">Deposit completed</h2>
       <p>Hi ${escapeHtml(fullName) || "there"}, your fiat deposit has been confirmed and credited to your wallet.</p>
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:16px 0;font-size:14px;">
         <tr><td style="color:#9ca3af;padding:4px 0;">Payment method</td><td style="text-align:right;text-transform:capitalize;">${escapeHtml(method)}</td></tr>
-        <tr><td style="color:#9ca3af;padding:4px 0;">Amount</td><td style="text-align:right;">${formatUsd(amount)}</td></tr>
-        <tr><td style="color:#9ca3af;padding:4px 0;">Fee</td><td style="text-align:right;">${formatUsd(fee)}</td></tr>
-        <tr><td style="color:#9ca3af;padding:4px 0;font-weight:bold;">Credited to wallet</td><td style="text-align:right;font-weight:bold;">${formatUsd(netAmount)}</td></tr>
+        <tr><td style="color:#9ca3af;padding:4px 0;">Amount</td><td style="text-align:right;">${formatFiat(amount, currency)}</td></tr>
+        <tr><td style="color:#9ca3af;padding:4px 0;">Fee</td><td style="text-align:right;">${formatFiat(fee, currency)}</td></tr>
+        <tr><td style="color:#9ca3af;padding:4px 0;font-weight:bold;">Credited to wallet</td><td style="text-align:right;font-weight:bold;">${formatFiat(netAmount, currency)}</td></tr>
         <tr><td style="color:#9ca3af;padding:4px 0;">Reference</td><td style="text-align:right;">${escapeHtml(reference)}</td></tr>
       </table>
     `
@@ -144,13 +150,13 @@ const withdrawalConfirmationRequestEmail = ({ fullName, asset, amount, receiveAm
   subject: `Confirm your ${asset} withdrawal`,
   html: wrap({
     title: "Confirm your withdrawal",
-    preheader: `Confirm your withdrawal of ${asset === "USD" ? formatUsd(amount) : formatCrypto(amount) + " " + escapeHtml(asset)}.`,
+    preheader: `Confirm your withdrawal of ${formatAmount(amount, asset)}.`,
     bodyHtml: `
       <h2 style="color:#ffffff;margin-top:0;">Confirm your withdrawal</h2>
       <p>Hi ${escapeHtml(fullName) || "there"}, a withdrawal was requested on your Anchor Exchange account. For your security, it will not be processed until you confirm it below.</p>
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:16px 0;font-size:14px;">
-        <tr><td style="color:#9ca3af;padding:4px 0;">Amount</td><td style="text-align:right;">${asset === "USD" ? formatUsd(amount) : `${formatCrypto(amount)} ${escapeHtml(asset)}`}</td></tr>
-        <tr><td style="color:#9ca3af;padding:4px 0;font-weight:bold;">You'll receive</td><td style="text-align:right;font-weight:bold;">${asset === "USD" ? formatUsd(receiveAmount) : `${formatCrypto(receiveAmount)} ${escapeHtml(asset)}`}</td></tr>
+        <tr><td style="color:#9ca3af;padding:4px 0;">Amount</td><td style="text-align:right;">${formatAmount(amount, asset)}</td></tr>
+        <tr><td style="color:#9ca3af;padding:4px 0;font-weight:bold;">You'll receive</td><td style="text-align:right;font-weight:bold;">${formatAmount(receiveAmount, asset)}</td></tr>
         <tr><td style="color:#9ca3af;padding:4px 0;">Destination</td><td style="text-align:right;word-break:break-all;">${escapeHtml(destination)}</td></tr>
       </table>
       ${button(confirmUrl, "Confirm Withdrawal")}
@@ -164,12 +170,12 @@ const withdrawalCompletedEmail = ({ fullName, asset, amount, txHash, reference }
   subject: `Your ${asset} withdrawal is complete`,
   html: wrap({
     title: "Withdrawal completed",
-    preheader: `Your withdrawal of ${asset === "USD" ? formatUsd(amount) : formatCrypto(amount) + " " + escapeHtml(asset)} has been processed.`,
+    preheader: `Your withdrawal of ${formatAmount(amount, asset)} has been processed.`,
     bodyHtml: `
       <h2 style="color:#ffffff;margin-top:0;">Withdrawal completed</h2>
       <p>Hi ${escapeHtml(fullName) || "there"}, your withdrawal has been confirmed and processed.</p>
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:16px 0;font-size:14px;">
-        <tr><td style="color:#9ca3af;padding:4px 0;font-weight:bold;">Amount sent</td><td style="text-align:right;font-weight:bold;">${asset === "USD" ? formatUsd(amount) : `${formatCrypto(amount)} ${escapeHtml(asset)}`}</td></tr>
+        <tr><td style="color:#9ca3af;padding:4px 0;font-weight:bold;">Amount sent</td><td style="text-align:right;font-weight:bold;">${formatAmount(amount, asset)}</td></tr>
         ${txHash ? `<tr><td style="color:#9ca3af;padding:4px 0;">Transaction hash</td><td style="text-align:right;word-break:break-all;">${escapeHtml(txHash)}</td></tr>` : ""}
         <tr><td style="color:#9ca3af;padding:4px 0;">Reference</td><td style="text-align:right;">${escapeHtml(reference)}</td></tr>
       </table>

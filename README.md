@@ -7,6 +7,33 @@
 **Completed:** Stage 0, Stage 1, Stage 2, Stage 3, Stage 4, Stage 5, Stage 6, Stage 7, Stage 8, Stage 9, Stage 10, Stage 11, Stage 12, Stage 13, Stage 14, Stage 15, Stage 16, Stage 17, Stage 18, Stage 19 (one open item), Stage 20
 **Next Stage:** None — Stage 20 is the last stage on the checklist. What's left is the git-history secret purge (your call, see Stage 19) and committing everything.
 
+### Financial platform: ledger, ZAR, provider lifecycles (2026-10-12)
+
+**Bottom line:** every financial workflow is implemented end to end and tested against **demo** providers. **No real money or crypto can move**: there is no real payment-provider or custody adapter (none can be built or tested without a merchant/custody account, its official API documentation and sandbox credentials), and production refuses to start without `ALLOW_DEMO_MODE=true`.
+
+| Area | Status |
+|---|---|
+| Double-entry ledger (`ledger_journals` / `ledger_entries`) | Complete. Every balance change is one journal whose entries sum to zero per asset (enforced by a deferred DB trigger); journals are append-only (DB trigger); a unique `journal_key` makes each business event post at most once. `wallet_balances` is updated in the same transaction and reconciliation proves they agree. Existing balances got opening-balance journals (migration 004). |
+| Exact money arithmetic | Complete. `utils/money.js` (BigInt, 8 dp) replaces JS floats for every fee, total and quantity; fiat is validated to 2 dp, crypto to 8 dp. |
+| Fiat currencies | **ZAR and USD**, each with its own limits/fees (`config/fiatCurrencies.js`). Amounts are never added across currencies (admin stats/charts were fixed to stop summing ZAR as dollars). |
+| Bank / card deposits | Complete (demo provider). `PENDING` → provider webhook → `COMPLETED` / `FAILED`, or `UNDER_REVIEW` when the provider reports a different amount/currency. Bank transfers show the provider's instructions + reference; the demo shows **no bank account**. |
+| Crypto deposits | Complete (demo custodian). Addresses come from the custody adapter (demo addresses are labelled and not spendable). Signed custody events: `DETECTED` → `CONFIRMING` → `COMPLETED` once confirmations ≥ policy; one credit per (network, tx hash, address); out-of-order events handled; below-minimum or conflicting data → `UNDER_REVIEW`; reverted before credit → `FAILED`, after credit → `UNDER_REVIEW` (never auto-debited). |
+| Bank withdrawals | Complete (demo provider). Beneficiaries stored with the account number **AES-256-GCM encrypted**, only `•••• 1234` ever returned. `PENDING_CONFIRMATION` (funds reserved) → email link → `PROCESSING` (submitted) → `COMPLETED` only on the provider's confirmation; provider failure → `FAILED` + funds released once; unknown outcome → `UNDER_REVIEW` with funds **kept locked** until "re-check with provider". |
+| Crypto withdrawals | Same lifecycle through the custody adapter; tx hash stored when broadcast; demo hashes start with `demo-`. |
+| Idempotency | `Idempotency-Key` header on withdrawal requests; provider event ids recorded in `provider_events`; payouts use `WD-<id>` as the provider-side idempotency key. |
+| Transaction history | Status follows each deposit/withdrawal from creation; filters by type, asset, fiat/crypto, status, fees, date range, reference/tx hash. |
+| Admin | Deposits/withdrawals search + filters + detail (ledger journals, provider events, withdrawal risk context); reject (pending only, reason required); re-check payout with provider; reconciliation; audit log; asset registry. No endpoint can edit a balance or the ledger. |
+| Audit log | `audit_logs` (append-only): role changes, suspensions, withdrawal rejections, payout re-checks — who, what, when, reason, before/after. |
+
+**Activating real payments (external, needs your accounts):**
+1. Choose a South African payment provider that supports collections **and** payouts for a crypto business (confirm with them in writing: many PSPs restrict crypto). Get merchant approval, API docs and sandbox keys.
+2. Choose a custody provider (or self-hosted wallets with keys in an HSM/KMS — never in this app or its DB). Get API docs and sandbox keys.
+3. Implement `services/payments/<name>.js` / `services/custody/<name>.js` to the interfaces documented in `services/payments/index.js` and `services/custody/index.js`, translating their webhooks into the event formats in `demoPaymentProvider.js` / `demoCustody.js`; add them to `ADAPTERS`.
+4. Test against their sandboxes, then set `PAYMENT_PROVIDER`, `CUSTODY_PROVIDER`, the webhook secrets and `BENEFICIARY_ENCRYPTION_KEY` (see `Back-End/.env.example`), and remove `ALLOW_DEMO_MODE`.
+5. Regulatory: South African crypto asset service providers need FSCA licensing and FICA (KYC/AML) compliance — this app has no KYC verification yet.
+
+**Run locally:** `cd Back-End && npm install && node db/migrate.js && npm run dev` (port 5000) · `cd Front-End && npm install && npm run dev` (port 5173). Tests: `cd Back-End && npm test` · `cd Front-End && npx vitest run && npm run test:e2e`.
+
 ### Role-based access (2026-10-12)
 
 One sign-in page for everyone; the role in `users.role` (`user` | `admin`) decides where you go and what you can do.

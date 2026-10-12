@@ -143,10 +143,11 @@ describe("POST /api/orders/sell", () => {
     test("locked funds (pending withdrawal) cannot be sold", async () => {
         const user = await h.createUser();
         await h.fund(user.id, "BTC", 0.01);
-        await h.pool.query(
-            `UPDATE wallet_balances SET available_balance = 0, locked_balance = 0.01
-             WHERE asset_symbol = 'BTC' AND wallet_id = (SELECT id FROM wallets WHERE user_id = $1)`, [user.id]
-        );
+        const reserve = await h.api("POST", "/api/withdrawals/crypto", {
+            token: user.token, body: { asset: "BTC", network: "BTC", amount: 0.01, address: h.validAddresses.BTC }
+        });
+        assert.equal(reserve.status, 201);
+        assert.deepEqual(await h.balance(user.id, "BTC"), { available: 0, locked: 0.01 });
 
         const res = await h.api("POST", "/api/orders/sell", { token: user.token, body: { asset: "BTC", amount: 0.01 } });
         assert.equal(res.status, 400);

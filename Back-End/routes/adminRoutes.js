@@ -19,6 +19,14 @@ const {
     rejectWithdrawal,
     getAllOrders
 } = require("../controllers/adminController");
+const {
+    getDepositDetail,
+    getWithdrawalDetail,
+    recheckWithdrawalWithProvider,
+    getReconciliation,
+    getAuditLogs,
+    getSupportedAssets
+} = require("../controllers/adminFinanceController");
 
 // Every route here requires a valid JWT (authenticate) AND a current
 // role of 'admin' looked up fresh from the DB (authorizeAdmin) — see
@@ -47,9 +55,16 @@ router.patch("/users/:id/suspension", adminWriteLimiter, setUserSuspension);
 router.get("/transactions", getAllTransactions);
 
 router.get("/deposits", getAllDeposits);
+router.get("/deposits/:id", getDepositDetail);
 
 router.get("/withdrawals", getAllWithdrawals);
+router.get("/withdrawals/:id", getWithdrawalDetail);
 router.post("/withdrawals/:id/reject", adminWriteLimiter, rejectWithdrawal);
+router.post("/withdrawals/:id/recheck", adminWriteLimiter, recheckWithdrawalWithProvider);
+
+router.get("/reconciliation", getReconciliation);
+router.get("/audit-logs", getAuditLogs);
+router.get("/assets", getSupportedAssets);
 
 router.get("/orders", getAllOrders);
 

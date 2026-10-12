@@ -32,11 +32,35 @@ const validateEnv = (env = process.env) => {
         (production ? errors : warnings).push("CRYPTO_ADDRESS_SECRET is not set (falls back to a hardcoded default)");
     }
 
+    // Provider names must be ones this build implements (see services/payments
+    // and services/custody); an unknown name is a misconfiguration, never a
+    // reason to fall back to simulation.
+    const { KNOWN_PROVIDERS } = require("../services/payments");
+    const { KNOWN_CUSTODY_PROVIDERS } = require("../services/custody");
+    const paymentProvider = (env.PAYMENT_PROVIDER || "").trim().toLowerCase();
+    const custodyProvider = (env.CUSTODY_PROVIDER || "").trim().toLowerCase();
+    if (paymentProvider && !KNOWN_PROVIDERS.includes(paymentProvider)) {
+        errors.push(`PAYMENT_PROVIDER "${env.PAYMENT_PROVIDER}" is not implemented (available: ${KNOWN_PROVIDERS.join(", ")})`);
+    }
+    if (custodyProvider && !KNOWN_CUSTODY_PROVIDERS.includes(custodyProvider)) {
+        errors.push(`CUSTODY_PROVIDER "${env.CUSTODY_PROVIDER}" is not implemented (available: ${KNOWN_CUSTODY_PROVIDERS.join(", ")})`);
+    }
+    if (env.BENEFICIARY_ENCRYPTION_KEY) {
+        const key = env.BENEFICIARY_ENCRYPTION_KEY;
+        const bytes = /^[0-9a-f]{64}$/i.test(key) ? 32 : Buffer.from(key, "base64").length;
+        if (bytes !== 32) errors.push("BENEFICIARY_ENCRYPTION_KEY must be 32 bytes (64 hex characters or base64)");
+    } else {
+        (production ? errors : warnings).push("BENEFICIARY_ENCRYPTION_KEY is not set (bank account numbers are encrypted with a built-in development key)");
+    }
+    if (!env.CUSTODY_WEBHOOK_SECRET) {
+        (production ? errors : warnings).push("CUSTODY_WEBHOOK_SECRET is not set (custody webhooks fall back to a development secret)");
+    }
+
     if (production) {
         if (env.ALLOW_DEMO_MODE !== "true") {
             errors.push(
-                "Refusing to start in production: payments, deposits and withdrawals are simulated (no real provider is integrated) " +
-                "and would create money from nothing. Set ALLOW_DEMO_MODE=true to acknowledge this explicitly."
+                "Refusing to start in production: payments, deposits and withdrawals are simulated (only the demo payment and custody " +
+                "providers exist in this build) and would create money from nothing. Set ALLOW_DEMO_MODE=true only to run a public demo."
             );
         }
         if (!(env.SMTP_HOST && env.SMTP_USER && env.SMTP_PASS)) {

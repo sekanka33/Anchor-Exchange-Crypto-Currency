@@ -142,13 +142,19 @@ describe("admin capabilities", () => {
         const body = { asset: "BTC", network: "BTC", amount: 0.01, address: h.validAddresses.BTC };
 
         const pending = await h.api("POST", "/api/withdrawals/crypto", { token: user.token, body });
-        assert.equal((await h.api("POST", `/api/admin/withdrawals/${pending.body.withdrawal.id}/reject`, { token: admin.token })).status, 200);
+        const pendingId = pending.body.withdrawal.id;
+        assert.equal((await h.api("POST", `/api/admin/withdrawals/${pendingId}/reject`, { token: admin.token })).status, 400, "a reason is required");
+        assert.equal((await h.api("POST", `/api/admin/withdrawals/${pendingId}/reject`, { token: admin.token, body: { reason: "Suspected account takeover" } })).status, 200);
         assert.deepEqual(await h.balance(user.id, "BTC"), { available: 0.05, locked: 0 });
+        assert.equal((await h.pool.query("SELECT status FROM withdrawals WHERE id = $1", [pendingId])).rows[0].status, "REJECTED");
+        const audit = (await h.pool.query("SELECT actor_user_id, reason FROM audit_logs WHERE action = 'WITHDRAWAL_REJECT' AND target_id = $1", [String(pendingId)])).rows;
+        assert.deepEqual(audit, [{ actor_user_id: admin.id, reason: "Suspected account takeover" }]);
 
         const done = await h.api("POST", "/api/withdrawals/crypto", { token: user.token, body });
         const { confirmation_token } = (await h.pool.query("SELECT confirmation_token FROM withdrawals WHERE id = $1", [done.body.withdrawal.id])).rows[0];
         await h.api("GET", `/api/withdrawals/confirm?token=${confirmation_token}`);
-        assert.equal((await h.api("POST", `/api/admin/withdrawals/${done.body.withdrawal.id}/reject`, { token: admin.token })).status, 404);
+        assert.equal((await h.api("POST", `/api/admin/withdrawals/${done.body.withdrawal.id}/reject`, { token: admin.token, body: { reason: "Too late to stop" } })).status, 404);
+        await h.waitFor(async () => (await h.balance(user.id, "BTC")).locked === 0, { message: "payout settled" });
         assert.deepEqual(await h.balance(user.id, "BTC"), { available: 0.04, locked: 0 });
     });
 });

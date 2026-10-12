@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 const jwt = require("jsonwebtoken");
 const rateLimit = require("express-rate-limit");
+const QRCode = require("qrcode");
 
 const pool = require("../config/database");
 const redis = require("../config/redis");
@@ -66,8 +67,9 @@ router.get("/init", qrInitLimiter, async (req, res) => {
 
             qr_token,
 
-            qrCode:
-                `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(qrUrl)}`,
+            // Rendered here, never by a third-party QR service: the URL holds
+            // a token that can approve a sign-in.
+            qrCode: await QRCode.toDataURL(qrUrl, { width: 200, margin: 1 }),
 
             expires_in: 60
 

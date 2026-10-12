@@ -3,19 +3,15 @@ import Modal from "../Components/Modal";
 import PageHeader from "../Components/PageHeader";
 import MoneyFlowSidebar from "../Components/MoneyFlowSidebar";
 import { API_BASE_URL } from "../api/config";
+import { StatusBadge } from "../Components/FinanceUI";
+import { STATUS_META, formatAmount as formatMoneyAmount } from "../utils/finance";
 
 const TYPE_OPTIONS = ["BUY", "SELL", "DEPOSIT", "WITHDRAWAL"];
-const STATUS_OPTIONS = ["PENDING", "COMPLETED", "FAILED"];
+const STATUS_OPTIONS = Object.keys(STATUS_META).filter((s) => s !== "OPEN");
 
 const authHeaders = () => ({
   Authorization: `Bearer ${localStorage.getItem("token")}`,
 });
-
-const statusStyles = {
-  COMPLETED: "bg-green-500/10 text-green-400",
-  PENDING: "bg-amber-500/10 text-amber-400",
-  FAILED: "bg-red-500/10 text-red-400",
-};
 
 const typeStyles = {
   BUY: "text-green-400",
@@ -24,10 +20,13 @@ const typeStyles = {
   WITHDRAWAL: "text-purple-400",
 };
 
-const formatAmount = (value) => {
-  const num = Number(value);
-  return Number.isInteger(num) ? num.toString() : num.toFixed(8).replace(/0+$/, "").replace(/\.$/, "");
-};
+// Buys/sells move crypto (`amount`) but their fee and total are in the
+// order's fiat currency; deposits/withdrawals are all in their own asset.
+const feeCurrency = (tx) =>
+  tx.type === "BUY" || tx.type === "SELL" ? tx.metadata?.currency || "USD" : tx.asset;
+const fmtAmount = (tx) => formatMoneyAmount(tx.amount, tx.asset);
+const fmtFee = (tx) => formatMoneyAmount(tx.fee, feeCurrency(tx));
+const fmtTotal = (tx) => formatMoneyAmount(tx.total, feeCurrency(tx));
 
 const TransactionHistory = () => {
   const [transactions, setTransactions] = useState([]);
@@ -40,6 +39,9 @@ const TransactionHistory = () => {
   const [statusFilter, setStatusFilter] = useState("");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
+  const [category, setCategory] = useState("");
+  const [feesOnly, setFeesOnly] = useState(false);
+  const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
 
   const [selectedTx, setSelectedTx] = useState(null);
@@ -55,6 +57,9 @@ const TransactionHistory = () => {
       if (statusFilter) params.set("status", statusFilter);
       if (startDate) params.set("startDate", startDate);
       if (endDate) params.set("endDate", endDate);
+      if (category) params.set("category", category);
+      if (feesOnly) params.set("feesOnly", "true");
+      if (search.trim()) params.set("search", search.trim());
 
       try {
         const res = await fetch(`${API_BASE_URL}/api/transactions?${params.toString()}`, {
@@ -77,7 +82,7 @@ const TransactionHistory = () => {
     };
 
     fetchTransactions();
-  }, [typeFilter, assetFilter, statusFilter, startDate, endDate, page]);
+  }, [typeFilter, assetFilter, statusFilter, startDate, endDate, category, feesOnly, search, page]);
 
   const clearFilters = () => {
     setTypeFilter("");
@@ -85,10 +90,13 @@ const TransactionHistory = () => {
     setStatusFilter("");
     setStartDate("");
     setEndDate("");
+    setCategory("");
+    setFeesOnly(false);
+    setSearch("");
     setPage(1);
   };
 
-  const hasActiveFilters = typeFilter || assetFilter || statusFilter || startDate || endDate;
+  const hasActiveFilters = typeFilter || assetFilter || statusFilter || startDate || endDate || category || feesOnly || search;
 
   return (
     <div className="pb-20">
@@ -143,7 +151,7 @@ const TransactionHistory = () => {
               >
                 <option value="">All</option>
                 {STATUS_OPTIONS.map((s) => (
-                  <option key={s} value={s}>{s}</option>
+                  <option key={s} value={s}>{STATUS_META[s].label}</option>
                 ))}
               </select>
             </div>
@@ -169,6 +177,25 @@ const TransactionHistory = () => {
                 className="bg-slate-100 dark:bg-[#21242d] text-slate-900 dark:text-white border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
+
+            <div>
+              <label htmlFor="tx-category-filter" className="block text-xs text-gray-600 dark:text-gray-400 mb-1">Currency kind</label>
+              <select id="tx-category-filter" value={category} onChange={(e) => { setCategory(e.target.value); setPage(1); }} className="bg-slate-100 dark:bg-[#21242d] text-slate-900 dark:text-white border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500">
+                <option value="">All</option>
+                <option value="fiat">Fiat (ZAR, USD)</option>
+                <option value="crypto">Crypto</option>
+              </select>
+            </div>
+
+            <div>
+              <label htmlFor="tx-search" className="block text-xs text-gray-600 dark:text-gray-400 mb-1">Reference or tx hash</label>
+              <input id="tx-search" type="search" value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }} placeholder="e.g. DEP-…" className="w-40 bg-slate-100 dark:bg-[#21242d] text-slate-900 dark:text-white border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500" />
+            </div>
+
+            <label className="flex items-center gap-2 text-sm py-2">
+              <input type="checkbox" checked={feesOnly} onChange={(e) => { setFeesOnly(e.target.checked); setPage(1); }} className="accent-blue-600" />
+              With fees only
+            </label>
 
             {hasActiveFilters && (
               <button
@@ -204,6 +231,7 @@ const TransactionHistory = () => {
                       <th className="px-5 py-3 font-medium">Fee</th>
                       <th className="px-5 py-3 font-medium">Total</th>
                       <th className="px-5 py-3 font-medium">Status</th>
+                      <th className="px-5 py-3 font-medium">Reference</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -218,14 +246,11 @@ const TransactionHistory = () => {
                         </td>
                         <td className={`px-5 py-3 font-semibold ${typeStyles[tx.type] || ""}`}>{tx.type}</td>
                         <td className="px-5 py-3">{tx.asset}</td>
-                        <td className="px-5 py-3">{formatAmount(tx.amount)}</td>
-                        <td className="px-5 py-3 text-gray-600 dark:text-gray-400">{formatAmount(tx.fee)}</td>
-                        <td className="px-5 py-3">{formatAmount(tx.total)}</td>
-                        <td className="px-5 py-3">
-                          <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${statusStyles[tx.status] || "bg-gray-500/10 text-gray-600 dark:text-gray-400"}`}>
-                            {tx.status}
-                          </span>
-                        </td>
+                        <td className="px-5 py-3 whitespace-nowrap">{fmtAmount(tx)}</td>
+                        <td className="px-5 py-3 text-gray-600 dark:text-gray-400 whitespace-nowrap">{fmtFee(tx)}</td>
+                        <td className="px-5 py-3 whitespace-nowrap">{fmtTotal(tx)}</td>
+                        <td className="px-5 py-3"><StatusBadge status={tx.status} /></td>
+                        <td className="px-5 py-3 font-mono text-xs text-gray-600 dark:text-gray-400">{tx.reference}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -280,7 +305,7 @@ const TransactionHistory = () => {
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-600 dark:text-gray-400">Status</span>
-                <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${statusStyles[selectedTx.status] || ""}`}>{selectedTx.status}</span>
+                <StatusBadge status={selectedTx.status} />
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-600 dark:text-gray-400">Asset</span>
@@ -288,15 +313,15 @@ const TransactionHistory = () => {
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-600 dark:text-gray-400">Amount</span>
-                <span>{formatAmount(selectedTx.amount)} {selectedTx.asset}</span>
+                <span>{fmtAmount(selectedTx)}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-600 dark:text-gray-400">Fee</span>
-                <span>{formatAmount(selectedTx.fee)} {selectedTx.asset}</span>
+                <span>{fmtFee(selectedTx)}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-600 dark:text-gray-400">Total</span>
-                <span>{formatAmount(selectedTx.total)} {selectedTx.asset}</span>
+                <span>{fmtTotal(selectedTx)}</span>
               </div>
               {selectedTx.reference && (
                 <div className="flex justify-between gap-4">
@@ -304,9 +329,12 @@ const TransactionHistory = () => {
                   <span className="text-right break-all font-mono text-xs">{selectedTx.reference}</span>
                 </div>
               )}
+              {selectedTx.metadata?.demo && (
+                <p className="text-xs text-amber-700 dark:text-amber-300">Demo transaction: no real money or crypto moved.</p>
+              )}
               {selectedTx.tx_hash && (
                 <div className="flex justify-between gap-4">
-                  <span className="text-gray-600 dark:text-gray-400 flex-shrink-0">Tx hash</span>
+                  <span className="text-gray-600 dark:text-gray-400 flex-shrink-0">Tx hash{selectedTx.tx_hash.startsWith("demo-") ? " (simulated)" : ""}</span>
                   <span className="text-right break-all font-mono text-xs">{selectedTx.tx_hash}</span>
                 </div>
               )}
