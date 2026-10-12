@@ -111,7 +111,7 @@ export const DepositsPanel = ({ initialStatus = "" }) => {
     <div>
       <Filters search={search} setSearch={reset(setSearch)} status={status} setStatus={reset(setStatus)} statuses={DEPOSIT_STATUSES}
         asset={asset} setAsset={reset(setAsset)} placeholder="Reference, tx hash or customer email" />
-      <div className={`${card} overflow-x-auto`}>
+      <div className={`${card} overflow-x-auto relative`}>
         <table className="w-full text-sm">
           <thead className="text-left text-gray-600 dark:text-text-color border-b border-gray-200 dark:border-line-color">
             <tr><th className={th}>Date</th><th className={th}>Customer</th><th className={th}>Type</th><th className={th}>Amount</th><th className={th}>Status</th><th className={th}>Reference / tx</th><th className={th}><span className="sr-only">Actions</span></th></tr>
@@ -214,7 +214,7 @@ export const WithdrawalsPanel = ({ initialStatus = "" }) => {
     <div>
       <Filters search={search} setSearch={reset(setSearch)} status={status} setStatus={reset(setStatus)} statuses={WITHDRAWAL_STATUSES}
         asset={asset} setAsset={reset(setAsset)} placeholder="WD-reference, tx hash, address or email" />
-      <div className={`${card} overflow-x-auto`}>
+      <div className={`${card} overflow-x-auto relative`}>
         <table className="w-full text-sm">
           <thead className="text-left text-gray-600 dark:text-text-color border-b border-gray-200 dark:border-line-color">
             <tr><th className={th}>Date</th><th className={th}>Reference</th><th className={th}>Customer</th><th className={th}>Amount</th><th className={th}>Destination</th><th className={th}>Status</th><th className={th}><span className="sr-only">Actions</span></th></tr>
@@ -371,7 +371,7 @@ export const ReconciliationPanel = () => {
             )}
           </section>
 
-          <section className={`${card} p-5 overflow-x-auto`}>
+          <section className={`${card} p-5 overflow-x-auto relative`}>
             <h3 className="font-semibold mb-1">Platform accounts</h3>
             <p className="text-xs text-gray-600 dark:text-gray-400 mb-3">Fees earned, the exchange's trading inventory, and money that entered or left through each provider (negative = net inflow).</p>
             <table className="text-sm w-full">
@@ -397,7 +397,7 @@ export const AuditLogPanel = () => {
   const rows = logs.data?.auditLogs || [];
 
   return (
-    <div className={`${card} overflow-x-auto`}>
+    <div className={`${card} overflow-x-auto relative`}>
       <table className="w-full text-sm">
         <thead className="text-left text-gray-600 dark:text-text-color border-b border-gray-200 dark:border-line-color">
           <tr><th className={th}>When</th><th className={th}>Administrator</th><th className={th}>Action</th><th className={th}>Target</th><th className={th}>Reason</th><th className={th}>Change</th></tr>
@@ -437,7 +437,7 @@ export const AssetsPanel = () => {
             <p>Payment provider: <strong>{a.paymentProvider}</strong> · Custody provider: <strong>{a.custodyProvider}</strong></p>
             {a.demo && <p className="mt-1 text-amber-700 dark:text-amber-300">Demo integrations are active: no real money or crypto moves.</p>}
           </div>
-          <section className={`${card} overflow-x-auto`}>
+          <section className={`${card} overflow-x-auto relative`}>
             <table className="w-full text-sm">
               <thead className="text-left text-gray-600 dark:text-text-color border-b border-gray-200 dark:border-line-color">
                 <tr><th className={th}>Fiat</th><th className={th}>Deposit limits</th><th className={th}>Deposit fees</th><th className={th}>Withdrawal limits</th><th className={th}>Withdrawal fee</th></tr>
@@ -455,7 +455,7 @@ export const AssetsPanel = () => {
               </tbody>
             </table>
           </section>
-          <section className={`${card} overflow-x-auto`}>
+          <section className={`${card} overflow-x-auto relative`}>
             <table className="w-full text-sm">
               <thead className="text-left text-gray-600 dark:text-text-color border-b border-gray-200 dark:border-line-color">
                 <tr><th className={th}>Crypto</th><th className={th}>Networks</th><th className={th}>Min deposit</th><th className={th}>Confirmations</th><th className={th}>Withdrawal fee</th></tr>

@@ -105,7 +105,7 @@ const Wallet = () => {
               </div>
 
 
-              <div className='bg-white dark:bg-hero2-dark text-slate-900 dark:text-white w-full max-w-220 min-h-40 pl-10 pr-10 mt-9 pb-5 rounded-2xl border-gray-200 dark:border-line-color border-2 overflow-x-auto'>
+              <div className='bg-white dark:bg-hero2-dark text-slate-900 dark:text-white w-full max-w-220 min-h-40 pl-10 pr-10 mt-9 pb-5 rounded-2xl border-gray-200 dark:border-line-color border-2 overflow-x-auto relative'>
                 <div className='flex flex-row gap-20 pt-10 text-gray-500 dark:text-text-color w-max min-w-full'>
                   <p className='w-30'>Asset</p>
                   <p className='w-40'>Available</p>
@@ -151,7 +151,7 @@ const Wallet = () => {
                   ))}
               </div>
 
-              <div className='bg-white dark:bg-hero2-dark text-slate-900 dark:text-white w-full max-w-220 min-h-30 pl-10 pr-10 mt-9 pb-5 rounded-2xl border-gray-200 dark:border-line-color border-2 overflow-x-auto'>
+              <div className='bg-white dark:bg-hero2-dark text-slate-900 dark:text-white w-full max-w-220 min-h-30 pl-10 pr-10 mt-9 pb-5 rounded-2xl border-gray-200 dark:border-line-color border-2 overflow-x-auto relative'>
                 <p className='text-xl font-bold pt-5 pb-3'>Recent Wallet Activity</p>
                 <hr className='text-gray-200 dark:text-line-color w-200 h-0 mb-2' />
 
