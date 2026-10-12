@@ -1,11 +1,12 @@
 import { Link } from "react-router-dom";
 import { useCurrency } from "../hooks/useCurrency";
 import { useState, useEffect } from "react";
-import { getCoinsByCategory } from "../api/coingecko";
+import { getCoinsMarkets } from "../api/coingecko";
 import graphic from "../assets/Graphic.png";
 import { FaAppStore, FaCheckCircle, FaGooglePlay, FaSearch, FaStar, FaRegStar } from 'react-icons/fa';
 import CreateAnAccoutSection from '../Components/CreateAnAccoutSection';
 import CryptoMarketBar from '../Components/CryptoMarketBar';
+import PriceSparkline from '../Components/PriceSparkline';
 
 const MARKET_CATEGORIES = [
   { name: "View All", id: "" },
@@ -30,7 +31,8 @@ const Home = () => {
     const loadCoins = async () => {
       setCoinsLoading(true);
       try {
-        const data = await getCoinsByCategory(category, 8);
+        // sparkline: hourly prices for the last 7 days; 7d: the week's % change.
+        const data = await getCoinsMarkets({ category, perPage: 8, sparkline: true, priceChangePercentage: "7d" });
         setCoins(data);
       } catch {
         setCoins([]);
@@ -114,7 +116,7 @@ const Home = () => {
 
           {/* Table Container */}
           <div className='overflow-x-auto'>
-            <table className='w-full min-w-[800px] text-left border-collapse'>
+            <table className='w-full min-w-[880px] text-left border-collapse'>
               <thead>
                 <tr className='border-b border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 text-sm font-semibold'>
                   <th scope="col" className='py-4 px-2 w-10 text-center'></th>
@@ -183,8 +185,14 @@ const Home = () => {
                       {formatMoney(coin.market_cap, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                     </td>
 
-                    <td className='py-4 px-4 text-center text-gray-600 dark:text-gray-400 text-xs align-middle'>
-                      —
+                    <td className='py-4 px-4 align-middle'>
+                      <PriceSparkline
+                        prices={coin.sparkline_in_7d?.price}
+                        name={coin.name}
+                        changePercent={coin.price_change_percentage_7d_in_currency}
+                        endTime={coin.last_updated}
+                        formatPrice={(value) => formatMoney(value)}
+                      />
                     </td>
 
                     <td className='py-4 px-4 text-right align-middle'>
