@@ -190,7 +190,7 @@ const CryptoDeposit = () => {
         <div className="hidden md:block h-140 w-0 border-r-2 border-gray-200 dark:border-hero-dark"></div>
 
         {/* MAIN */}
-        <div className="text-slate-900 dark:text-white font-sans w-full max-w-2xl">
+        <div className="text-slate-900 dark:text-white font-sans w-full min-w-0 max-w-2xl">
 
           <div className="bg-white dark:bg-[#16181e] p-8 rounded-2xl border border-gray-200 dark:border-gray-800/50 shadow-xl">
 

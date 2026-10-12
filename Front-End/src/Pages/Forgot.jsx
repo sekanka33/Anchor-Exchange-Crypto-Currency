@@ -37,7 +37,7 @@ const Forgot = () => {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen px-6">
+    <div className="flex flex-1 flex-col items-center justify-center px-6 py-12">
       <h1 className="text-2xl font-semibold mb-2">Forgot password</h1>
       <p className="text-center mb-6 text-slate-500 dark:text-gray-400">
         Enter the email associated with your account and we'll send you a link to reset your

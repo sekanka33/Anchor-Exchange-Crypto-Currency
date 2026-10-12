@@ -242,7 +242,7 @@ const BuyCrypto = () => {
         <div className="hidden md:block h-140 w-0 border-r-2 border-gray-200 dark:border-hero-dark"></div>
 
         {/* MAIN CONTENT */}
-        <div className="text-slate-900 dark:text-white font-sans w-full">
+        <div className="text-slate-900 dark:text-white font-sans w-full min-w-0">
 
           <StepIndicator steps={["Select currency", "Important Notes", "Payment Details"]} currentStep={step} />
 

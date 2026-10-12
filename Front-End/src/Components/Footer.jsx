@@ -1,149 +1,125 @@
 import { Link } from 'react-router-dom'
-import { FaFacebook, FaLinkedin, FaTwitter } from 'react-icons/fa'
+import { FaFacebook, FaLinkedin } from 'react-icons/fa'
 import { FaWhatsapp, FaXTwitter } from 'react-icons/fa6'
+
+// One list drives both the desktop and mobile layouts. Items with a `to` are
+// real routes; items without one are products/features Anchor Exchange
+// doesn't offer yet and are shown as "Soon" rather than as dead links.
+const SECTIONS = [
+  {
+    title: 'PRODUCTS',
+    items: [
+      { label: 'Spot', to: '/spot' },
+      { label: 'Inverse Perpetual' },
+      { label: 'USDT Perpetual' },
+      { label: 'Exchange', to: '/exchange' },
+      { label: 'Launchpad' },
+      { label: 'Anchor Pay' },
+    ],
+  },
+  {
+    title: 'SERVICES',
+    items: [
+      { label: 'Buy Crypto', to: '/buy-crypto' },
+      { label: 'Markets', to: '/markets' },
+      { label: 'Trading Fee', to: '/faq#fees' },
+      { label: 'Affiliate Program' },
+      { label: 'Referral Program' },
+      { label: 'API' },
+    ],
+  },
+  {
+    title: 'SUPPORT',
+    items: [
+      { label: 'Anchor Learn', to: '/blog' },
+      { label: 'Help Center', to: '/faq' },
+      { label: 'User Feedback' },
+      { label: 'Submit Request' },
+      { label: 'API Documentation' },
+      { label: 'Trading Rules', to: '/faq#trading-rules' },
+    ],
+  },
+  {
+    title: 'ABOUT US',
+    items: [
+      { label: 'About Anchor Exchange', to: '/about' },
+      { label: 'Authenticity Check' },
+      { label: 'Careers', to: '/careers' },
+      { label: 'Contacts', to: '/contact' },
+      { label: 'Blog', to: '/blog' },
+    ],
+  },
+]
+
+// No official social accounts are configured yet, so these stay as labelled
+// icons instead of links to made-up URLs.
+const SOCIALS = [
+  { label: 'Facebook', Icon: FaFacebook },
+  { label: 'WhatsApp', Icon: FaWhatsapp },
+  { label: 'LinkedIn', Icon: FaLinkedin },
+  { label: 'X (Twitter)', Icon: FaXTwitter },
+]
+
+const FooterItem = ({ item }) =>
+  item.to ? (
+    <Link to={item.to} className='inline-flex py-0.5 hover:text-blue-500 focus-visible:text-blue-500'>
+      {item.label}
+    </Link>
+  ) : (
+    <span className='inline-flex flex-wrap items-center gap-2 py-0.5 text-gray-500 dark:text-gray-400' title='Not available yet'>
+      {item.label}
+      <span className='rounded-full border border-gray-300 dark:border-gray-600 px-1.5 text-[10px] font-semibold uppercase leading-4 tracking-wide'>
+        Soon
+      </span>
+    </span>
+  )
 
 const Footer = () => {
   return (
-    <footer className='w-full h-auto'>
+    <footer className='w-full'>
       {/* Top Footer */}
-      <div className='hidden md:flex md:flex-wrap justify-between gap-x-8 gap-y-10 py-20 px-8 max-w-7xl mx-auto w-full'>
-        <div className='flex flex-col gap-4'>
+      <div className='flex flex-col md:flex-row md:flex-wrap md:justify-between gap-x-8 gap-y-7 md:gap-y-10 px-7 md:px-8 py-7 md:py-20 max-w-7xl mx-auto w-full box-border'>
+        <div className='flex flex-col gap-2 md:gap-4'>
           {/* Logo */}
-          <h2 className='text-2xl font-extrabold '>Anchor Exchange</h2>
-          <p className='text-1xl font-semibold'>Let's talk! 🤙</p>
+          <h2 className='text-lg md:text-2xl font-extrabold'>Anchor Exchange</h2>
+          <p className='font-semibold'>Let's talk! 🤙</p>
           <p>+27 123 456 7890</p>
-          <p>Anchor@exchange.com</p>
+          <p className='break-all'>Anchor@exchange.com</p>
           <p>Free For all of the World people</p>
         </div>
 
-        {/* Fixed: changed gap-20 to md:gap-20 so it doesn't inflate layout width on mobile background DOM */}
-        <div className='hidden md:flex md:flex-wrap gap-8 lg:gap-20 justify-between'>
-          <div className='flex flex-col gap-4'>
-            <h2 className='text-1xl font-bold '>PRODUCTS</h2>
-            <p className='hover:text-blue-500'>Spot</p>
-            <p className='hover:text-blue-500'>Inverse Perpetual</p>
-            <p className='hover:text-blue-500'>USDT Perpetual</p>
-            <Link to="/exchange" className='hover:text-blue-500'>Exchange</Link>
-            <p className='hover:text-blue-500'>Launchpad</p>
-            <p className='hover:text-blue-500'>Anchor pay</p>
-          </div>
-
-          <div className='flex flex-col gap-4'>
-            <h2 className='text-1xl font-bold '>SERVICES</h2>
-            <Link to="/buy-crypto" className='hover:text-blue-500'>Buy Crypto</Link>
-            <Link to="/markets" className='hover:text-blue-500'>Markets</Link>
-            <p className='hover:text-blue-500'>Trading Fee</p>
-            <p className='hover:text-blue-500'>Affiliate Program</p>
-            <p className='hover:text-blue-500'>Referral Program</p>
-            <p className='hover:text-blue-500'>API</p>
-          </div>
-
-          <div className='flex flex-col gap-4'>
-            <h2 className='text-1xl font-bold '>SUPPORT</h2>
-            <p className='hover:text-blue-500'>Anchor Learn</p>
-            <Link to="/faq" className='hover:text-blue-500'>Help Center</Link>
-            <p className='hover:text-blue-500'>User Feedback</p>
-            <p className='hover:text-blue-500'>Submit Request</p>
-            <p className='hover:text-blue-500'>API Documentation</p>
-            <p className='hover:text-blue-500'>Trading Rules</p>
-          </div>
-
-          <div className='flex flex-col gap-4'>
-            <h2 className='text-1xl font-bold '>ABOUT US</h2>
-            <p className='hover:text-blue-500'>About Anchor Exchange</p>
-            <p className='hover:text-blue-500'>Authenticity Check</p>
-            <p className='hover:text-blue-500'>Careers</p>
-            <Link to="/contact" className='hover:text-blue-500'>Contacts</Link>
-            <Link to="/blog" className='hover:text-blue-500'>Blog</Link>
-          </div>
+        <div className='flex flex-col md:flex-row md:flex-wrap gap-6 md:gap-8 lg:gap-12 md:justify-between'>
+          {SECTIONS.map((section) => (
+            <div key={section.title} className='flex flex-col gap-2 md:gap-4'>
+              <h2 className='text-lg md:text-base font-bold'>{section.title}</h2>
+              <ul className='flex flex-col gap-2 md:gap-3'>
+                {section.items.map((item) => (
+                  <li key={item.label}>
+                    <FooterItem item={item} />
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
         </div>
       </div>
 
+      {/* Bottom bar */}
+      <div className='w-full bg-white border-t border-gray-200 text-gray-600 dark:bg-mist-900 dark:border-transparent dark:text-white transition-colors duration-300'>
+        <div className='flex flex-col md:flex-row items-center md:justify-between gap-3 md:gap-4 px-6 md:px-20 py-7 md:py-6 text-center md:text-left'>
+          <p>Copyright &copy; {new Date().getFullYear()} Anchor Exchange</p>
 
-      <div className='hidden md:block h-20 w-full bg-white border-t border-gray-200 text-gray-600 dark:bg-mist-900 dark:border-transparent dark:text-white transition-colors duration-300'>
-        <div className='flex flex-wrap gap-4 justify-between px-4 md:pl-20 md:pr-20 pt-6'>
-          <div>
-            <p>Copyright &copy; {new Date().getFullYear()} Free For all of the World people</p>
-          </div>
-
-          <div className='flex gap-5 text-gray-600 dark:text-gray-400'>
-            <button className='hover:text-blue-500' aria-label='Facebook'><FaFacebook size={20} /> </button>
-            <button className='hover:text-blue-500' aria-label='WhatsApp'><FaWhatsapp size={20} /> </button>
-            <button className='hover:text-blue-500' aria-label='LinkedIn'><FaLinkedin size={20} /> </button>
-            <button className='hover:text-blue-500' aria-label='X (Twitter)'><FaXTwitter size={20} /> </button>
-          </div>
+          <ul className='flex items-center gap-5 text-gray-600 dark:text-gray-400' aria-label='Social media (coming soon)'>
+            {SOCIALS.map(({ label, Icon }) => (
+              <li key={label}>
+                <span role='img' aria-label={`${label} (coming soon)`} title={`${label} — coming soon`} className='flex'>
+                  <Icon size={20} aria-hidden='true' />
+                </span>
+              </li>
+            ))}
+          </ul>
         </div>
       </div>
-
-
-      {/* mobile footer */}
-      <div className='flex md:hidden flex-col justify-between px-7 py-7 w-full box-border'>
-        <div className='flex flex-col gap-2'>
-          {/* Logo */}
-          <h2 className='text-lg font-extrabold '>Anchor Exchange</h2>
-          <p className='text-base font-semibold'>Let's talk! 🤙</p>
-          <p className='text-base'>+27 123 456 7890</p>
-          <p className='text-base'>Anchor@exchange.com</p>
-          <p className='text-base'>Free For all of the World people</p>
-        </div>
-
-        <div className='flex flex-col gap-6 justify-between pt-7'>
-          <div className='flex flex-col gap-2'>
-            <h2 className='text-lg font-bold '>PRODUCTS</h2>
-            <p className='text-base'>Spot</p>
-            <p className='text-base'>Inverse Perpetual</p>
-            <p className='text-base'>USDT Perpetual</p>
-            <p className='text-base'>Exchange</p>
-            <p className='text-base'>Launchpad</p>
-            <p className='text-base'>Anchor pay</p>
-          </div>
-
-          <div className='flex flex-col gap-4'>
-            <h2 className='text-lg font-bold '>SERVICES</h2>
-            <p className='text-base'>Buy Crypto</p>
-            <p className='text-base'>Markets</p>
-            <p className='text-base'>Trading Fee</p>
-            <p className='text-base'>Affiliate Program</p>
-            <p className='text-base'>Referral Program</p>
-            <p className='text-base'>API</p>
-          </div>
-
-          <div className='flex flex-col gap-4'>
-            <h2 className='text-lg font-bold '>SUPPORT</h2>
-            <p className='text-base'>Anchor Learn</p>
-            <p className='text-base'>Help Center</p>
-            <p className='text-base'>User Feedback</p>
-            <p className=' text-base'>Submit Request</p>
-            <p className='text-base'>API Documentation</p>
-            <p className='text-base'>Trading Rules</p>
-          </div>
-
-          <div className='flex flex-col gap-4'>
-            <h2 className='text-lg font-bold '>ABOUT US</h2>
-            <p className='text-base'>About Anchor Exchange</p>
-            <p className='text-base'>Authenticity Check</p>
-            <p className='text-base'>Careers</p>
-            <p className='text-base'>Contacts</p>
-            <p className='text-base'>Blog</p>
-          </div>
-        </div>
-      </div>
-
-      <div className='md:hidden w-full py-7 px-6 bg-white border-t border-gray-200 text-gray-600 dark:bg-mist-900 dark:border-transparent dark:text-white transition-colors duration-300 box-border'>
-        <div className='flex flex-col gap-3 items-center justify-between'>
-          <div>
-            <p className='text-base'>Copyright &copy; {new Date().getFullYear()} Anchor Exchange</p>
-          </div>
-
-          <div className='flex gap-2 text-gray-600 dark:text-gray-400'>
-            <button className='text-base' aria-label='Facebook'><FaFacebook size={20} /> </button>
-            <button className='text-base' aria-label='WhatsApp'><FaWhatsapp size={20} /> </button>
-            <button className='text-base' aria-label='LinkedIn'><FaLinkedin size={20} /> </button>
-            <button className='text-base' aria-label='X (Twitter)'><FaXTwitter size={20} /> </button>
-          </div>
-        </div>
-      </div>
-
     </footer>
   )
 }
