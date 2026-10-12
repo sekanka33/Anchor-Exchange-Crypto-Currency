@@ -25,7 +25,7 @@ test.describe('money flows across the real stack', () => {
     await expect(page.getByText('$0.00').first()).toBeVisible()
   })
 
-  test('emailed withdrawal link: confirming completes it once, replaying the link fails', async ({ page }) => {
+  test('emailed withdrawal link: confirming submits it once, the custodian settles it, replaying the link fails', async ({ page }) => {
     const user = await createUser()
     await fund(user.id, 'BTC', 0.05)
 
@@ -40,8 +40,9 @@ test.describe('money flows across the real stack', () => {
     const link = `/withdrawals/confirm?token=${rows[0].confirmation_token}`
 
     await page.goto(link)
-    await expect(page.getByRole('status')).toContainText(/confirmed and processed/i)
-    expect(await balance(user.id, 'BTC')).toEqual({ available: 0.04, locked: 0 })
+    await expect(page.getByRole('status')).toContainText(/confirmed and sent for processing/i)
+    // Paid out only when the (demo) custodian confirms it, moments later.
+    await expect.poll(() => balance(user.id, 'BTC')).toEqual({ available: 0.04, locked: 0 })
 
     await page.goto(link)
     await expect(page.getByRole('status')).toContainText(/invalid, expired, or already used/i)

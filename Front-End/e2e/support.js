@@ -48,13 +48,28 @@ export const createUser = async ({ role = 'user' } = {}) => {
   return { id, email, password: PASSWORD, token: login.body.token }
 }
 
+// Test funding is posted through the backend's ledger, like every real
+// balance change, so balances and ledger stay reconciled.
+const ledger = require('./services/ledger.js')
 export const fund = async (userId, asset, amount) => {
-  const wallet = await pool.query('SELECT id FROM wallets WHERE user_id = $1', [userId])
-  await pool.query(
-    `INSERT INTO wallet_balances(wallet_id, asset_symbol, available_balance) VALUES($1,$2,$3)
-     ON CONFLICT (wallet_id, asset_symbol) DO UPDATE SET available_balance = wallet_balances.available_balance + EXCLUDED.available_balance`,
-    [wallet.rows[0].id, asset, amount],
-  )
+  const client = await pool.connect()
+  try {
+    await client.query('BEGIN')
+    await ledger.postJournal(client, {
+      key: `test-funding:${crypto.randomUUID()}`,
+      kind: 'TEST_FUNDING',
+      entries: [
+        { account: 'external:test-funding', asset, amount: `-${amount}` },
+        { account: ledger.account.available(userId), asset, amount: String(amount) },
+      ],
+    })
+    await client.query('COMMIT')
+  } catch (error) {
+    await client.query('ROLLBACK')
+    throw error
+  } finally {
+    client.release()
+  }
 }
 
 export const balance = async (userId, asset) => {

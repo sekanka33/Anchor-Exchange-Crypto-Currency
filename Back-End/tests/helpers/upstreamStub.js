@@ -16,7 +16,10 @@ const PRICES = {
     tether: 1
 };
 
-const upstream = { fail: false, calls: 0, prices: { ...PRICES } };
+// Fixed test exchange rates: a price in another currency is the USD price × this.
+const FX = { usd: 1, zar: 18, eur: 0.9, gbp: 0.8 };
+
+const upstream = { fail: false, calls: 0, prices: { ...PRICES }, fx: { ...FX } };
 
 const realFetch = global.fetch;
 
@@ -37,9 +40,14 @@ global.fetch = async (url, options) => {
 
         if (parsed.pathname.endsWith("/simple/price")) {
             const ids = (parsed.searchParams.get("ids") || "").split(",");
+            const currencies = (parsed.searchParams.get("vs_currencies") || "usd").split(",");
             const out = {};
             for (const id of ids) {
-                if (upstream.prices[id] !== undefined) out[id] = { usd: upstream.prices[id] };
+                if (upstream.prices[id] === undefined) continue;
+                out[id] = {};
+                for (const vs of currencies) {
+                    if (upstream.fx[vs] !== undefined) out[id][vs] = upstream.prices[id] * upstream.fx[vs];
+                }
             }
             return jsonResponse(out);
         }

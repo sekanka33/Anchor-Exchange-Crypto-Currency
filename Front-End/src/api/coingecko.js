@@ -36,8 +36,8 @@ export const getCoinsMarkets = async ({
   return request(`/coins?${params.toString()}`);
 };
 
-export const getCoinPrice = async (coinId) => {
-  return request(`/price?ids=${encodeURIComponent(coinId)}`);
+export const getCoinPrice = async (coinId, vsCurrency = "usd") => {
+  return request(`/price?ids=${encodeURIComponent(coinId)}&vsCurrencies=${encodeURIComponent(vsCurrency)}`);
 };
 
 export const getGlobalMarketData = async () => {

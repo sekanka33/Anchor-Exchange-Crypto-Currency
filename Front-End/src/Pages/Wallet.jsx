@@ -5,12 +5,16 @@ import { Link } from 'react-router-dom'
 import PageHeader from '../Components/PageHeader'
 import MoneyFlowSidebar from '../Components/MoneyFlowSidebar'
 import { API_BASE_URL } from '../api/config'
+import { StatusBadge } from '../Components/FinanceUI'
+import { isFiat, formatFiat } from '../utils/finance'
 
 const authHeaders = () => ({
   Authorization: `Bearer ${localStorage.getItem("token")}`,
 });
 
-const formatAmount = (value) => value.toLocaleString(undefined, { maximumFractionDigits: 8 });
+// Fiat in its own currency (R 1,250.00); crypto to 8 decimals.
+const formatAmount = (value, asset) =>
+  isFiat(asset) ? formatFiat(value, asset) : Number(value).toLocaleString(undefined, { maximumFractionDigits: 8 });
 
 const Wallet = () => {
   const { currency, formatMoney } = useCurrency();
@@ -75,7 +79,7 @@ const Wallet = () => {
               <div className='bg-white dark:bg-hero2-dark text-slate-900 dark:text-white w-full max-w-220 min-h-50 flex flex-col lg:flex-row justify-between gap-4 pl-10 pr-10 pt-5 pb-5 rounded-2xl border-gray-200 dark:border-line-color border-2'>
                 <div className='flex flex-col gap-3'>
                   <p className='text-3xl font-bold'>Overview</p>
-                  <p className='text-gray-500 dark:text-text-color text-sm'>Total Portfolio Value</p>
+                  <p className='text-gray-500 dark:text-text-color text-sm'>Total Portfolio Value <span className='text-xs'>(estimated at live prices)</span></p>
                   <div className='flex flex-row gap-3 items-center'>
                     <p className='text-2xl'>
                       {hideBalances ? "••••••" : formatMoney(wallet.portfolioValue)}
@@ -107,7 +111,8 @@ const Wallet = () => {
                   <p className='w-40'>Available</p>
                   <p className='w-30'>Locked</p>
                   <p className='w-30'>Total</p>
-                  <p className='w-30'>Value ({currency})</p>
+                  <p className='w-30'>Est. value ({currency})</p>
+                  <p className='w-40'><span className='sr-only'>Actions</span></p>
                 </div>
 
                 <hr className='text-gray-200 dark:text-line-color w-200 h-0 mt-4' />
@@ -130,11 +135,18 @@ const Wallet = () => {
                 {hasAnyBalance &&
                   balances.map((b) => (
                     <div key={b.assetSymbol} className='flex flex-row gap-20 py-3 items-center border-b border-gray-200 dark:border-line-color/40 w-max min-w-full'>
-                      <p className='w-30 font-semibold'>{b.assetSymbol}</p>
-                      <p className='w-40'>{hideBalances ? "••••••" : formatAmount(b.availableBalance)}</p>
-                      <p className='w-30'>{hideBalances ? "••••••" : formatAmount(b.lockedBalance)}</p>
-                      <p className='w-30'>{hideBalances ? "••••••" : formatAmount(b.totalBalance)}</p>
-                      <p className='w-30'>{hideBalances ? "••••••" : formatMoney(b.usdValue)}</p>
+                      <p className='w-30 font-semibold'>
+                        {b.assetSymbol}
+                        <span className='ml-2 text-[10px] font-medium uppercase text-gray-500 dark:text-text-color'>{isFiat(b.assetSymbol) ? "Fiat" : "Crypto"}</span>
+                      </p>
+                      <p className='w-40'>{hideBalances ? "••••••" : formatAmount(b.availableBalance, b.assetSymbol)}</p>
+                      <p className='w-30' title='Reserved for pending withdrawals'>{hideBalances ? "••••••" : formatAmount(b.lockedBalance, b.assetSymbol)}</p>
+                      <p className='w-30'>{hideBalances ? "••••••" : formatAmount(b.totalBalance, b.assetSymbol)}</p>
+                      <p className='w-30'>{hideBalances ? "••••••" : `≈ ${formatMoney(b.usdValue)}`}</p>
+                      <p className='w-40 flex gap-2'>
+                        <Link to={isFiat(b.assetSymbol) ? "/deposit" : "/deposit/crypto"} className='px-3 py-1 rounded-full text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white'>Deposit</Link>
+                        <Link to={isFiat(b.assetSymbol) ? "/withdraw" : "/withdraw/crypto"} className='px-3 py-1 rounded-full text-xs font-semibold border border-gray-300 dark:border-gray-600 hover:border-blue-500'>Withdraw</Link>
+                      </p>
                     </div>
                   ))}
               </div>
@@ -150,8 +162,8 @@ const Wallet = () => {
                     <div key={tx.id} className='flex flex-row gap-10 py-2 items-center border-b border-gray-200 dark:border-line-color/40 text-sm w-max min-w-full'>
                       <p className='w-25'>{tx.type}</p>
                       <p className='w-20'>{tx.asset}</p>
-                      <p className='w-30'>{Number(tx.amount).toLocaleString()}</p>
-                      <p className='w-25'>{tx.status}</p>
+                      <p className='w-30'>{formatAmount(tx.amount, tx.asset)}</p>
+                      <p className='w-35'><StatusBadge status={tx.status} /></p>
                       <p className='w-40 text-gray-500 dark:text-text-color'>{new Date(tx.created_at).toLocaleString()}</p>
                     </div>
                   ))

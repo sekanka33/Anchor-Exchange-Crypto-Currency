@@ -181,6 +181,12 @@ app.use(
 );
 
 
+app.use(
+    "/api/config",
+    require("./routes/configRoutes")
+);
+
+
 const { notFound, errorHandler } = require("./middleware/errorHandler");
 
 app.use(notFound);

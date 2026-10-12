@@ -16,6 +16,7 @@ import { useApi } from '../hooks/useApi';
 import { authFetch } from '../api/authFetch';
 import { Card, CardTitle, PanelMessage, StatCard } from './DashboardUI';
 import BarChart from './BarChart';
+import { formatAmount as formatAssetAmount } from '../utils/finance';
 
 const RANGES = [
   { value: '7d', label: '7 Days' },
@@ -263,7 +264,7 @@ const AdminOverview = ({ stats, statsError, onReloadStats, onOpenTab, onViewUser
             detail={s && `Placed an order, deposit or withdrawal${s.users.total ? ` · ${((s.users.activeLast30Days / s.users.total) * 100).toFixed(0)}% of users` : ''}`}
           />
           <StatCard
-            label="Total trading volume"
+            label="Trading volume (USD orders)"
             loading={statsLoading}
             value={s && formatMoney(s.orders.volumeUsd)}
             trend={s && pctChange(s.orders.volumeLast30DaysUsd, s.orders.volumePrevious30DaysUsd)}
@@ -304,6 +305,45 @@ const AdminOverview = ({ stats, statsError, onReloadStats, onOpenTab, onViewUser
           />
         </section>
       ) : null}
+
+      {/* MONEY BY CURRENCY — completed amounts only, never mixed across currencies */}
+      {s && (
+        <Card>
+          <CardTitle subtitle="Completed deposits and withdrawals, and fees earned, per currency. Pending amounts are not included; currencies are never added together.">
+            Money by currency
+          </CardTitle>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 text-sm">
+            {[
+              ['Deposits completed', s.deposits.completedTotals],
+              ['Withdrawals completed', s.withdrawals.completedTotals],
+              ['Fees earned', s.fees?.earnedByAsset],
+            ].map(([title, totals]) => (
+              <div key={title}>
+                <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-text-color mb-1">{title}</p>
+                {totals && Object.keys(totals).length > 0 ? (
+                  <ul className="space-y-0.5 tabular-nums">
+                    {Object.entries(totals).map(([asset, amount]) => <li key={asset}>{formatAssetAmount(amount, asset)}</li>)}
+                  </ul>
+                ) : <p className="text-gray-500 dark:text-text-color">None yet</p>}
+              </div>
+            ))}
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-text-color mb-1">Health</p>
+              <ul className="space-y-0.5">
+                <li>Customers: {formatCount(s.users.customers)} ({formatCount(s.users.suspended)} suspended)</li>
+                <li>Deposits under review: {formatCount(s.deposits.underReview)}</li>
+                <li>Withdrawals processing: {formatCount(s.withdrawals.processing)}, under review: {formatCount(s.withdrawals.underReview)}</li>
+                <li>
+                  Reconciliation exceptions:{' '}
+                  <button type="button" onClick={() => onOpenTab('Reconciliation')} className={`font-semibold underline ${s.reconciliation?.exceptions ? 'text-red-600 dark:text-red-400' : 'text-green-700 dark:text-green-400'}`}>
+                    {formatCount(s.reconciliation?.exceptions ?? 0)}
+                  </button>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </Card>
+      )}
 
       {/* REQUIRES ATTENTION */}
       <Card className="border-amber-500/40 dark:border-amber-500/30">

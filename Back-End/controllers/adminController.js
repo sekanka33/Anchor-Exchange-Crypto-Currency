@@ -1,25 +1,38 @@
 const pool = require("../config/database");
+const { recordAudit } = require("../services/auditLog");
+const { closeBeforeSubmission, runInTransaction } = require("./withdrawalController");
+const { reconcile } = require("../services/ledger");
 const { createNotification } = require("../utils/notify");
 
 // System-wide counters for the admin overview. Kept as simple aggregate
 // queries run in parallel rather than a materialized/cached view — the
 // data volumes here are demo-scale, so there's no need for the extra
 // complexity a real analytics pipeline would eventually want.
+// Metric definitions (also shown in the admin UI):
+//  - customers: accounts with role 'user'; suspended = is_suspended.
+//  - active: moved money or traded in the last 30 days (no login tracking exists).
+//  - deposit/withdrawal totals: COMPLETED only, summed per currency — never
+//    mixed with pending amounts, never added across currencies.
+//  - volume: completed orders' fiat value, per quote currency.
+//  - fees: platform:fees ledger balance per asset (what the exchange earned).
+//  - reconciliation exceptions: ledger/balance mismatches plus deposits and
+//    withdrawals held for review or stuck (see /api/admin/reconciliation).
+const totalsByAsset = (rows, column) =>
+    Object.fromEntries(rows.filter((r) => r[column] !== null).map((r) => [r.asset, String(r[column])]));
+
 const getStats = async (req, res) => {
-
     try {
-
-        const [users, deposits, withdrawals, orders, transactions] = await Promise.all([
+        const [users, deposits, depositTotals, withdrawals, withdrawalTotals, orders, volumes, fees, transactions, ledger, stuck] = await Promise.all([
             pool.query(`
                 SELECT
                     COUNT(*)::int AS total,
+                    COUNT(*) FILTER (WHERE role = 'user')::int AS customers,
+                    COUNT(*) FILTER (WHERE is_suspended = true)::int AS suspended,
                     COUNT(*) FILTER (WHERE is_verified = true)::int AS verified,
                     COUNT(*) FILTER (WHERE created_at >= NOW() - INTERVAL '7 days')::int AS new_7d,
                     COUNT(*) FILTER (WHERE created_at >= NOW() - INTERVAL '30 days')::int AS new_30d,
                     COUNT(*) FILTER (WHERE created_at >= NOW() - INTERVAL '60 days'
                                        AND created_at < NOW() - INTERVAL '30 days')::int AS new_prev_30d,
-                    -- No login tracking exists, so "active" means the user moved money
-                    -- or traded (order, deposit or withdrawal) in the last 30 days.
                     (SELECT COUNT(DISTINCT user_id)::int FROM (
                         SELECT user_id FROM orders WHERE created_at >= NOW() - INTERVAL '30 days'
                         UNION SELECT user_id FROM deposits WHERE created_at >= NOW() - INTERVAL '30 days'
@@ -30,23 +43,24 @@ const getStats = async (req, res) => {
             pool.query(`
                 SELECT
                     COUNT(*) FILTER (WHERE type = 'FIAT' AND status = 'COMPLETED')::int AS fiat_completed,
-                    COALESCE(SUM(net_amount) FILTER (WHERE type = 'FIAT' AND status = 'COMPLETED'), 0) AS fiat_total,
                     COUNT(*) FILTER (WHERE type = 'CRYPTO' AND status = 'COMPLETED')::int AS crypto_completed,
-                    COUNT(*) FILTER (WHERE status = 'COMPLETED')::int AS completed,
-                    COUNT(*) FILTER (WHERE status = 'PENDING')::int AS pending,
-                    COUNT(*) FILTER (WHERE status = 'FAILED')::int AS failed
+                    COUNT(*)::int AS total
                 FROM deposits
+            `),
+            pool.query(`
+                SELECT asset, SUM(net_amount) FILTER (WHERE status = 'COMPLETED') AS completed
+                FROM deposits GROUP BY asset
             `),
             pool.query(`
                 SELECT
                     COUNT(*) FILTER (WHERE type = 'FIAT' AND status = 'COMPLETED')::int AS fiat_completed,
-                    COALESCE(SUM(amount) FILTER (WHERE type = 'FIAT' AND status = 'COMPLETED'), 0) AS fiat_total,
                     COUNT(*) FILTER (WHERE type = 'CRYPTO' AND status = 'COMPLETED')::int AS crypto_completed,
-                    COUNT(*) FILTER (WHERE status = 'COMPLETED')::int AS completed,
-                    COUNT(*) FILTER (WHERE status = 'PENDING_CONFIRMATION')::int AS pending,
-                    COUNT(*) FILTER (WHERE status = 'CANCELLED')::int AS cancelled,
-                    COUNT(*) FILTER (WHERE status = 'EXPIRED')::int AS expired
+                    COUNT(*)::int AS total
                 FROM withdrawals
+            `),
+            pool.query(`
+                SELECT asset, SUM(amount) FILTER (WHERE status = 'COMPLETED') AS completed
+                FROM withdrawals GROUP BY asset
             `),
             pool.query(`
                 SELECT
@@ -56,28 +70,56 @@ const getStats = async (req, res) => {
                     COUNT(*) FILTER (WHERE status = 'OPEN')::int AS open,
                     COUNT(*) FILTER (WHERE status = 'COMPLETED')::int AS completed,
                     COUNT(*) FILTER (WHERE status = 'CANCELLED')::int AS cancelled,
-                    COALESCE(SUM(total) FILTER (WHERE status = 'COMPLETED'), 0) AS volume,
-                    COALESCE(SUM(total) FILTER (WHERE status = 'COMPLETED'
-                        AND created_at >= NOW() - INTERVAL '30 days'), 0) AS volume_30d,
-                    COALESCE(SUM(total) FILTER (WHERE status = 'COMPLETED'
-                        AND created_at >= NOW() - INTERVAL '60 days'
-                        AND created_at < NOW() - INTERVAL '30 days'), 0) AS volume_prev_30d,
                     COUNT(*) FILTER (WHERE created_at >= NOW() - INTERVAL '30 days')::int AS count_30d,
                     COUNT(*) FILTER (WHERE created_at >= NOW() - INTERVAL '60 days'
                         AND created_at < NOW() - INTERVAL '30 days')::int AS count_prev_30d
                 FROM orders
             `),
-            pool.query("SELECT COUNT(*)::int AS total FROM transactions")
+            pool.query(`
+                SELECT split_part(pair, '/', 2) AS currency,
+                       COALESCE(SUM(total) FILTER (WHERE status = 'COMPLETED'), 0) AS volume,
+                       COALESCE(SUM(total) FILTER (WHERE status = 'COMPLETED' AND created_at >= NOW() - INTERVAL '30 days'), 0) AS volume_30d,
+                       COALESCE(SUM(total) FILTER (WHERE status = 'COMPLETED' AND created_at >= NOW() - INTERVAL '60 days'
+                                                     AND created_at < NOW() - INTERVAL '30 days'), 0) AS volume_prev_30d
+                FROM orders GROUP BY 1
+            `),
+            pool.query("SELECT asset, SUM(amount) AS earned FROM ledger_entries WHERE account = 'platform:fees' GROUP BY asset"),
+            pool.query("SELECT COUNT(*)::int AS total FROM transactions"),
+            reconcile(pool),
+            pool.query(`
+                SELECT
+                    (SELECT COUNT(*)::int FROM deposits WHERE status = 'UNDER_REVIEW'
+                        OR (status IN ('PENDING', 'DETECTED', 'CONFIRMING') AND created_at < NOW() - INTERVAL '24 hours')) AS deposits,
+                    (SELECT COUNT(*)::int FROM withdrawals WHERE status = 'UNDER_REVIEW'
+                        OR (status = 'PROCESSING' AND COALESCE(submitted_at, updated_at) < NOW() - INTERVAL '1 hour')) AS withdrawals
+            `)
+        ]);
+
+        // Every known status is always present (0 when unused), so charts and
+        // clients can rely on the keys.
+        const statusCounts = async (table, known) => {
+            const counts = Object.fromEntries(known.map((s) => [s, 0]));
+            for (const r of (await pool.query(`SELECT status, COUNT(*)::int AS n FROM ${table} GROUP BY status`)).rows) counts[r.status] = r.n;
+            return counts;
+        };
+        const [depositStatus, withdrawalStatus] = await Promise.all([
+            statusCounts("deposits", ["PENDING", "DETECTED", "CONFIRMING", "COMPLETED", "FAILED", "UNDER_REVIEW"]),
+            statusCounts("withdrawals", ["PENDING_CONFIRMATION", "PROCESSING", "COMPLETED", "FAILED", "UNDER_REVIEW", "CANCELLED", "EXPIRED", "REJECTED"])
         ]);
 
         const u = users.rows[0];
         const d = deposits.rows[0];
         const w = withdrawals.rows[0];
         const o = orders.rows[0];
+        const usdVolume = volumes.rows.find((r) => r.currency === "USD") || { volume: 0, volume_30d: 0, volume_prev_30d: 0 };
+        const depositsCompleted = totalsByAsset(depositTotals.rows, "completed");
+        const withdrawalsCompleted = totalsByAsset(withdrawalTotals.rows, "completed");
 
         res.json({
             users: {
                 total: u.total,
+                customers: u.customers,
+                suspended: u.suspended,
                 verified: u.verified,
                 newLast7Days: u.new_7d,
                 newLast30Days: u.new_30d,
@@ -85,48 +127,58 @@ const getStats = async (req, res) => {
                 activeLast30Days: u.active_30d
             },
             deposits: {
+                total: d.total,
                 fiatCompletedCount: d.fiat_completed,
-                fiatCompletedTotalUsd: Number(d.fiat_total),
+                // USD only; other currencies are in completedTotals.
+                fiatCompletedTotalUsd: Number(depositsCompleted.USD || 0),
+                completedTotals: depositsCompleted,
                 cryptoCompletedCount: d.crypto_completed,
-                pending: d.pending,
-                statusCounts: { COMPLETED: d.completed, PENDING: d.pending, FAILED: d.failed }
+                pending: (depositStatus.PENDING || 0) + (depositStatus.DETECTED || 0) + (depositStatus.CONFIRMING || 0),
+                failed: depositStatus.FAILED || 0,
+                underReview: depositStatus.UNDER_REVIEW || 0,
+                statusCounts: depositStatus
             },
             withdrawals: {
+                total: w.total,
                 fiatCompletedCount: w.fiat_completed,
-                fiatCompletedTotalUsd: Number(w.fiat_total),
+                fiatCompletedTotalUsd: Number(withdrawalsCompleted.USD || 0),
+                completedTotals: withdrawalsCompleted,
                 cryptoCompletedCount: w.crypto_completed,
-                pendingConfirmation: w.pending,
-                statusCounts: {
-                    COMPLETED: w.completed,
-                    PENDING_CONFIRMATION: w.pending,
-                    CANCELLED: w.cancelled,
-                    EXPIRED: w.expired
-                }
+                pendingConfirmation: withdrawalStatus.PENDING_CONFIRMATION || 0,
+                processing: withdrawalStatus.PROCESSING || 0,
+                failed: withdrawalStatus.FAILED || 0,
+                underReview: withdrawalStatus.UNDER_REVIEW || 0,
+                statusCounts: withdrawalStatus
             },
             orders: {
                 buy: o.buy,
                 sell: o.sell,
                 total: o.total,
                 statusCounts: { OPEN: o.open, COMPLETED: o.completed, CANCELLED: o.cancelled },
-                volumeUsd: Number(o.volume),
-                volumeLast30DaysUsd: Number(o.volume_30d),
-                volumePrevious30DaysUsd: Number(o.volume_prev_30d),
+                // USD-quoted orders only; ZAR-quoted volume is in volumeByCurrency.
+                volumeUsd: Number(usdVolume.volume),
+                volumeLast30DaysUsd: Number(usdVolume.volume_30d),
+                volumePrevious30DaysUsd: Number(usdVolume.volume_prev_30d),
+                volumeByCurrency: Object.fromEntries(volumes.rows.map((r) => [r.currency, {
+                    total: String(r.volume), last30Days: String(r.volume_30d), previous30Days: String(r.volume_prev_30d)
+                }])),
                 countLast30Days: o.count_30d,
                 countPrevious30Days: o.count_prev_30d
             },
+            fees: { earnedByAsset: totalsByAsset(fees.rows, "earned") },
             transactions: {
                 total: transactions.rows[0].total
+            },
+            reconciliation: {
+                exceptions: ledger.balanceMismatches.length + ledger.unbalancedJournals.length
+                    + stuck.rows[0].deposits + stuck.rows[0].withdrawals,
+                ledgerMismatches: ledger.balanceMismatches.length + ledger.unbalancedJournals.length
             }
         });
-
     } catch (error) {
-
         console.error("ADMIN GET STATS ERROR:", error);
-
         res.status(500).json({ message: "Unable to load system statistics" });
-
     }
-
 };
 
 // Time-bucketed platform activity for the admin charts. Short ranges are
@@ -141,6 +193,9 @@ const HISTORY_RANGES = {
     "1y": { unit: "month", buckets: 12 }
 };
 
+// History charts are in USD: they include USD-quoted orders and USD fiat
+// movements only. ZAR totals are reported per currency by /stats, never
+// silently added as dollars.
 const getStatsHistory = async (req, res) => {
 
     const range = HISTORY_RANGES[req.query.range] ? req.query.range : "30d";
@@ -165,19 +220,19 @@ const getStatsHistory = async (req, res) => {
                            COALESCE(SUM(total) FILTER (WHERE side = 'SELL'), 0) AS sell_usd,
                            COUNT(*)::int AS orders
                     FROM orders
-                    WHERE status = 'COMPLETED' AND created_at >= (SELECT start FROM since)
+                WHERE status = 'COMPLETED' AND pair LIKE '%/USD' AND pair LIKE '%/USD' AND created_at >= (SELECT start FROM since)
                     GROUP BY 1
                 ),
                 d AS (
                     SELECT date_trunc($1, created_at) AS b, SUM(net_amount) AS usd
                     FROM deposits
-                    WHERE type = 'FIAT' AND status = 'COMPLETED' AND created_at >= (SELECT start FROM since)
+                    WHERE type = 'FIAT' AND asset = 'USD' AND status = 'COMPLETED' AND created_at >= (SELECT start FROM since)
                     GROUP BY 1
                 ),
                 w AS (
                     SELECT date_trunc($1, created_at) AS b, SUM(amount) AS usd
                     FROM withdrawals
-                    WHERE type = 'FIAT' AND status = 'COMPLETED' AND created_at >= (SELECT start FROM since)
+                    WHERE type = 'FIAT' AND asset = 'USD' AND status = 'COMPLETED' AND created_at >= (SELECT start FROM since)
                     GROUP BY 1
                 ),
                 u AS (
@@ -383,6 +438,8 @@ const updateUserRole = async (req, res) => {
 
         }
 
+        const before = (await pool.query("SELECT role FROM users WHERE id = $1", [id])).rows[0];
+
         const result = await pool.query(
             "UPDATE users SET role = $1, updated_at = NOW() WHERE id = $2 RETURNING id, email, role",
             [role, id]
@@ -391,6 +448,12 @@ const updateUserRole = async (req, res) => {
         if (result.rows.length === 0) {
             return res.status(404).json({ message: "User not found" });
         }
+
+        await recordAudit(pool, {
+            actor: req.user, action: "USER_ROLE_CHANGE", targetType: "user", targetId: id,
+            reason: typeof req.body.reason === "string" ? req.body.reason.slice(0, 500) : null,
+            before: { role: before?.role }, after: { role }
+        });
 
         createNotification(id, {
             title: role === "admin" ? "Admin access granted" : "Admin access removed",
@@ -428,6 +491,8 @@ const setUserSuspension = async (req, res) => {
 
     try {
 
+        const before = (await pool.query("SELECT is_suspended FROM users WHERE id = $1", [id])).rows[0];
+
         const result = await pool.query(
             "UPDATE users SET is_suspended = $1, updated_at = NOW() WHERE id = $2 RETURNING id, email, is_suspended",
             [suspended, id]
@@ -436,6 +501,12 @@ const setUserSuspension = async (req, res) => {
         if (result.rows.length === 0) {
             return res.status(404).json({ message: "User not found" });
         }
+
+        await recordAudit(pool, {
+            actor: req.user, action: suspended ? "USER_SUSPEND" : "USER_REINSTATE", targetType: "user", targetId: id,
+            reason: typeof req.body.reason === "string" ? req.body.reason.slice(0, 500) : null,
+            before: { is_suspended: before?.is_suspended }, after: { is_suspended: suspended }
+        });
 
         createNotification(id, {
             title: suspended ? "Account suspended" : "Account reinstated",
@@ -544,6 +615,16 @@ const getAllDeposits = async (req, res) => {
         conditions.push(`d.type = $${params.length}`);
     }
 
+    if (req.query.asset) {
+        params.push(String(req.query.asset).toUpperCase());
+        conditions.push(`d.asset = $${params.length}`);
+    }
+
+    if (req.query.search) {
+        params.push(`%${String(req.query.search).slice(0, 200)}%`);
+        conditions.push(`(d.provider_reference ILIKE $${params.length} OR d.tx_hash ILIKE $${params.length} OR u.email ILIKE $${params.length})`);
+    }
+
     const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
 
     try {
@@ -552,7 +633,8 @@ const getAllDeposits = async (req, res) => {
             pool.query(
                 `
                 SELECT d.id, d.user_id, u.email AS user_email, d.type, d.asset, d.amount, d.fee, d.net_amount,
-                       d.payment_method, d.network, d.status, d.created_at
+                       d.payment_method, d.network, d.status, d.provider, d.provider_reference, d.tx_hash,
+                       d.confirmations, d.required_confirmations, d.failure_reason, d.created_at, d.completed_at
                 FROM deposits d
                 JOIN users u ON u.id = d.user_id
                 ${whereClause}
@@ -561,7 +643,7 @@ const getAllDeposits = async (req, res) => {
                 `,
                 [...params, limit, offset]
             ),
-            pool.query(`SELECT COUNT(*)::int AS count FROM deposits d ${whereClause}`, params)
+            pool.query(`SELECT COUNT(*)::int AS count FROM deposits d JOIN users u ON u.id = d.user_id ${whereClause}`, params)
         ]);
 
         res.json({
@@ -603,6 +685,16 @@ const getAllWithdrawals = async (req, res) => {
         conditions.push(`w.type = $${params.length}`);
     }
 
+    if (req.query.asset) {
+        params.push(String(req.query.asset).toUpperCase());
+        conditions.push(`w.asset = $${params.length}`);
+    }
+
+    if (req.query.search) {
+        params.push(`%${String(req.query.search).slice(0, 200)}%`);
+        conditions.push(`('WD-' || w.id ILIKE $${params.length} OR w.provider_reference ILIKE $${params.length} OR w.tx_hash ILIKE $${params.length} OR w.destination_address ILIKE $${params.length} OR u.email ILIKE $${params.length})`);
+    }
+
     const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
 
     try {
@@ -610,8 +702,11 @@ const getAllWithdrawals = async (req, res) => {
         const [rowsResult, countResult] = await Promise.all([
             pool.query(
                 `
-                SELECT w.id, w.user_id, u.email AS user_email, w.type, w.asset, w.amount, w.fee, w.receive_amount,
-                       w.destination_address, w.network, w.status, w.created_at
+                SELECT w.id, 'WD-' || w.id AS reference, w.user_id, u.email AS user_email, w.type, w.asset, w.amount, w.fee,
+                       w.receive_amount, w.destination_address, w.network, w.status, w.provider, w.provider_reference,
+                       w.provider_status, w.tx_hash, w.failure_reason, w.created_at, w.completed_at,
+                       w.bank_details->>'bankName' AS bank_name,
+                       COALESCE(w.bank_details->>'accountNumberMasked', '•••• ' || RIGHT(w.bank_details->>'accountNumber', 4)) AS bank_account_masked
                 FROM withdrawals w
                 JOIN users u ON u.id = w.user_id
                 ${whereClause}
@@ -620,7 +715,7 @@ const getAllWithdrawals = async (req, res) => {
                 `,
                 [...params, limit, offset]
             ),
-            pool.query(`SELECT COUNT(*)::int AS count FROM withdrawals w ${whereClause}`, params)
+            pool.query(`SELECT COUNT(*)::int AS count FROM withdrawals w JOIN users u ON u.id = w.user_id ${whereClause}`, params)
         ]);
 
         res.json({
@@ -649,74 +744,41 @@ const getAllWithdrawals = async (req, res) => {
 // admin can only stop a withdrawal before its email confirmation, never
 // reverse one that already completed and left the ledger.
 const rejectWithdrawal = async (req, res) => {
-
     const { id } = req.params;
-    const { reason } = req.body;
+    const reason = typeof req.body.reason === "string" ? req.body.reason.trim() : "";
 
-    const client = await pool.connect();
+    if (reason.length < 5 || reason.length > 500) {
+        return res.status(400).json({ message: "A reason (5-500 characters) is required to reject a withdrawal" });
+    }
 
     try {
+        const rejected = await runInTransaction(async (client) => {
+            const closed = await closeBeforeSubmission(client, id, null, "REJECTED", `Rejected by an administrator: ${reason}`);
+            if (!closed) return null;
+            await recordAudit(client, {
+                actor: req.user, action: "WITHDRAWAL_REJECT", targetType: "withdrawal", targetId: id, reason,
+                before: { status: "PENDING_CONFIRMATION" },
+                after: { status: "REJECTED", released: `${closed.amount} ${closed.asset}` }
+            });
+            return closed;
+        });
 
-        await client.query("BEGIN");
-
-        const withdrawalResult = await client.query(
-            "SELECT * FROM withdrawals WHERE id = $1 AND status = 'PENDING_CONFIRMATION' FOR UPDATE",
-            [id]
-        );
-
-        if (withdrawalResult.rows.length === 0) {
-            await client.query("ROLLBACK");
+        if (!rejected) {
             return res.status(404).json({ message: "No pending withdrawal found with that id" });
         }
 
-        const withdrawal = withdrawalResult.rows[0];
-
-        const walletResult = await client.query(
-            "SELECT id FROM wallets WHERE user_id = $1 FOR UPDATE",
-            [withdrawal.user_id]
-        );
-
-        const walletId = walletResult.rows[0].id;
-
-        await client.query(
-            `
-            UPDATE wallet_balances
-            SET available_balance = available_balance + $1, locked_balance = locked_balance - $1, updated_at = NOW()
-            WHERE wallet_id = $2 AND asset_symbol = $3
-            `,
-            [withdrawal.amount, walletId, withdrawal.asset]
-        );
-
-        await client.query(
-            "UPDATE withdrawals SET status = 'CANCELLED', confirmation_token = NULL, updated_at = NOW() WHERE id = $1",
-            [withdrawal.id]
-        );
-
-        await client.query("COMMIT");
-
-        createNotification(withdrawal.user_id, {
+        createNotification(rejected.user_id, {
             title: "Withdrawal rejected",
-            message: `Your withdrawal of ${withdrawal.amount} ${withdrawal.asset} was rejected by our security team${reason ? `: ${reason}` : "."} The funds have been returned to your available balance.`,
+            message: `Your withdrawal of ${rejected.amount} ${rejected.asset} was rejected by our security team: ${reason}. The funds have been returned to your available balance.`,
             type: "SECURITY",
-            link: "/withdraw"
+            link: "/transactions"
         });
 
         res.json({ message: "Withdrawal rejected and funds released" });
-
     } catch (error) {
-
-        await client.query("ROLLBACK");
-
         console.error("ADMIN REJECT WITHDRAWAL ERROR:", error);
-
         res.status(500).json({ message: "Unable to reject withdrawal" });
-
-    } finally {
-
-        client.release();
-
     }
-
 };
 
 const getAllOrders = async (req, res) => {

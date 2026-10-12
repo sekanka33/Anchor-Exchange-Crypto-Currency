@@ -30,7 +30,7 @@ const WithdrawalConfirm = () => {
         }
 
         setStatus("success");
-        setMessage(data.message || "Withdrawal confirmed and processed.");
+        setMessage(data.message || "Withdrawal confirmed and sent for processing.");
       } catch {
         setStatus("error");
         setMessage("Unable to connect to Anchor Exchange server.");
