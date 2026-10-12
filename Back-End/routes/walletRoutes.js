@@ -1,18 +1,18 @@
 const express = require("express");
 const router = express.Router();
 
-const authenticate = require("../middleware/authenticate");
+const { requireCustomer } = require("../middleware/authorizeRole");
 const { getWallet, getWalletTransactions } = require("../controllers/walletController");
 
 router.get(
     "/",
-    authenticate,
+    requireCustomer,
     getWallet
 );
 
 router.get(
     "/transactions",
-    authenticate,
+    requireCustomer,
     getWalletTransactions
 );
 

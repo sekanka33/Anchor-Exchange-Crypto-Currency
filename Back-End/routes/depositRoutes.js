@@ -4,7 +4,7 @@ const router = express.Router();
 router.param("id", require("../middleware/validateId"));
 const rateLimit = require("express-rate-limit");
 
-const authenticate = require("../middleware/authenticate");
+const { requireCustomer } = require("../middleware/authorizeRole");
 const {
     createFiatDeposit,
     getDeposits,
@@ -23,16 +23,16 @@ const depositLimiter = rateLimit({
     message: { message: "Too many deposit attempts. Please slow down." }
 });
 
-router.get("/", authenticate, getDeposits);
+router.get("/", requireCustomer, getDeposits);
 
-router.get("/crypto/networks", authenticate, getCryptoNetworks);
+router.get("/crypto/networks", requireCustomer, getCryptoNetworks);
 
-router.get("/crypto/address", authenticate, getCryptoDepositAddress);
+router.get("/crypto/address", requireCustomer, getCryptoDepositAddress);
 
-router.post("/crypto/simulate", authenticate, depositLimiter, simulateCryptoDeposit);
+router.post("/crypto/simulate", requireCustomer, depositLimiter, simulateCryptoDeposit);
 
-router.get("/:id", authenticate, getDepositById);
+router.get("/:id", requireCustomer, getDepositById);
 
-router.post("/fiat", authenticate, depositLimiter, createFiatDeposit);
+router.post("/fiat", requireCustomer, depositLimiter, createFiatDeposit);
 
 module.exports = router;

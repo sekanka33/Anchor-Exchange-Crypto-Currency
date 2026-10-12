@@ -4,7 +4,9 @@ import { LayoutDashboard, Users, ArrowLeftRight, ArrowDownToLine, ArrowUpFromLin
 import AdminOverview from "../Components/AdminOverview";
 import { useCurrency } from "../hooks/useCurrency";
 import Modal from "../Components/Modal";
-import { Link, useNavigate } from "react-router-dom";
+import AdminHeader from "../Components/AdminHeader";
+import { useAuth } from "../hooks/useAuth";
+import { Link } from "react-router-dom";
 import { API_BASE_URL } from "../api/config";
 
 const authHeaders = () => ({
@@ -78,7 +80,7 @@ const StatusBadge = ({ status }) => (
 
 const AdminDashboard = () => {
   const { formatMoney } = useCurrency();
-  const navigate = useNavigate();
+  const { signOut, retry } = useAuth();
 
   const [accessState, setAccessState] = useState("checking"); // checking | granted | denied
   // The active section lives in the URL (?tab=withdrawals) so the sidebar
@@ -133,12 +135,16 @@ const AdminDashboard = () => {
         const res = await fetch(`${API_BASE_URL}/api/admin/stats`, { headers: authHeaders() });
 
         if (res.status === 401) {
-          navigate("/signin");
+          // Session expired: ProtectedRoute then sends them to sign in.
+          signOut("expired");
           return;
         }
 
         if (res.status === 403) {
+          // Demoted or suspended since signing in: re-check the session so
+          // the route guard sends them to the right place.
           setAccessState("denied");
+          retry();
           return;
         }
 
@@ -152,7 +158,7 @@ const AdminDashboard = () => {
     };
 
     checkAccess();
-  }, [navigate]);
+  }, [signOut, retry]);
 
   const reloadStats = async () => {
     setStatsError("");
@@ -384,6 +390,8 @@ const AdminDashboard = () => {
   };
 
   return (
+    <div className="flex flex-1 flex-col">
+    <AdminHeader />
     <div className="flex-1 bg-slate-50 dark:bg-hero-dark text-slate-900 dark:text-white font-sans flex">
       {/* SIDEBAR (desktop) */}
       <aside className="hidden lg:flex flex-col w-60 shrink-0 border-r border-gray-200 dark:border-line-color bg-white dark:bg-dark-void p-5 sticky top-14 h-[calc(100dvh-3.5rem)] overflow-y-auto">
@@ -779,6 +787,7 @@ const AdminDashboard = () => {
             )}
         </Modal>
       )}
+    </div>
 
     </div>
   );

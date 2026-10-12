@@ -37,7 +37,9 @@ const VerifyEmail = lazy(() => import('./Pages/VerifyEmail'))
 const About = lazy(() => import('./Pages/About'))
 const Careers = lazy(() => import('./Pages/Careers'))
 const NotFound = lazy(() => import('./Pages/NotFound'))
-import ProtectedRoute from './Components/ProtectedRoute'
+import ProtectedRoute, { CustomerRoute, GuestRoute } from './Components/ProtectedRoute'
+import { AuthProvider } from './Components/AuthProvider'
+import { useAuth } from './hooks/useAuth'
 
 const PAGE_TITLES = {
   '/': 'Home',
@@ -74,11 +76,18 @@ const PAGE_TITLES = {
   '/profile-setting': 'Profile & Settings',
 }
 
-const App = () => {
+const AppShell = () => {
 
   const location = useLocation();
+  const auth = useAuth();
 
-  const isDashboard = location.pathname === "/dashboard";
+  // The customer navbar and footer are hidden on the two pages with their
+  // own full-screen layout, for administrators everywhere (they only use the
+  // admin app), and while a stored session is still being verified (so no
+  // one sees chrome that their role might not get).
+  const hasOwnLayout = location.pathname === "/dashboard" || location.pathname === "/admin";
+  const sessionPending = auth.status === "loading" || auth.status === "error";
+  const showSiteChrome = !hasOwnLayout && !sessionPending && auth.user?.role !== "admin";
   const mainRef = useRef(null);
   const firstRender = useRef(true);
 
@@ -100,8 +109,7 @@ const App = () => {
   }, [location.pathname]);
 
   return (
-    <ThemeProvider>
-    <CurrencyProvider>
+    <>
       <a
         href="#main-content"
         className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[100] focus:rounded focus:bg-blue-700 focus:px-4 focus:py-2 focus:text-white"
@@ -112,7 +120,7 @@ const App = () => {
           footer, so short pages keep the footer at the bottom of the viewport. */}
       <div className="flex min-h-dvh flex-col">
       {
-        !isDashboard && (
+        showSiteChrome && (
           <header className="sticky top-0 z-40">
             <Navbar />
           </header>
@@ -122,159 +130,72 @@ const App = () => {
         <Suspense fallback={<p role="status" className="p-8 text-center">Loading…</p>}>
         <Routes>
 
-          {/* PUBLIC */}
-          <Route path="/" element={<Home />} />
-          <Route path="/markets" element={<Markets />} />
-          <Route path="/exchange" element={<Exchange />} />
-          <Route path="/spot" element={<Spot />} />
-          <Route path="/bitusdt" element={<Bitusdt />} />
-          <Route path="/assets" element={<Assets />} />
-          <Route path="/overview" element={<Overview />} />
-          <Route path="/buy-crypto" element={<BuyCrypto />} />
-          <Route path="/contact" element={<Contact />} />
-          <Route path="/blog" element={<Blog />} />
-          <Route path="/faq" element={<HelpCenter />} />
-          <Route path="/about" element={<About />} />
-          <Route path="/careers" element={<Careers />} />
+          {/* CUSTOMER APP, open to visitors. Admins are sent to /admin.
+              /withdrawals/confirm is the emailed confirmation link, which
+              works without being signed in. */}
+          <Route path="/" element={<CustomerRoute><Home /></CustomerRoute>} />
+          <Route path="/markets" element={<CustomerRoute><Markets /></CustomerRoute>} />
+          <Route path="/exchange" element={<CustomerRoute><Exchange /></CustomerRoute>} />
+          <Route path="/spot" element={<CustomerRoute><Spot /></CustomerRoute>} />
+          <Route path="/bitusdt" element={<CustomerRoute><Bitusdt /></CustomerRoute>} />
+          <Route path="/assets" element={<CustomerRoute><Assets /></CustomerRoute>} />
+          <Route path="/overview" element={<CustomerRoute><Overview /></CustomerRoute>} />
+          <Route path="/buy-crypto" element={<CustomerRoute><BuyCrypto /></CustomerRoute>} />
+          <Route path="/contact" element={<CustomerRoute><Contact /></CustomerRoute>} />
+          <Route path="/blog" element={<CustomerRoute><Blog /></CustomerRoute>} />
+          <Route path="/faq" element={<CustomerRoute><HelpCenter /></CustomerRoute>} />
+          <Route path="/about" element={<CustomerRoute><About /></CustomerRoute>} />
+          <Route path="/careers" element={<CustomerRoute><Careers /></CustomerRoute>} />
+          <Route path="/withdrawals/confirm" element={<CustomerRoute><WithdrawalConfirm /></CustomerRoute>} />
 
-          {/* AUTH */}
-          <Route path="/signin" element={<Signin />} />
-          <Route path="/signup" element={<Signup />} />
+          {/* SIGN IN / SIGN UP: one login page for every role; GuestRoute
+              sends a signed-in session to the right app. */}
+          <Route path="/signin" element={<GuestRoute><Signin /></GuestRoute>} />
+          <Route path="/signup" element={<GuestRoute><Signup /></GuestRoute>} />
+
+          {/* ACCOUNT LINKS (emailed/QR), usable in any state */}
           <Route path="/forgot-password" element={<Forgot />} />
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/verify-email" element={<VerifyEmail />} />
           <Route path="/qr-auth" element={<QRAuth />} />
 
-          {/* PROTECTED */}
-          <Route
-            path="/dashboard"
-            element={
-              <ProtectedRoute>
-                <Dashboard />
-              </ProtectedRoute>
-            }
-          />
+          {/* CUSTOMER APP, signed-in users only */}
+          <Route path="/dashboard" element={<ProtectedRoute role="user"><Dashboard /></ProtectedRoute>} />
+          <Route path="/wallet" element={<ProtectedRoute role="user"><Wallet /></ProtectedRoute>} />
+          <Route path="/orderstrades" element={<ProtectedRoute role="user"><OrdersTrades /></ProtectedRoute>} />
+          <Route path="/notifications" element={<ProtectedRoute role="user"><Notifications /></ProtectedRoute>} />
+          <Route path="/sell-crypto" element={<ProtectedRoute role="user"><SellCrypto /></ProtectedRoute>} />
+          <Route path="/deposit" element={<ProtectedRoute role="user"><DepositFiat /></ProtectedRoute>} />
+          <Route path="/deposit/crypto" element={<ProtectedRoute role="user"><CryptoDeposit /></ProtectedRoute>} />
+          <Route path="/withdraw" element={<ProtectedRoute role="user"><FiatWithdraw /></ProtectedRoute>} />
+          <Route path="/withdraw/crypto" element={<ProtectedRoute role="user"><CryptoWithdraw /></ProtectedRoute>} />
+          <Route path="/transactions" element={<ProtectedRoute role="user"><TransactionHistory /></ProtectedRoute>} />
+          <Route path="/profile-setting" element={<ProtectedRoute role="user"><ProfileAndSetting /></ProtectedRoute>} />
 
-          <Route
-            path="/wallet"
-            element={
-              <ProtectedRoute>
-                <Wallet />
-              </ProtectedRoute>
-            }
-          />
+          {/* ADMIN APP, administrators only */}
+          <Route path="/admin" element={<ProtectedRoute role="admin"><AdminDashboard /></ProtectedRoute>} />
 
-          <Route
-            path="/orderstrades"
-            element={
-              <ProtectedRoute>
-                <OrdersTrades />
-              </ProtectedRoute>
-            }
-          />
-
-          <Route
-            path="/notifications"
-            element={
-              <ProtectedRoute>
-                <Notifications />
-              </ProtectedRoute>
-            }
-          />
-
-          <Route
-            path="/sell-crypto"
-            element={
-              <ProtectedRoute>
-                <SellCrypto />
-              </ProtectedRoute>
-            }
-          />
-
-          <Route
-            path="/deposit"
-            element={
-              <ProtectedRoute>
-                <DepositFiat />
-              </ProtectedRoute>
-            }
-          />
-
-          <Route
-            path="/deposit/crypto"
-            element={
-              <ProtectedRoute>
-                <CryptoDeposit />
-              </ProtectedRoute>
-            }
-          />
-
-          <Route
-            path="/withdraw"
-            element={
-              <ProtectedRoute>
-                <FiatWithdraw />
-              </ProtectedRoute>
-            }
-          />
-
-          <Route
-            path="/withdraw/crypto"
-            element={
-              <ProtectedRoute>
-                <CryptoWithdraw />
-              </ProtectedRoute>
-            }
-          />
-
-          <Route
-            path="/withdrawals/confirm"
-            element={
-              <ProtectedRoute>
-                <WithdrawalConfirm />
-              </ProtectedRoute>
-            }
-          />
-
-          <Route
-            path="/transactions"
-            element={
-              <ProtectedRoute>
-                <TransactionHistory />
-              </ProtectedRoute>
-            }
-          />
-
-          <Route
-            path="/profile-setting"
-            element={
-              <ProtectedRoute>
-                <ProfileAndSetting />
-              </ProtectedRoute>
-            }
-          />
-
-          <Route
-            path="/admin"
-            element={
-              <ProtectedRoute>
-                <AdminDashboard />
-              </ProtectedRoute>
-            }
-          />
-
-          <Route path="*" element={<NotFound />} />
+          <Route path="*" element={<CustomerRoute><NotFound /></CustomerRoute>} />
 
         </Routes>
         </Suspense>
       </main>
       {
-        !isDashboard && <Footer />
+        showSiteChrome && <Footer />
       }
       </div>
-    </CurrencyProvider>
-    </ThemeProvider>
+    </>
   )
 }
+
+const App = () => (
+  <ThemeProvider>
+  <CurrencyProvider>
+  <AuthProvider>
+    <AppShell />
+  </AuthProvider>
+  </CurrencyProvider>
+  </ThemeProvider>
+)
 
 export default App

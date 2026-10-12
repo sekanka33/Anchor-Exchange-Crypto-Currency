@@ -52,8 +52,65 @@ describe('App shell', () => {
   })
 
   it('lets a logged-in user reach a protected page', async () => {
+    mockProfile({ id: 7, email: 'u@test.local', role: 'user' })
     localStorage.setItem('token', 'jwt')
     renderAt('/wallet')
-    await waitFor(() => expect(document.title).toBe('Wallet | Anchor Exchange'))
+    expect(await screen.findByRole('heading', { level: 1, name: 'Wallet' })).toBeInTheDocument()
+  })
+})
+
+// GET /api/users/profile answers with this user; every other call fails.
+const mockProfile = (user, status = 200) =>
+  globalThis.fetch.mockImplementation((url) =>
+    String(url).includes('/api/users/profile')
+      ? Promise.resolve({ ok: status < 400, status, json: () => Promise.resolve(status < 400 ? { user } : { message: 'Invalid or expired token.' }) })
+      : Promise.reject(new Error('offline'))
+  )
+
+describe('role separation', () => {
+  it('an admin who opens customer pages lands in the admin app, with no customer navbar or footer', async () => {
+    mockProfile({ id: 1, email: 'admin@test.local', role: 'admin' })
+    localStorage.setItem('token', 'jwt')
+    for (const path of ['/', '/markets', '/wallet', '/exchange', '/profile-setting', '/no-such-page']) {
+      const { unmount } = renderAt(path)
+      await waitFor(() => expect(document.title).toBe('Admin | Anchor Exchange'))
+      expect(screen.queryByRole('link', { name: 'Buy Crypto' })).not.toBeInTheDocument()
+      expect(screen.queryByRole('contentinfo')).not.toBeInTheDocument()
+      unmount()
+    }
+  })
+
+  it('the admin app has its own header with sign out', async () => {
+    mockProfile({ id: 1, email: 'admin@test.local', role: 'admin' })
+    globalThis.fetch.mockImplementation((url) => {
+      if (String(url).includes('/api/users/profile')) return Promise.resolve({ ok: true, status: 200, json: () => Promise.resolve({ user: { id: 1, email: 'admin@test.local', role: 'admin' } }) })
+      if (String(url).includes('/api/admin/stats')) return Promise.resolve({ ok: false, status: 500, json: () => Promise.resolve({ message: 'Unable to load statistics' }) })
+      return Promise.reject(new Error('offline'))
+    })
+    localStorage.setItem('token', 'jwt')
+    renderAt('/admin')
+    expect(await screen.findByRole('button', { name: /sign out/i })).toBeInTheDocument()
+    expect(screen.getByText('admin@test.local')).toBeInTheDocument()
+  })
+
+  it('a normal user who opens /admin is sent to their dashboard', async () => {
+    mockProfile({ id: 7, email: 'u@test.local', role: 'user' })
+    localStorage.setItem('token', 'jwt')
+    localStorage.setItem('role', 'admin') // tampering changes nothing
+    renderAt('/admin')
+    await waitFor(() => expect(document.title).toBe('Dashboard | Anchor Exchange'))
+  })
+
+  it('a visitor who opens /admin is asked to sign in', async () => {
+    renderAt('/admin')
+    await waitFor(() => expect(document.title).toBe('Sign In | Anchor Exchange'))
+  })
+
+  it('an expired session ends on sign in with an explanation', async () => {
+    mockProfile(null, 401)
+    localStorage.setItem('token', 'expired-jwt')
+    renderAt('/wallet')
+    expect(await screen.findAllByText('Your session has ended. Please sign in again.')).not.toHaveLength(0)
+    expect(localStorage.getItem('token')).toBeNull()
   })
 })

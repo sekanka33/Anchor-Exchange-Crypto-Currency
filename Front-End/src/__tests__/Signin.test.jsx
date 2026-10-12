@@ -8,6 +8,8 @@ vi.mock('socket.io-client', () => ({
 }))
 
 import Signin from '../Pages/Signin'
+import { AuthProvider } from '../Components/AuthProvider'
+import { GuestRoute } from '../Components/ProtectedRoute'
 
 const json = (body, ok = true, status = 200) =>
   Promise.resolve({ ok, status, json: () => Promise.resolve(body) })
@@ -22,13 +24,17 @@ beforeEach(() => {
   })
 })
 
-const renderSignin = () =>
+const renderSignin = (from) =>
   render(
-    <MemoryRouter initialEntries={['/signin']}>
-      <Routes>
-        <Route path="/signin" element={<Signin />} />
-        <Route path="/dashboard" element={<p>Dashboard page</p>} />
-      </Routes>
+    <MemoryRouter initialEntries={[{ pathname: '/signin', state: from ? { from } : undefined }]}>
+      <AuthProvider>
+        <Routes>
+          <Route path="/signin" element={<GuestRoute><Signin /></GuestRoute>} />
+          <Route path="/dashboard" element={<p>Dashboard page</p>} />
+          <Route path="/wallet" element={<p>Wallet page</p>} />
+          <Route path="/admin" element={<p>Admin page</p>} />
+        </Routes>
+      </AuthProvider>
     </MemoryRouter>
   )
 
@@ -62,8 +68,8 @@ describe('Signin page', () => {
     expect(screen.queryByText('Dashboard page')).not.toBeInTheDocument()
   })
 
-  it('stores the token, user id and role, then navigates to the dashboard on success', async () => {
-    loginResponse = () => json({ token: 'jwt-123', user: { id: 42, role: 'admin' } })
+  it('sends a normal user to the dashboard and stores the token and user id (but not the role)', async () => {
+    loginResponse = () => json({ token: 'jwt-123', user: { id: 42, role: 'user' } })
     const user = userEvent.setup()
     renderSignin()
 
@@ -72,7 +78,38 @@ describe('Signin page', () => {
     expect(await screen.findByText('Dashboard page')).toBeInTheDocument()
     expect(localStorage.getItem('token')).toBe('jwt-123')
     expect(localStorage.getItem('userId')).toBe('42')
-    expect(localStorage.getItem('role')).toBe('admin')
+    expect(localStorage.getItem('role')).toBeNull()
+  })
+
+  it('returns a normal user to the page that sent them to sign in', async () => {
+    loginResponse = () => json({ token: 'jwt-123', user: { id: 42, role: 'user' } })
+    const user = userEvent.setup()
+    renderSignin('/wallet')
+
+    await fillAndSubmit(user, { email: 'a@b.co', password: 'right' })
+
+    expect(await screen.findByText('Wallet page')).toBeInTheDocument()
+  })
+
+  it('always sends an administrator to /admin, even when they were headed to a customer page', async () => {
+    loginResponse = () => json({ token: 'jwt-123', user: { id: 1, role: 'admin' } })
+    const user = userEvent.setup()
+    renderSignin('/wallet')
+
+    await fillAndSubmit(user, { email: 'admin@b.co', password: 'right' })
+
+    expect(await screen.findByText('Admin page')).toBeInTheDocument()
+    expect(screen.queryByText('Wallet page')).not.toBeInTheDocument()
+  })
+
+  it('never sends a normal user to /admin, even if that is where they came from', async () => {
+    loginResponse = () => json({ token: 'jwt-123', user: { id: 42, role: 'user' } })
+    const user = userEvent.setup()
+    renderSignin('/admin')
+
+    await fillAndSubmit(user, { email: 'a@b.co', password: 'right' })
+
+    expect(await screen.findByText('Dashboard page')).toBeInTheDocument()
   })
 
   it('POSTs the credentials as JSON to the login endpoint', async () => {

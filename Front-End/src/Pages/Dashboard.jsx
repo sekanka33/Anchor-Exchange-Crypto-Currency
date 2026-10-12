@@ -32,6 +32,7 @@ import {
 } from 'lucide-react';
 import { useTheme } from '../hooks/useTheme';
 import { useCurrency } from '../hooks/useCurrency';
+import { useAuth } from '../hooks/useAuth';
 import useNotificationSocket from '../hooks/useNotificationSocket';
 import CurrencySelect from '../Components/CurrencySelect';
 import { authFetch } from '../api/authFetch';
@@ -144,7 +145,7 @@ function Dashboard() {
   const navigate = useNavigate();
   const { isDarkMode, toggleTheme } = useTheme();
   const { currency, formatMoney } = useCurrency();
-  const role = localStorage.getItem('role');
+  const { signOut } = useAuth();
 
   const [selectedPair, setSelectedPair] = useState(PAIRS[0]);
   const [pairMenuOpen, setPairMenuOpen] = useState(false);
@@ -162,10 +163,8 @@ function Dashboard() {
   const [tradeMessage, setTradeMessage] = useState(null); // { kind: 'success' | 'error', text }
 
   const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('userId');
-    localStorage.removeItem('role');
-    navigate('/signin');
+    signOut();
+    navigate('/signin', { replace: true });
   };
 
   /* ---------------- Data ---------------- */
@@ -173,7 +172,6 @@ function Dashboard() {
   const profile = useApi(() => authFetch('/api/users/profile').then((d) => d.user), []);
   const wallet = useApi(() => authFetch('/api/wallet'), []);
   const stats = useApi(() => authFetch('/api/users/stats'), []);
-  const adminStats = useApi(() => authFetch('/api/admin/stats'), [], { enabled: role === 'admin' });
 
   const orders = useApi(() => {
     const params = new URLSearchParams({ limit: '5' });
@@ -602,42 +600,6 @@ function Dashboard() {
                   detail={s && `${formatCount(s.transactions.total)} transaction${s.transactions.total === 1 ? '' : 's'}`}
                 />
               </section>
-
-            {/* PLATFORM METRICS (admins only, from the existing admin stats endpoint) */}
-            {role === 'admin' && (
-              <Card>
-                <CardTitle
-                  action={
-                    <Link to="/admin" className="text-xs text-blue-500 hover:underline flex items-center">
-                      Admin panel <ArrowUpRight size={12} className="ml-0.5" aria-hidden="true" />
-                    </Link>
-                  }
-                >
-                  Platform overview
-                </CardTitle>
-                {adminStats.loading ? (
-                  <PanelMessage kind="loading">Loading platform statistics…</PanelMessage>
-                ) : adminStats.error ? (
-                  <PanelMessage kind="error" onRetry={adminStats.reload}>{adminStats.error}</PanelMessage>
-                ) : adminStats.data && (
-                  <dl className="grid grid-cols-2 md:grid-cols-5 gap-4 text-sm">
-                    {[
-                      ['Total users', formatCount(adminStats.data.users.total), `${formatCount(adminStats.data.users.newLast7Days)} new this week`],
-                      ['Transactions', formatCount(adminStats.data.transactions.total), null],
-                      ['Orders', formatCount(adminStats.data.orders.total), `${formatCount(adminStats.data.orders.buy)} buy · ${formatCount(adminStats.data.orders.sell)} sell`],
-                      ['Fiat deposits', formatMoney(adminStats.data.deposits.fiatCompletedTotalUsd), `${formatCount(adminStats.data.deposits.pending)} pending`],
-                      ['Fiat withdrawals', formatMoney(adminStats.data.withdrawals.fiatCompletedTotalUsd), `${formatCount(adminStats.data.withdrawals.pendingConfirmation)} awaiting confirmation`],
-                    ].map(([label, value, detail]) => (
-                      <div key={label}>
-                        <dt className="text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-text-color">{label}</dt>
-                        <dd className="text-lg font-bold tabular-nums">{value}</dd>
-                        {detail && <dd className="text-xs text-gray-500 dark:text-text-color">{detail}</dd>}
-                      </div>
-                    ))}
-                  </dl>
-                )}
-              </Card>
-            )}
 
             {/* TOP ROW: CHART + ORDERS (LEFT) & TRADE PANEL + BALANCES (RIGHT) */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">

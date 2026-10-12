@@ -178,13 +178,13 @@ describe("JWT authentication middleware", () => {
         assert.equal((await h.api("GET", "/api/wallet")).status, 401);
     });
 
-    test("malformed / wrongly-signed / expired tokens -> 403", async () => {
+    test("malformed / wrongly-signed / expired tokens -> 401", async () => {
         const user = await h.createUser();
         const forged = jwt.sign({ id: user.id }, "some-other-secret");
         const expired = jwt.sign({ id: user.id }, process.env.JWT_SECRET, { expiresIn: -10 });
 
         for (const token of ["garbage", forged, expired]) {
-            assert.equal((await h.api("GET", "/api/wallet", { token })).status, 403);
+            assert.equal((await h.api("GET", "/api/wallet", { token })).status, 401);
         }
     });
 
@@ -198,7 +198,7 @@ describe("JWT authentication middleware", () => {
         const header = Buffer.from(JSON.stringify({ alg: "none", typ: "JWT" })).toString("base64url");
         const payload = Buffer.from(JSON.stringify({ id: 1 })).toString("base64url");
         const res = await h.api("GET", "/api/wallet", { token: `${header}.${payload}.` });
-        assert.equal(res.status, 403);
+        assert.equal(res.status, 401);
     });
 });
 

@@ -28,7 +28,10 @@ const authenticate = (req, res, next) => {
 
     } catch (err) {
 
-        return res.status(403).json({
+        // A bad or expired token means "not authenticated" (401), not
+        // "authenticated but not allowed" (403) — clients use 401 to
+        // end the session and send the user back to sign in.
+        return res.status(401).json({
             message: "Invalid or expired token."
         });
 

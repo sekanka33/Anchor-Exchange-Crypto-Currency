@@ -25,9 +25,9 @@ const QRAuth = () => {
 
             if (!token) {
 
-                // Phone is not logged in
-                // Send the user to login and keep the QR token
-                navigate(`/signin?qr=${qr_token}`);
+                // Phone is not logged in: sign in first, then come back
+                // here to approve the desktop login.
+                navigate("/signin", { state: { from: `/qr-auth?token=${encodeURIComponent(qr_token)}` } });
 
                 return;
             }

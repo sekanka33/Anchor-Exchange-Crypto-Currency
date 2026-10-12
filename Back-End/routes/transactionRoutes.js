@@ -3,11 +3,11 @@ const router = express.Router();
 
 router.param("id", require("../middleware/validateId"));
 
-const authenticate = require("../middleware/authenticate");
+const { requireCustomer } = require("../middleware/authorizeRole");
 const { getTransactions, getTransactionById } = require("../controllers/transactionController");
 
-router.get("/", authenticate, getTransactions);
+router.get("/", requireCustomer, getTransactions);
 
-router.get("/:id", authenticate, getTransactionById);
+router.get("/:id", requireCustomer, getTransactionById);
 
 module.exports = router;

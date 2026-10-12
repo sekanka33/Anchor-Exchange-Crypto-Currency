@@ -361,7 +361,7 @@ const Home = () => {
                   <p>Director, Company</p>
                 </div>
               </div>
-              <img src="src/assets/logo.png" alt="" className='w-40 h-10 md:relative md:right-17'/>
+              <img src="src/assets/Logo.png" alt="" className='w-40 h-10 md:relative md:right-17'/>
             </div>
           </div>
         </div>
