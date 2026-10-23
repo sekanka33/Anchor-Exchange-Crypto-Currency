@@ -15,8 +15,9 @@ const createPendingDeposit = async (user, amount = 100, paymentMethod = "card", 
 };
 
 // A PENDING deposit the demo provider will NOT call back for, so the test
-// alone drives its webhooks.
-const insertPendingDeposit = async (user, { amount = "100", asset = "USD", fee = "0" } = {}) => {
+// alone drives its webhooks. The demo provider's status API reports it as
+// completed, which is what the webhook handler cross-checks before crediting.
+const insertPendingDeposit = async (user, { amount = "100", asset = "USD", fee = "0", providerStatus = "completed" } = {}) => {
     const ref = `TESTREF-${crypto.randomBytes(6).toString("hex")}`;
     const net = (Number(amount) - Number(fee)).toFixed(2);
     const row = (await h.pool.query(
@@ -24,6 +25,7 @@ const insertPendingDeposit = async (user, { amount = "100", asset = "USD", fee =
          VALUES ($1, 'FIAT', $2, $3, $4, $5, 'bank', 'PENDING', 'demo', $6) RETURNING id`,
         [user.id, asset, amount, fee, net, ref]
     )).rows[0];
+    if (providerStatus) demoPayments.controls.setDepositOutcome(ref, providerStatus);
     return { id: row.id, ref };
 };
 
@@ -179,12 +181,69 @@ describe("payment webhook security and idempotency", () => {
         assert.equal((await h.pool.query("SELECT outcome FROM provider_events WHERE payload->'data'->>'reference' = $1", [short.ref])).rows[0].outcome, "amount_mismatch");
     });
 
-    test("unknown reference -> 404; malformed payload or unsupported type -> 400", async () => {
+    test("unknown reference -> 409 (provider disowns it) or 404 (we don't know it); malformed payload or unsupported type -> 400", async () => {
+        assert.equal((await h.paymentEvent("deposit.completed", { reference: "NOPE", amount: "1", currency: "USD" })).status, 409);
+        demoPayments.controls.setDepositOutcome("NOPE", "completed");
         assert.equal((await h.paymentEvent("deposit.completed", { reference: "NOPE", amount: "1", currency: "USD" })).status, 404);
         assert.equal((await h.paymentEvent("deposit.completed", {})).status, 400);
         assert.equal((await h.paymentEvent("deposit.bogus", { reference: "X" })).status, 400);
         const noId = h.signWebhook({ type: "deposit.completed", data: { reference: "X" } });
         assert.equal((await h.api("POST", "/api/webhooks/payments", { raw: noId.body, headers: { "Content-Type": "application/json", "X-Webhook-Signature": noId.signature } })).status, 400);
+    });
+
+    test("verifies the exact raw bytes: the same JSON re-formatted no longer matches its signature", async () => {
+        const user = await h.createUser();
+        const { ref } = await insertPendingDeposit(user);
+        const event = { id: h.eventId(), type: "deposit.completed", data: { reference: ref, amount: "100", currency: "USD" } };
+        const compact = h.signWebhook(event);
+        const pretty = JSON.stringify(event, null, 2);
+
+        const reformatted = await h.api("POST", "/api/webhooks/payments", { raw: pretty, headers: { "Content-Type": "application/json", "X-Webhook-Signature": compact.signature } });
+        assert.equal(reformatted.status, 401);
+        assert.equal((await h.balance(user.id, "USD")).available, 0);
+
+        const prettySigned = crypto.createHmac("sha256", process.env.PAYMENT_WEBHOOK_SECRET).update(pretty).digest("hex");
+        assert.equal((await h.api("POST", "/api/webhooks/payments", { raw: pretty, headers: { "Content-Type": "application/json", "X-Webhook-Signature": prettySigned } })).status, 200);
+        assert.equal((await h.balance(user.id, "USD")).available, 100);
+    });
+
+    test("non-JSON content types and malformed signature headers are rejected before anything is read", async () => {
+        const user = await h.createUser();
+        const { ref } = await insertPendingDeposit(user);
+        const signed = h.signWebhook({ id: h.eventId(), type: "deposit.completed", data: { reference: ref, amount: "100", currency: "USD" } });
+
+        assert.equal((await h.api("POST", "/api/webhooks/payments", { raw: signed.body, headers: { "Content-Type": "text/plain", "X-Webhook-Signature": signed.signature } })).status, 415);
+        assert.equal((await h.api("POST", "/api/webhooks/payments", { raw: signed.body, headers: { "Content-Type": "application/json", "X-Webhook-Signature": `sha256=${signed.signature}` } })).status, 401);
+        assert.equal((await h.api("POST", "/api/webhooks/custody", { raw: signed.body, headers: { "Content-Type": "application/json", "X-Custody-Signature": signed.signature } })).status, 401, "a payment signature is not a custody signature");
+        assert.equal((await h.balance(user.id, "USD")).available, 0);
+    });
+
+    test("a signed 'completed' the provider's own API doesn't confirm credits nothing and isn't recorded (retry works later)", async () => {
+        const user = await h.createUser();
+        const { id, ref } = await insertPendingDeposit(user, { providerStatus: "pending" });
+        const eventIdValue = h.eventId();
+        const data = { reference: ref, amount: "100", currency: "USD" };
+
+        const early = await h.paymentEvent("deposit.completed", data, { id: eventIdValue });
+        assert.equal(early.status, 409);
+        assert.equal((await depositStatus(user, id)).status, "PENDING");
+        assert.equal((await h.pool.query("SELECT 1 FROM provider_events WHERE event_id = $1", [eventIdValue])).rowCount, 0);
+
+        demoPayments.controls.setDepositOutcome(ref, "completed");
+        assert.equal((await h.paymentEvent("deposit.completed", data, { id: eventIdValue })).status, 200, "the provider's retry of the same event is processed");
+        assert.equal((await h.balance(user.id, "USD")).available, 100);
+    });
+
+    test("a replayed event id is acknowledged but never re-applied, even after the deposit changed", async () => {
+        const user = await h.createUser();
+        const { ref } = await insertPendingDeposit(user);
+        const id = h.eventId();
+        await h.paymentEvent("deposit.completed", { reference: ref, amount: "100", currency: "USD" }, { id });
+        const replay = await Promise.all([1, 2, 3].map(() => h.paymentEvent("deposit.completed", { reference: ref, amount: "100", currency: "USD" }, { id })));
+        assert.ok(replay.every((r) => r.status === 200));
+        assert.equal((await h.pool.query("SELECT COUNT(*)::int AS n FROM provider_events WHERE event_id = $1", [id])).rows[0].n, 1);
+        assert.equal((await h.balance(user.id, "USD")).available, 100);
+        assert.deepEqual(await h.reconcile(), { balanceMismatches: [], unbalancedJournals: [] });
     });
 
     test("a failed event after a completed one cannot reverse or re-fail the deposit", async () => {

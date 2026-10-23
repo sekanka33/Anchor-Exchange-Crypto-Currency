@@ -1,5 +1,6 @@
 const crypto = require("crypto");
 const { generateDepositAddress } = require("../cryptoDepositService");
+const { readSecret } = require("../../config/secrets");
 
 // DEMO custody provider. There is no wallet, node or blockchain behind it:
 // deposit addresses are derived locally and are NOT spendable chain
@@ -12,20 +13,21 @@ const { generateDepositAddress } = require("../cryptoDepositService");
 // HMAC-SHA256(CUSTODY_WEBHOOK_SECRET, rawBody) in X-Custody-Signature.
 //   deposit.updated     data: { txHash, network, asset, address, memo, amount, confirmations, state }
 //                       state: "pending" | "confirmed" | "reverted"
-//   withdrawal.updated  data: { reference, providerReference, txHash, state, reason }
+//   withdrawal.updated  data: { reference, providerReference, txHash, state, reason, amount?, asset? }
 //                       state: "broadcast" | "confirmed" | "failed"
 
 const NAME = "demo";
-const WEBHOOK_SECRET = process.env.CUSTODY_WEBHOOK_SECRET || process.env.CRYPTO_ADDRESS_SECRET || "demo-custody-webhook-secret-do-not-use-in-production";
 const delayMs = () => Number(process.env.DEMO_EVENT_DELAY_MS || 1500);
 
-const sign = (rawBody) => crypto.createHmac("sha256", WEBHOOK_SECRET)
+// CUSTODY_WEBHOOK_SECRET only: never another secret as a stand-in, so a key
+// for one channel can't authenticate events on another (config/secrets.js).
+const sign = (rawBody) => crypto.createHmac("sha256", readSecret("CUSTODY_WEBHOOK_SECRET"))
     .update(typeof rawBody === "string" ? rawBody : JSON.stringify(rawBody)).digest("hex");
 
 // Exact, constant-time comparison of the lowercase hex digest (an
 // upper-cased or otherwise re-encoded signature is rejected).
 const verifySignature = (rawBody, signature) => {
-    if (typeof signature !== "string") return false;
+    if (typeof signature !== "string" || !/^[0-9a-f]{64}$/.test(signature)) return false;
     const expected = Buffer.from(sign(rawBody));
     const given = Buffer.from(signature);
     return expected.length === given.length && crypto.timingSafeEqual(expected, given);
@@ -70,6 +72,8 @@ const transfers = new Map();
 let nextWithdrawal = null;
 const controls = {
     setNextWithdrawal: (behaviour) => { nextWithdrawal = behaviour; },
+    // What a status query reports for a reference (tests that send their own events).
+    setWithdrawalStatus: (reference, status) => { transfers.set(reference, { ...transfers.get(reference), status }); },
     emitDeposit: (data, webhookUrl) => deliver(webhookUrl, "deposit.updated", data),
     reset: () => { nextWithdrawal = null; transfers.clear(); }
 };
@@ -108,6 +112,8 @@ const submitWithdrawal = async ({ reference, asset, network, address, memo, amou
                 reference,
                 providerReference,
                 txHash: behaviour.settle === "failed" ? null : txHash,
+                amount,
+                asset,
                 state: behaviour.settle,
                 reason: behaviour.settle === "failed" ? "Demo: transaction rejected by the network" : undefined
             });
