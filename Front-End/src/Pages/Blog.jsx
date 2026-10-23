@@ -5,18 +5,30 @@ import CreateAnAccoutSection from "../Components/CreateAnAccoutSection";
 const CATEGORIES = ["View All", "Learn & Earn", "Metaverse", "Energy", "NFT", "Gaming", "Music"];
 
 const POSTS = [
-  { id: 1, category: "Learn & Earn", title: "What is Bitcoin and how does it work?", author: "Anchor Team", date: "2026-01-12" },
-  { id: 2, category: "Learn & Earn", title: "A beginner's guide to buying your first crypto", author: "Anchor Team", date: "2026-01-20" },
-  { id: 3, category: "NFT", title: "Understanding NFTs: ownership on the blockchain", author: "Anchor Team", date: "2026-02-02" },
-  { id: 4, category: "Metaverse", title: "How the metaverse is reshaping digital assets", author: "Anchor Team", date: "2026-02-14" },
-  { id: 5, category: "Learn & Earn", title: "Spot vs. futures trading: what's the difference?", author: "Anchor Team", date: "2026-03-01" },
-  { id: 6, category: "Gaming", title: "Play-to-earn games and in-game economies", author: "Anchor Team", date: "2026-03-09" },
-  { id: 7, category: "Energy", title: "The energy debate around proof-of-work mining", author: "Anchor Team", date: "2026-03-22" },
-  { id: 8, category: "Music", title: "Musicians embracing tokenized royalties", author: "Anchor Team", date: "2026-04-03" },
-  { id: 9, category: "NFT", title: "How to safely store and trade digital collectibles", author: "Anchor Team", date: "2026-04-15" },
+  { id: 1, category: "Learn & Earn", title: "What is Bitcoin and how does it work?", author: "Anchor Team", date: "2026-01-12", videoUrl: "https://youtu.be/-1ErJsH73Lk?si=_HuQ866f4amz1uk2" },
+  { id: 2, category: "Learn & Earn", title: "A beginner's guide to buying your first crypto", author: "Anchor Team", date: "2026-01-20", videoUrl: "https://youtu.be/--GRcD_DY0Y?si=cykB0Md9COT0u7lV" },
+  { id: 3, category: "NFT", title: "Understanding NFTs: ownership on the blockchain", author: "Anchor Team", date: "2026-02-02", videoUrl: "https://youtu.be/eZGDvWyreOY?si=RXoitXqLhkZPPknU" },
+  { id: 4, category: "Metaverse", title: "How the metaverse is reshaping digital assets", author: "Anchor Team", date: "2026-02-14", videoUrl: "https://youtu.be/EBwf4mmy5q8?si=sATHdpbTfRWTOXPu" },
+  { id: 5, category: "Learn & Earn", title: "Spot vs. futures trading: what's the difference?", author: "Anchor Team", date: "2026-03-01", videoUrl: "https://youtu.be/Gb7a65Pr0Og?si=eVvMFH8vcIVdkm7F" },
+  { id: 6, category: "Gaming", title: "Play-to-earn games and in-game economies", author: "Anchor Team", date: "2026-03-09", videoUrl: "https://youtu.be/6VEzWfADwJE?si=Ap_TBgYdkXq8E-3E" },
+  { id: 7, category: "Energy", title: "The energy debate around proof-of-work mining", author: "Anchor Team", date: "2026-03-22", videoUrl: "https://youtu.be/-1ErJsH73Lk?si=_HuQ866f4amz1uk2" },
+  { id: 8, category: "Music", title: "Musicians embracing tokenized royalties", author: "Anchor Team", date: "2026-04-03", videoUrl: "https://youtu.be/-1ErJsH73Lk?si=_HuQ866f4amz1uk2" },
+  { id: 9, category: "NFT", title: "How to safely store and trade digital collectibles", author: "Anchor Team", date: "2026-04-15", videoUrl: "https://youtu.be/-1ErJsH73Lk?si=_HuQ866f4amz1uk2" },
 ];
 
 const TAGS = ["Crypto", "Wallet", "Bitcoin", "NFT Marketplace", "Metaverse", "Token", "Arts"];
+
+// Helper function to extract the YouTube ID from youtu.be or watch?v= links and format it for embeds
+const getYouTubeEmbedUrl = (url) => {
+  if (!url) return "";
+  let videoId = "";
+  if (url.includes("youtu.be/")) {
+    videoId = url.split("youtu.be/")[1]?.split("?")[0];
+  } else if (url.includes("watch?v=")) {
+    videoId = url.split("watch?v=")[1]?.split("&")[0];
+  }
+  return videoId ? `https://www.youtube.com/embed/${videoId}` : url;
+};
 
 const Blog = () => {
   const [category, setCategory] = useState("View All");
@@ -62,7 +74,23 @@ const Blog = () => {
                 key={post.id}
                 className="bg-white dark:bg-hero-dark border border-gray-200 dark:border-transparent rounded-2xl overflow-hidden shadow-sm flex flex-col"
               >
-                <div className="aspect-video bg-slate-200 dark:bg-crypto-color" />
+                <div className="aspect-video bg-slate-200 dark:bg-crypto-color overflow-hidden">
+                  {post.videoUrl ? (
+                    <iframe
+                      className="w-full h-full"
+                      src={getYouTubeEmbedUrl(post.videoUrl)}
+                      title={post.title}
+                      frameBorder="0"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                      allowFullScreen
+                    ></iframe>
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-xs text-gray-400">
+                      No Video Available
+                    </div>
+                  )}
+                </div>
+
                 <div className="p-4 flex flex-col gap-2 flex-1">
                   <span className="inline-block w-fit bg-blue-600/10 text-blue-600 dark:text-blue-400 text-[10px] font-bold uppercase px-2 py-1 rounded-full">
                     {post.category}
