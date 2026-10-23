@@ -3,9 +3,6 @@ import { FiMoon, FiSun, FiLogOut } from "react-icons/fi";
 import { useTheme } from "../hooks/useTheme";
 import { useAuth } from "../hooks/useAuth";
 
-// Top bar of the admin app. Replaces the customer Navbar for administrators:
-// no customer links, just who is signed in, theme, and sign out. Same 56px
-// height as the Navbar, which the admin sidebar's sticky offset relies on.
 const AdminHeader = () => {
   const { isDarkMode, toggleTheme } = useTheme();
   const { user, signOut } = useAuth();

@@ -5,11 +5,6 @@ import { useApi } from "../hooks/useApi";
 import { authFetch } from "../api/authFetch";
 import { formatAmount, STATUS_META } from "../utils/finance";
 
-// Administrator finance panels: deposits, withdrawals, reconciliation, audit
-// log and the supported-asset registry. Everything shown comes from the
-// backend; the only actions are "reject" (before submission, with a reason)
-// and "re-check with provider", both enforced and audit-logged server-side.
-
 const card = "bg-white dark:bg-crypto-color border border-gray-200 dark:border-line-color rounded-2xl";
 const field = "bg-slate-100 dark:bg-input-field text-slate-900 dark:text-white border border-gray-300 dark:border-line-color rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500";
 const th = "px-4 py-3 font-medium whitespace-nowrap";
