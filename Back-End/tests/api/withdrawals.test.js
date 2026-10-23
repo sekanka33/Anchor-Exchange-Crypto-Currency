@@ -199,7 +199,10 @@ describe("email confirmation (the anti-takeover control)", () => {
         const { id } = (await request(user)).body.withdrawal;
 
         const res = await h.custodyEvent("withdrawal.updated", { reference: `WD-${id}`, txHash: "x", state: "confirmed" });
-        assert.equal(res.status, 200);
+        assert.equal(res.status, 409, "the custodian has no such transfer");
+        demoCustody.controls.setWithdrawalStatus(`WD-${id}`, "completed");
+        const agreed = await h.custodyEvent("withdrawal.updated", { reference: `WD-${id}`, txHash: "x", state: "confirmed" });
+        assert.equal(agreed.status, 200, "even when the custodian agrees, an unconfirmed withdrawal is not paid");
         assert.equal((await status(user, id)).status, "PENDING_CONFIRMATION");
         assert.deepEqual(await journals(id), ["reserve"]);
     });
@@ -242,6 +245,7 @@ describe("provider outcomes", () => {
         demoCustody.controls.setNextWithdrawal({ submit: "ok", settle: "none" });
         await confirm(id);
 
+        demoCustody.controls.setWithdrawalStatus(`WD-${id}`, "failed");
         const failed = { reference: `WD-${id}`, state: "failed", reason: "rejected by network" };
         await Promise.all([1, 2, 3].map(() => h.custodyEvent("withdrawal.updated", failed)));
         await h.custodyEvent("withdrawal.updated", { reference: `WD-${id}`, txHash: "late", state: "confirmed" });
@@ -402,6 +406,99 @@ describe("fiat withdrawal", () => {
         assert.match((await status(user, id)).failure_reason, /rejected/i);
         await h.paymentEvent("payout.completed", { reference: `WD-${id}` });
         assert.deepEqual(await journals(id), ["reserve", "release"]);
+    });
+
+    const pendingFiatPayout = async (user, amount = 100) => {
+        const { id } = (await h.api("POST", "/api/withdrawals/fiat", { token: user.token, body: { amount, bankDetails: bank } })).body.withdrawal;
+        demoPayments.controls.setNextPayout({ submit: "ok", settle: "none" });
+        await confirm(id);
+        assert.equal((await status(user, id)).status, "PROCESSING");
+        return id;
+    };
+
+    test("a payout event must match the amount and currency we asked the provider to pay", async () => {
+        const user = await h.createUser();
+        await h.fund(user.id, "USD", 500);
+        const wrongAmount = await pendingFiatPayout(user);
+        const noAmount = await pendingFiatPayout(user);
+        demoPayments.controls.setPayoutStatus(`WD-${wrongAmount}`, "completed");
+        demoPayments.controls.setPayoutStatus(`WD-${noAmount}`, "completed");
+
+        assert.equal((await h.paymentEvent("payout.completed", { reference: `WD-${wrongAmount}`, amount: "990.00", currency: "USD" })).status, 200);
+        assert.equal((await h.paymentEvent("payout.completed", { reference: `WD-${noAmount}` })).status, 200);
+
+        for (const id of [wrongAmount, noAmount]) {
+            const w = await status(user, id);
+            assert.equal(w.status, "UNDER_REVIEW");
+            assert.deepEqual(await journals(id), ["reserve"], "neither settled nor released");
+        }
+        assert.deepEqual(await h.balance(user.id, "USD"), { available: 300, locked: 200 });
+        await clean();
+    });
+
+    test("a 'failed' payout the provider doesn't confirm can't hand the reserved money back", async () => {
+        const user = await h.createUser();
+        await h.fund(user.id, "USD", 500);
+        const id = await pendingFiatPayout(user);
+
+        const res = await h.paymentEvent("payout.failed", { reference: `WD-${id}`, amount: "99.00", currency: "USD" });
+        assert.equal(res.status, 409, "the provider still reports it as processing");
+        assert.equal((await status(user, id)).status, "PROCESSING");
+        assert.deepEqual(await h.balance(user.id, "USD"), { available: 400, locked: 100 });
+    });
+
+    test("payment-provider events can't settle a crypto withdrawal (channels are bound even though both adapters are 'demo')", async () => {
+        const user = await h.createUser();
+        await h.fund(user.id, "BTC", 0.05);
+        const { id } = (await request(user)).body.withdrawal;
+        demoCustody.controls.setNextWithdrawal({ submit: "ok", settle: "none" });
+        await confirm(id);
+        demoPayments.controls.setPayoutStatus(`WD-${id}`, "completed");
+
+        const res = await h.paymentEvent("payout.completed", { reference: `WD-${id}`, amount: "0.0095", currency: "BTC" });
+        assert.equal(res.status, 404);
+        assert.equal((await status(user, id)).status, "PROCESSING");
+        assert.deepEqual(await journals(id), ["reserve"]);
+    });
+
+    test("bank details that can't be decrypted stop the payout before it is sent; funds stay reserved", async () => {
+        const user = await h.createUser();
+        await h.fund(user.id, "USD", 500);
+        const { id } = (await h.api("POST", "/api/withdrawals/fiat", { token: user.token, body: { amount: 100, bankDetails: bank } })).body.withdrawal;
+        await h.pool.query(
+            "UPDATE bank_beneficiaries SET account_number_encrypted = regexp_replace(account_number_encrypted, ':[^:]+$', ':AAAAAAAAAAAA') WHERE user_id = $1",
+            [user.id]
+        );
+
+        await confirm(id);
+        const w = (await h.pool.query("SELECT status, provider_status, provider_reference FROM withdrawals WHERE id = $1", [id])).rows[0];
+        assert.equal(w.status, "UNDER_REVIEW");
+        assert.equal(w.provider_status, "not_submitted");
+        assert.equal(w.provider_reference, null, "nothing reached the provider");
+        assert.deepEqual(await h.balance(user.id, "USD"), { available: 400, locked: 100 });
+    });
+
+    test("beneficiaries saved under the original fingerprint scheme are recognised and upgraded, not duplicated", async () => {
+        const user = await h.createUser();
+        const first = await h.api("POST", "/api/withdrawals/beneficiaries", { token: user.token, body: { ...bank, currency: "USD" } });
+        const key = Buffer.from(process.env.BENEFICIARY_ENCRYPTION_KEY, "hex");
+        const legacy = require("node:crypto").createHmac("sha256", key).update(`account:${bank.accountNumber}`).digest("hex");
+        await h.pool.query("UPDATE bank_beneficiaries SET account_fingerprint = $2 WHERE id = $1", [first.body.beneficiary.id, legacy]);
+
+        const again = await h.api("POST", "/api/withdrawals/beneficiaries", { token: user.token, body: { ...bank, currency: "USD" } });
+        assert.equal(again.body.beneficiary.id, first.body.beneficiary.id);
+        const rows = (await h.pool.query("SELECT account_fingerprint FROM bank_beneficiaries WHERE user_id = $1", [user.id])).rows;
+        assert.equal(rows.length, 1);
+        assert.notEqual(rows[0].account_fingerprint, legacy, "upgraded to the derived-key fingerprint");
+    });
+
+    test("another user can't archive, list or pay out to someone's beneficiary", async () => {
+        const owner = await h.createUser();
+        const other = await h.createUser();
+        const saved = await h.api("POST", "/api/withdrawals/beneficiaries", { token: owner.token, body: { ...bank, currency: "USD" } });
+        assert.equal((await h.api("DELETE", `/api/withdrawals/beneficiaries/${saved.body.beneficiary.id}`, { token: other.token })).status, 404);
+        assert.equal((await h.api("GET", "/api/withdrawals/beneficiaries", { token: owner.token })).body.beneficiaries.length, 1);
+        assert.equal((await h.api("GET", "/api/withdrawals/beneficiaries")).status, 401);
     });
 
     for (const [name, body] of [

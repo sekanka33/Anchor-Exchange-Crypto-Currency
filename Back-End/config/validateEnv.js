@@ -1,4 +1,21 @@
-const WEAK_SECRETS = new Set(["secret", "changeme", "change-me", "password", "123456", "jwt_secret", "your_jwt_secret"]);
+const { parseKey32, PUBLIC_DEFAULTS } = require("./secrets");
+
+const WEAK_SECRETS = new Set(["secret", "changeme", "change-me", "password", "123456", "jwt_secret", "your_jwt_secret", "postgres", "admin", "root"]);
+
+// HMAC secrets: at least 32 characters, not a published default, and not
+// obviously low-entropy (one repeated character, or very few distinct ones).
+const MIN_SECRET_LENGTH = 32;
+const HMAC_SECRETS = ["PAYMENT_WEBHOOK_SECRET", "CUSTODY_WEBHOOK_SECRET", "CRYPTO_ADDRESS_SECRET"];
+
+const lowEntropy = (value) => new Set(value).size < 10;
+
+// Every message names the variable and the rule, never the value.
+const secretProblem = (value) => {
+    if (PUBLIC_DEFAULTS.has(value) || WEAK_SECRETS.has(value.toLowerCase())) return "is a published or well-known value";
+    if (value.length < MIN_SECRET_LENGTH) return `should be at least ${MIN_SECRET_LENGTH} characters`;
+    if (lowEntropy(value)) return "has too little variety to be a random secret (generate one with: openssl rand -hex 32)";
+    return null;
+};
 
 const REQUIRED = ["DB_HOST", "DB_PORT", "DB_USER", "DB_PASSWORD", "DB_NAME", "JWT_SECRET"];
 
@@ -19,17 +36,30 @@ const validateEnv = (env = process.env) => {
             errors.push("JWT_SECRET is a well-known weak value");
         } else if (jwt.length < 32) {
             (production ? errors : warnings).push("JWT_SECRET should be at least 32 characters");
+        } else if (lowEntropy(jwt)) {
+            (production ? errors : warnings).push("JWT_SECRET has too little variety to be a random secret (generate one with: openssl rand -hex 64)");
         }
     }
 
     const port = Number(env.PORT || 5000);
     if (!Number.isInteger(port) || port < 1 || port > 65535) errors.push("PORT must be a valid port number");
 
-    if (!env.PAYMENT_WEBHOOK_SECRET) {
-        (production ? errors : warnings).push("PAYMENT_WEBHOOK_SECRET is not set (falls back to a public default that anyone could use to forge webhooks)");
+    // Webhook/address secrets: required and strong in production; outside
+    // production a missing one falls back to a labelled development value
+    // (config/secrets.js), which is only a warning.
+    for (const key of HMAC_SECRETS) {
+        const value = env[key];
+        if (!value) {
+            (production ? errors : warnings).push(`${key} is not set (a public development value is used outside production; production refuses to start)`);
+            continue;
+        }
+        const problem = secretProblem(value);
+        if (problem) (production ? errors : warnings).push(`${key} ${problem}`);
     }
-    if (!env.CRYPTO_ADDRESS_SECRET) {
-        (production ? errors : warnings).push("CRYPTO_ADDRESS_SECRET is not set (falls back to a hardcoded default)");
+
+    // Each channel has its own key, so a leak of one can't forge the other.
+    if (env.PAYMENT_WEBHOOK_SECRET && env.PAYMENT_WEBHOOK_SECRET === env.CUSTODY_WEBHOOK_SECRET) {
+        (production ? errors : warnings).push("PAYMENT_WEBHOOK_SECRET and CUSTODY_WEBHOOK_SECRET must be different values");
     }
 
     // Provider names must be ones this build implements (see services/payments
@@ -45,18 +75,40 @@ const validateEnv = (env = process.env) => {
     if (custodyProvider && !KNOWN_CUSTODY_PROVIDERS.includes(custodyProvider)) {
         errors.push(`CUSTODY_PROVIDER "${env.CUSTODY_PROVIDER}" is not implemented (available: ${KNOWN_CUSTODY_PROVIDERS.join(", ")})`);
     }
+    // 32 bytes as 64 hex characters or canonical base64 (44 characters).
     if (env.BENEFICIARY_ENCRYPTION_KEY) {
-        const key = env.BENEFICIARY_ENCRYPTION_KEY;
-        const bytes = /^[0-9a-f]{64}$/i.test(key) ? 32 : Buffer.from(key, "base64").length;
-        if (bytes !== 32) errors.push("BENEFICIARY_ENCRYPTION_KEY must be 32 bytes (64 hex characters or base64)");
+        const key = parseKey32(env.BENEFICIARY_ENCRYPTION_KEY);
+        if (!key) {
+            errors.push("BENEFICIARY_ENCRYPTION_KEY must be exactly 32 bytes (64 hex characters or 44-character base64)");
+        } else if (new Set(key).size < 8) {
+            (production ? errors : warnings).push("BENEFICIARY_ENCRYPTION_KEY has too little variety to be a random key (generate one with: openssl rand -hex 32)");
+        }
     } else {
         (production ? errors : warnings).push("BENEFICIARY_ENCRYPTION_KEY is not set (bank account numbers are encrypted with a built-in development key)");
     }
-    if (!env.CUSTODY_WEBHOOK_SECRET) {
-        (production ? errors : warnings).push("CUSTODY_WEBHOOK_SECRET is not set (custody webhooks fall back to a development secret)");
+    if (env.BENEFICIARY_ENCRYPTION_KEY_PREVIOUS) {
+        const previous = parseKey32(env.BENEFICIARY_ENCRYPTION_KEY_PREVIOUS);
+        if (!previous) {
+            errors.push("BENEFICIARY_ENCRYPTION_KEY_PREVIOUS must be exactly 32 bytes (64 hex characters or 44-character base64)");
+        } else if (env.BENEFICIARY_ENCRYPTION_KEY && previous.equals(parseKey32(env.BENEFICIARY_ENCRYPTION_KEY) || Buffer.alloc(0))) {
+            warnings.push("BENEFICIARY_ENCRYPTION_KEY_PREVIOUS equals the current key; remove it");
+        } else {
+            warnings.push("BENEFICIARY_ENCRYPTION_KEY_PREVIOUS is set: run scripts/rotateBeneficiaryKey.js --apply, then remove it");
+        }
     }
 
+    const dbPort = Number(env.DB_PORT);
+    if (env.DB_PORT && (!Number.isInteger(dbPort) || dbPort < 1 || dbPort > 65535)) errors.push("DB_PORT must be a valid port number");
+
     if (production) {
+        if (env.DB_PASSWORD && WEAK_SECRETS.has(env.DB_PASSWORD.toLowerCase())) {
+            errors.push("DB_PASSWORD is a well-known weak value");
+        }
+        if (env.ALLOW_DEMO_MODE === "true") {
+            // Allowed only as an explicit acknowledgement; it never makes demo
+            // adapters real (every demo response stays labelled demo).
+            warnings.push("ALLOW_DEMO_MODE=true: deposits, payouts, custody and addresses are SIMULATED. Do not accept real customer funds.");
+        }
         if (env.ALLOW_DEMO_MODE !== "true") {
             errors.push(
                 "Refusing to start in production: payments, deposits and withdrawals are simulated (only the demo payment and custody " +

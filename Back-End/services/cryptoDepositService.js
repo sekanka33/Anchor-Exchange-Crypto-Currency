@@ -1,11 +1,15 @@
 const crypto = require("crypto");
 const { getNetworkConfig } = require("../config/cryptoNetworks");
+const { readSecret } = require("../config/secrets");
 
 // Demo mode only: addresses are deterministically derived from a local
 // secret rather than issued by a real wallet/custody provider, so the same
 // user+asset+network always gets the same address back. These are NOT real
 // chain addresses and nothing is watching them — see simulateIncomingDeposit.
-const ADDRESS_SECRET = process.env.CRYPTO_ADDRESS_SECRET || "demo-crypto-address-secret-do-not-use-in-production";
+//
+// Addresses are stored in deposit_addresses when first issued and re-read
+// from there, so changing CRYPTO_ADDRESS_SECRET only changes addresses issued
+// afterwards; existing demo records keep their address.
 
 const BASE58_ALPHABET = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
 
@@ -14,7 +18,7 @@ const deterministicBytes = (seed, byteLength) => {
     let counter = 0;
 
     while (buf.length < byteLength) {
-        const chunk = crypto.createHmac("sha256", ADDRESS_SECRET).update(`${seed}:${counter}`).digest();
+        const chunk = crypto.createHmac("sha256", readSecret("CRYPTO_ADDRESS_SECRET")).update(`${seed}:${counter}`).digest();
         buf = Buffer.concat([buf, chunk]);
         counter += 1;
     }
@@ -55,6 +59,4 @@ const generateDepositAddress = (userId, asset, network) => {
 
 };
 
-const generateFakeTxHash = () => `0x${crypto.randomBytes(32).toString("hex")}`;
-
-module.exports = { generateDepositAddress, generateFakeTxHash };
+module.exports = { generateDepositAddress };

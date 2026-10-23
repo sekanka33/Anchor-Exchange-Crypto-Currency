@@ -13,7 +13,7 @@ const baseEnv = () => ({
     NODE_ENV: "development",
     PORT: "5097",
     FRONTEND_URL: "http://localhost:5173",
-    JWT_SECRET: "j".repeat(64),
+    JWT_SECRET: require("node:crypto").createHash("sha512").update("anchor-exchange-test:server-jwt").digest("hex"),
 });
 
 const run = (envOverrides, { until, timeout = 8000 } = {}) =>

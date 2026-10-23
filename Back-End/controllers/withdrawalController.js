@@ -390,11 +390,20 @@ const submitToProvider = async (w) => {
         } else {
             const provider = getPaymentProvider();
             const beneficiary = w.beneficiary_id
-                ? (await pool.query("SELECT * FROM bank_beneficiaries WHERE id = $1", [w.beneficiary_id])).rows[0]
+                ? (await pool.query("SELECT * FROM bank_beneficiaries WHERE id = $1 AND user_id = $2", [w.beneficiary_id, w.user_id])).rows[0]
                 : null;
+            if (!beneficiary) throw Object.assign(new Error("No bank account on file for this payout"), { notSubmitted: true });
+            let details;
+            try {
+                details = beneficiaries.payoutDetails(beneficiary);
+            } catch {
+                // Wrong/missing key or tampered row: never send a payout with
+                // partial details, and never log what was (or wasn't) decrypted.
+                throw Object.assign(new Error("Bank account details could not be read"), { notSubmitted: true });
+            }
             outcome = await withTimeout(provider.createPayout({
                 reference, amount: w.receive_amount, currency: w.asset,
-                beneficiary: beneficiary ? beneficiaries.payoutDetails(beneficiary) : w.bank_details,
+                beneficiary: details,
                 webhookUrl: selfUrl("/api/webhooks/payments")
             }));
         }
@@ -406,6 +415,17 @@ const submitToProvider = async (w) => {
                 const closed = await releaseReservation(client, row, "FAILED", error.message.slice(0, 200));
                 return { ...closed, after: failedSideEffect(row) };
             });
+        }
+
+        if (error.notSubmitted) {
+            // Nothing reached the provider, so nothing can have been paid; the
+            // funds stay reserved until an administrator resolves it.
+            console.error(`WITHDRAWAL ${reference} NOT SUBMITTED: ${error.message}`);
+            return runInTransaction(async (client) => (await client.query(
+                `UPDATE withdrawals SET status = 'UNDER_REVIEW', provider_status = 'not_submitted', failure_reason = $2, updated_at = NOW()
+                 WHERE id = $1 AND status = 'PROCESSING' RETURNING ${WITHDRAWAL_COLUMNS}`,
+                [w.id, `${error.message}; the payout was not sent.`]
+            )).rows[0]);
         }
 
         console.error(`WITHDRAWAL ${reference} SUBMISSION OUTCOME UNKNOWN:`, error.message);
@@ -491,10 +511,17 @@ const confirmWithdrawal = async (req, res) => {
 
 // Applies a verified payout/withdrawal event from the payment provider or
 // custodian (inside the caller's transaction).
-const applyPayoutEvent = async (client, providerName, { reference, providerReference, txHash, state, reason }) => {
+// `type` binds the event to its channel: the payment provider only settles
+// FIAT payouts and the custodian only CRYPTO withdrawals, even when both
+// adapters share a name (both demo adapters are called "demo").
+// Final outcomes must match what we asked the provider to pay; the payment
+// channel must state amount and currency (`requireAmount`), the custodian is
+// checked whenever it reports them.
+const applyPayoutEvent = async (client, providerName, { reference, providerReference, txHash, state, reason, amount, currency, asset }, { type, requireAmount = false } = {}) => {
     const id = idFromReference(reference);
     const w = id ? (await client.query("SELECT * FROM withdrawals WHERE id = $1 FOR UPDATE", [id])).rows[0] : null;
     if (!w) return { status: 404, body: { message: "Withdrawal not found" }, outcome: "unknown_reference" };
+    if (type && w.type !== type) return { status: 404, body: { message: "Withdrawal not found" }, outcome: "channel_mismatch" };
     if (w.provider && w.provider !== providerName) return { status: 400, body: { message: "Event is from a different provider" }, outcome: "provider_mismatch" };
     if (providerReference && w.provider_reference && providerReference !== w.provider_reference) {
         return { status: 400, body: { message: "Provider reference mismatch" }, outcome: "provider_reference_mismatch" };
@@ -517,6 +544,28 @@ const applyPayoutEvent = async (client, providerName, { reference, providerRefer
             await client.query("UPDATE transactions SET tx_hash = $3, updated_at = NOW() WHERE user_id = $1 AND type = 'WITHDRAWAL' AND reference = $2", [w.user_id, reference, txHash]);
         }
         return { status: 200, body: { message: "Broadcast recorded" }, outcome: "broadcast" };
+    }
+
+    if (state === "completed" || state === "failed") {
+        const reportedAsset = currency ?? asset;
+        let reportedUnits = null;
+        try {
+            reportedUnits = amount === undefined || amount === null ? null : toUnits(amount);
+        } catch {
+            reportedUnits = "invalid";
+        }
+        const missing = requireAmount && (reportedUnits === null || reportedAsset === undefined);
+        const wrongAmount = reportedUnits !== null && reportedUnits !== toUnits(w.receive_amount);
+        const wrongAsset = reportedAsset !== undefined && String(reportedAsset).toUpperCase() !== w.asset;
+        if (missing || wrongAmount || wrongAsset) {
+            // Funds stay reserved: neither paid out nor handed back until an
+            // administrator establishes what really happened.
+            await client.query(
+                `UPDATE withdrawals SET status = 'UNDER_REVIEW', provider_status = $2, failure_reason = $3, updated_at = NOW() WHERE id = $1`,
+                [w.id, state, `Provider reported ${state} for ${amount ?? "no amount"} ${reportedAsset ?? ""}`.trim() + ` on a ${w.receive_amount} ${w.asset} payout`]
+            );
+            return { status: 200, body: { message: "Payout details do not match; held for review" }, outcome: "amount_mismatch" };
+        }
     }
 
     if (state === "completed") {

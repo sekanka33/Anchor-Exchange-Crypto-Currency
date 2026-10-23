@@ -1,4 +1,5 @@
 const crypto = require("crypto");
+const { readSecret } = require("../../config/secrets");
 
 // DEMO payment provider. No money moves: it stands in for a real fiat
 // provider (bank-transfer collections + bank payouts) so the full lifecycle
@@ -13,16 +14,17 @@ const crypto = require("crypto");
 // signed with HMAC-SHA256(PAYMENT_WEBHOOK_SECRET, rawBody) in X-Webhook-Signature.
 
 const NAME = "demo";
-const WEBHOOK_SECRET = process.env.PAYMENT_WEBHOOK_SECRET || "demo-webhook-secret-do-not-use-in-production";
 const delayMs = () => Number(process.env.DEMO_EVENT_DELAY_MS || 1500);
 
-const sign = (rawBody) => crypto.createHmac("sha256", WEBHOOK_SECRET)
+// In production a missing PAYMENT_WEBHOOK_SECRET throws (fail closed); see
+// config/secrets.js. Outside production a labelled development value is used.
+const sign = (rawBody) => crypto.createHmac("sha256", readSecret("PAYMENT_WEBHOOK_SECRET"))
     .update(typeof rawBody === "string" ? rawBody : JSON.stringify(rawBody)).digest("hex");
 
 // Exact, constant-time comparison of the lowercase hex digest (an
 // upper-cased or otherwise re-encoded signature is rejected).
 const verifySignature = (rawBody, signature) => {
-    if (typeof signature !== "string") return false;
+    if (typeof signature !== "string" || !/^[0-9a-f]{64}$/.test(signature)) return false;
     const expected = Buffer.from(sign(rawBody));
     const given = Buffer.from(signature);
     return expected.length === given.length && crypto.timingSafeEqual(expected, given);
@@ -40,6 +42,7 @@ let nextPayout = null;
 const controls = {
     setNextPayout: (behaviour) => { nextPayout = behaviour; },
     setDepositOutcome: (reference, outcome) => { records.set(reference, { kind: "deposit", status: outcome }); },
+    setPayoutStatus: (reference, status) => { records.set(reference, { ...records.get(reference), kind: "payout", status }); },
     reset: () => { nextPayout = null; records.clear(); }
 };
 
